@@ -65,7 +65,7 @@ Quando devi generare o aggiornare un personaggio:
 - `build`: caratteristiche, TS, abilità, competenze.
 - `combat`: attacchi, spellcasting e note di combattimento.
 - `spellSections`: trucchetti, spell di livello, rituali e relative tabelle.
-- `reminders`: promemoria di build e di uso al tavolo.
+- `reminders`: note generiche (`notes`) e promemoria di uso al tavolo (`tablePlay`).
 - `features`: privilegi, invocazioni, checklist di livello.
 - `inventory`: oggetti, monete e note di inventario.
 - `origin`: lingue, razza, background e note correlate.

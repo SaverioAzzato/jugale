@@ -965,8 +965,8 @@
             <p class="section-subtitle" id="spellcasting-summary"></p>
             <div id="spell-sections"></div>
             <div class="story-card" style="margin-top: 16px">
-              <h3 class="section-subtitle">Promemoria build</h3>
-              <ul id="warlock-reminders"></ul>
+              <h3 class="section-subtitle">Note</h3>
+              <ul id="notes-reminders"></ul>
               <h3 class="section-subtitle" style="margin-top: 18px">
                 Come tirare i dadi al tavolo
               </h3>
@@ -1129,7 +1129,7 @@
         appearanceList: document.getElementById("appearance-list"),
         storyParagraphs: document.getElementById("story-paragraphs"),
         unfilledList: document.getElementById("unfilled-list"),
-        warlockReminders: document.getElementById("warlock-reminders"),
+        notesReminders: document.getElementById("notes-reminders"),
         tableReminders: document.getElementById("table-reminders"),
         hpSummary: document.getElementById("hp-summary"),
         hpFill: document.getElementById("hp-fill"),
@@ -1872,7 +1872,7 @@
         elements.unfilledList.innerHTML = (data.narrative?.unfilled || [])
           .map((item) => `<li>${escapeHtml(item)}</li>`)
           .join("");
-        elements.warlockReminders.innerHTML = (data.reminders?.warlock || [])
+        elements.notesReminders.innerHTML = (data.reminders?.notes || [])
           .map((item) => `<li>${escapeHtml(item)}</li>`)
           .join("");
         elements.tableReminders.innerHTML = (data.reminders?.tablePlay || [])
