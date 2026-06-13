@@ -72,6 +72,18 @@ Competenze segnate: Atletica, Indagare, Intimidire, Sopravvivenza.
 - Sopravvivenza +2 (competente)
 - Storia +1
 
+### Competenze (classe + background)
+
+- Warlock:
+  - Armature: armature leggere
+  - Armi: armi semplici
+  - Strumenti: nessuno
+  - Tiri salvezza: Saggezza, Carisma
+  - Abilita di classe scelte: Indagare, Intimidire
+- Background Forestiero:
+  - Abilita: Atletica, Sopravvivenza
+  - Strumenti: armonica
+
 ---
 
 ## Attacchi e incantesimi per livello
@@ -85,12 +97,12 @@ Riferimenti incantatore (Warlock 4):
 
 ### Attacchi e opzioni non magiche/razziali
 
-| Opzione                         | Livello | Gittata/Area | Tiro che fai tu         | Tiro avversario | Danno/Effetto                | Note                           |
-| ------------------------------- | ------- | ------------ | ----------------------- | --------------- | ---------------------------- | ------------------------------ |
-| Randello pesante                | Base    | Mischia      | 1d20 +2 vs CA           | Nessuno         | 1d8 contundenti              | Attacco in mischia             |
-| Pugnale                         | Base    | 6/18 m       | 1d20 +4 vs CA           | Nessuno         | 1d4+2 perforanti             | Mischia o lancio               |
-| Arco corto                      | Base    | 24/96 m      | 1d20 +4 vs CA           | Nessuno         | 1d6+2 perforanti             | Munizioni: 15 frecce segnate   |
-| Arma a soffio (Draconide rosso) | Razza   | Cono 4,5 m   | Nessun tiro per colpire | TS Des CD 12    | 2d6 fuoco, meta con successo | Recupero su riposo breve/lungo |
+| Opzione                         | Livello | Gittata/Area | Tiro che fai tu         | Tiro avversario | Danno/Effetto                | Note                                                                                                                |
+| ------------------------------- | ------- | ------------ | ----------------------- | --------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Randello pesante                | Base    | Mischia      | 1d20 +2 vs CA           | Nessuno         | 1d8 contundenti              | Attacco in mischia                                                                                                  |
+| Pugnale                         | Base    | 6/18 m       | 1d20 +4 vs CA           | Nessuno         | 1d4+2 perforanti             | Mischia o lancio                                                                                                    |
+| Arco corto                      | Base    | 24/96 m      | 1d20 +4 vs CA           | Nessuno         | 1d6+2 perforanti             | Munizioni: 15 frecce segnate                                                                                        |
+| Arma a soffio (Draconide rosso) | Razza   | Cono 4,5 m   | Nessun tiro per colpire | TS Des CD 12    | 2d6 fuoco, meta con successo | CD = 8 + Cos + competenza; danni: 2d6 (L1-5), 3d6 (L6-10), 4d6 (L11-15), 5d6 (L16+); recupero su riposo breve/lungo |
 
 Nota livello 4: hai preso Incremento dei Punteggi di Caratteristica (+2 Carisma).
 
@@ -169,18 +181,21 @@ Promemoria Warlock 4:
 
 ## Equipaggiamento e inventario
 
-Elenco mantenuto da trascrizione:
+- Catene costringenti della divinità
+- Randello pesante (1d8 contundenti, due mani)
+- Arco corto + 15 frecce
+- Armatura di cuoio
+- Due pugnali
+- Focus arcano: una collana (un filo con una pietra scura appesa come ciondolo; il portatore e chi è entro 3 m dall'oggetto, se draconide o immondo, viene percepito come umano da chi non ha mai visto l'entità del tipo corretto)
+- Dotazione da avventuriero
 
-- 5 - Catena costringenti della divinita
-- 5 - Randello pesante
-- 5 - Arco corto 15 frecce
-- (vuoto) - Armatura di cuoio
-- (vuoto) - Due Pugnali Un-
-- 736 - focus arcano - una collana (un filo con una pietra oscura appesa come ciondolo, il portatore
+Nota focus arcano: per regola di tavolo può ricaricare fino a 2 slot incantesimo per long rest.
 
-Nota focus arcano: per regola di tavolo puo ricaricare fino a 2 slot incantesimo per long rest.
+Monete:
 
-Nota: ultima riga troncata nella fonte originale.
+- 738 mo
+- 5 ma
+- 5 mr
 
 Lingue e appunti razziali segnati:
 
@@ -188,6 +203,12 @@ Lingue e appunti razziali segnati:
 - Draconico
 - Draconide: +2 Forza, +1 Carisma
 - Tiefling: +1 Intelligenza
+- Scurovisione (Tiefling): 18 m
+- Resistenza/Immunita al fuoco (Tiefling): immunita al fuoco (homebrew approvata al tavolo)
+
+Privilegio background:
+
+- Viandante (Forestiero): memoria geografica, orientamento eccellente, capacita di trovare cibo e acqua fresca (in territori non aridi/inospitali).
 
 ---
 
@@ -237,6 +258,7 @@ Campi non compilati in scheda:
 - TS attuali: For +0, Des +2, Cos +2, Int +1, Sag +2, Car +6.
 - Abilita ricalcolate sulla distribuzione attuale.
 - Arma a soffio portata a CD 12 (8 + Cos + competenza, secondo tua nota).
+- Immunita al fuoco impostata come homebrew di campagna (sostituisce la normale resistenza tiefling).
 - Carisma allineato a mod +4.
 - Dati da incantatore allineati a CD 14 e attacco +6.
 - Benedizione dell oscuro allineata a 8 PF temporanei.
