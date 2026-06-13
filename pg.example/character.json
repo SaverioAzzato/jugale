@@ -1,0 +1,172 @@
+{
+  "schemaVersion": "1.0.0",
+  "platform": {
+    "name": "Character Sheet Platform",
+    "description": "Template di esempio per nuovi personaggi basati su una cartella con character.json e images/."
+  },
+  "meta": {
+    "name": "Esempio PG",
+    "player": "Da compilare",
+    "summary": "Personaggio di esempio per la cartella template.",
+    "portrait": {
+      "src": "images/01-portrait.svg",
+      "alt": "Ritratto di esempio"
+    }
+  },
+  "identity": [
+    {
+      "label": "Nome",
+      "value": "Esempio PG"
+    },
+    {
+      "label": "Classe",
+      "value": "Da definire"
+    },
+    {
+      "label": "Livello",
+      "value": "1"
+    },
+    {
+      "label": "Razza",
+      "value": "Da definire"
+    }
+  ],
+  "build": {
+    "priorities": "Compila questo esempio con i dati reali del personaggio.",
+    "baseStats": [
+      {
+        "label": "Forza",
+        "value": "10"
+      },
+      {
+        "label": "Destrezza",
+        "value": "10"
+      },
+      {
+        "label": "Costituzione",
+        "value": "10"
+      },
+      {
+        "label": "Intelligenza",
+        "value": "10"
+      },
+      {
+        "label": "Saggezza",
+        "value": "10"
+      },
+      {
+        "label": "Carisma",
+        "value": "10"
+      }
+    ],
+    "abilities": [
+      {
+        "name": "Forza",
+        "score": "10",
+        "modifier": "+0"
+      },
+      {
+        "name": "Destrezza",
+        "score": "10",
+        "modifier": "+0"
+      },
+      {
+        "name": "Costituzione",
+        "score": "10",
+        "modifier": "+0"
+      },
+      {
+        "name": "Intelligenza",
+        "score": "10",
+        "modifier": "+0"
+      },
+      {
+        "name": "Saggezza",
+        "score": "10",
+        "modifier": "+0"
+      },
+      {
+        "name": "Carisma",
+        "score": "10",
+        "modifier": "+0"
+      }
+    ],
+    "savingThrows": [
+      {
+        "name": "Tiro Salvezza Forza",
+        "value": "+0"
+      },
+      {
+        "name": "Tiro Salvezza Destrezza",
+        "value": "+0"
+      }
+    ],
+    "skills": [
+      {
+        "name": "Percezione",
+        "value": "+0"
+      },
+      {
+        "name": "Persuasione",
+        "value": "+0"
+      }
+    ],
+    "proficiencies": [
+      "Compila qui le competenze del personaggio."
+    ]
+  },
+  "combat": {
+    "attacks": [],
+    "levelNotes": [],
+    "spellcasting": {
+      "ability": "",
+      "saveDc": "",
+      "attackBonus": "",
+      "slots": ""
+    }
+  },
+  "spellSections": [],
+  "reminders": {
+    "warlock": [],
+    "tablePlay": []
+  },
+  "features": {
+    "items": [],
+    "levelChecklist": []
+  },
+  "inventory": {
+    "items": [],
+    "currencies": {
+      "gold": 0,
+      "silver": 0,
+      "copper": 0
+    },
+    "notes": [
+      "Inserisci qui oggetti, monete e appunti di inventario."
+    ]
+  },
+  "origin": {
+    "languages": [],
+    "raceNotes": [],
+    "backgroundFeature": []
+  },
+  "narrative": {
+    "roleplay": [],
+    "appearance": [],
+    "story": [],
+    "unfilled": []
+  },
+  "session": {
+    "resources": {
+      "currentHp": 0,
+      "maxHp": 0,
+      "tempHp": 0,
+      "pactSlotsTotal": 0,
+      "pactSlotsUsed": 0,
+      "focusChargesTotal": 0,
+      "focusChargesUsed": 0,
+      "arrows": 0
+    }
+  },
+
+}
