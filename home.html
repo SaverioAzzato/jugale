@@ -212,152 +212,54 @@
         font-size: 1.05rem;
       }
 
-      .gallery-panel {
-        margin-top: 20px;
+      .portrait-counter {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 2;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        color: #fdf3ea;
+        background: rgba(17, 12, 9, 0.68);
+        border: 1px solid rgba(255, 255, 255, 0.22);
       }
 
-      .gallery-head {
+      .portrait-nav {
+        position: absolute;
+        top: 50%;
+        left: 10px;
+        right: 10px;
+        transform: translateY(-50%);
+        z-index: 2;
         display: flex;
-        align-items: baseline;
         justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 12px;
+        pointer-events: none;
       }
 
-      .gallery-head p {
-        margin: 0;
-        color: var(--muted);
-      }
-
-      .gallery-rail {
-        display: flex;
-        gap: 14px;
-        overflow-x: auto;
-        padding-bottom: 8px;
-        scroll-snap-type: x mandatory;
-      }
-
-      .gallery-card {
-        flex: 0 0 220px;
-        scroll-snap-align: start;
-        border: 1px solid rgba(61, 44, 26, 0.14);
-        border-radius: 18px;
-        overflow: hidden;
-        background: rgba(255, 255, 255, 0.72);
-        cursor: pointer;
-        transition:
-          transform 120ms ease,
-          box-shadow 120ms ease,
-          border-color 120ms ease;
-      }
-
-      .gallery-card:hover {
-        transform: translateY(-2px);
-        border-color: rgba(182, 66, 29, 0.36);
-        box-shadow: 0 10px 26px rgba(55, 35, 20, 0.14);
-      }
-
-      .gallery-card.is-active {
-        border-color: rgba(182, 66, 29, 0.8);
-        box-shadow:
-          0 0 0 2px rgba(182, 66, 29, 0.15),
-          0 10px 24px rgba(55, 35, 20, 0.16);
-      }
-
-      .gallery-card img {
-        display: block;
-        width: 100%;
-        height: 180px;
-        object-fit: cover;
-      }
-
-      .gallery-card figcaption {
-        padding: 10px 12px 12px;
-      }
-
-      .gallery-card figcaption strong {
-        display: block;
-        font-size: 0.98rem;
-        margin-bottom: 4px;
-      }
-
-      .gallery-card figcaption span {
-        color: var(--muted);
-        font-size: 0.88rem;
-      }
-
-      .identity-grid,
-      .stat-grid,
-      .session-grid,
-      .skills-grid,
-      .notes-grid {
-        display: grid;
-        gap: 12px;
-      }
-      .identity-grid {
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      }
-
-      .identity-card,
-      .stat-card {
-        background: rgba(255, 255, 255, 0.55);
-        border: 1px solid var(--line);
-        border-radius: 18px;
-        padding: 16px 18px;
-      }
-
-      .eyebrow {
-        display: block;
-        color: var(--muted);
-        font-size: 0.8rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        margin-bottom: 6px;
-      }
-      .identity-card strong,
-      .stat-card strong {
-        font-size: 1.05rem;
-      }
-
-      .layout {
-        display: none;
-        grid-template-columns: minmax(0, 1.5fr) minmax(310px, 0.9fr);
-        gap: 24px;
-        margin-top: 24px;
-      }
-      .layout.is-visible {
-        display: grid;
-      }
-      .column {
-        display: grid;
-        gap: 24px;
-        min-width: 0;
-      }
-      .panel,
-      .story-card,
-      details,
-      .identity-card,
-      .stat-card,
-      .notes-grid > div,
-      .skills-grid > div {
-        min-width: 0;
-      }
-      .section-title {
-        margin: 0 0 14px;
+      .portrait-arrow {
+        pointer-events: auto;
+        width: 38px;
+        height: 38px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(17, 12, 9, 0.52);
+        color: #fdf3ea;
         font-size: 1.4rem;
+        line-height: 1;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
       }
-      .section-subtitle {
-        margin: 0 0 8px;
-        color: var(--muted);
-        font-size: 0.95rem;
+
+      .portrait-arrow:hover {
+        background: rgba(17, 12, 9, 0.72);
       }
-      .stat-grid {
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      }
-      .stat-card strong {
-        display: block;
-        margin-top: 4px;
-        font-size: 1.55rem;
+
+      .portrait-arrow:disabled {
+        opacity: 0.35;
+        cursor: default;
       }
       .stat-card small {
         color: var(--muted);
@@ -543,6 +445,25 @@
 
       <header class="hero" id="hero">
         <figure class="portrait">
+          <span class="portrait-counter" id="portrait-counter">0/0</span>
+          <div class="portrait-nav" aria-label="Navigazione immagini ritratto">
+            <button
+              id="portrait-prev"
+              class="portrait-arrow"
+              type="button"
+              aria-label="Immagine precedente"
+            >
+              ‹
+            </button>
+            <button
+              id="portrait-next"
+              class="portrait-arrow"
+              type="button"
+              aria-label="Immagine successiva"
+            >
+              ›
+            </button>
+          </div>
           <img id="portrait-image" alt="Ritratto del personaggio" />
           <figcaption id="portrait-caption"></figcaption>
         </figure>
@@ -555,21 +476,6 @@
           </button>
         </div>
       </header>
-
-      <section class="panel gallery-panel" id="gallery-panel" hidden>
-        <div class="gallery-head">
-          <div>
-            <h2 class="section-title" style="margin-bottom: 6px">Immagini</h2>
-            <p>
-              Le immagini vengono lette da <span class="muted">images/</span> in
-              ordine alfabetico e puoi scegliere quale mostrare come ritratto
-              principale.
-            </p>
-          </div>
-          <p id="gallery-count" class="muted"></p>
-        </div>
-        <div class="gallery-rail" id="gallery-rail"></div>
-      </section>
 
       <div class="layout" id="layout">
         <main class="column">
@@ -752,12 +658,12 @@
         layout: document.getElementById("layout"),
         portraitImage: document.getElementById("portrait-image"),
         portraitCaption: document.getElementById("portrait-caption"),
+        portraitCounter: document.getElementById("portrait-counter"),
+        portraitPrev: document.getElementById("portrait-prev"),
+        portraitNext: document.getElementById("portrait-next"),
         characterName: document.getElementById("character-name"),
         characterSummary: document.getElementById("character-summary"),
         identityGrid: document.getElementById("identity-grid"),
-        galleryPanel: document.getElementById("gallery-panel"),
-        galleryRail: document.getElementById("gallery-rail"),
-        galleryCount: document.getElementById("gallery-count"),
         baseStats: document.getElementById("base-stats"),
         buildPriorities: document.getElementById("build-priorities"),
         abilitiesTable: document.getElementById("abilities-table"),
@@ -1017,76 +923,61 @@
         }
       }
 
-      function renderImageGallery(data) {
-        const images = state.imageManifest.length
-          ? state.imageManifest
-          : getImageManifest(data);
-        const activePath =
-          state.activeImagePath ||
-          data.meta?.portrait?.src ||
-          images[0]?.src ||
-          null;
-        state.activeImagePath = activePath;
-
-        elements.galleryCount.textContent = images.length
-          ? `${images.length} ${images.length === 1 ? "immagine" : "immagini"}`
-          : "Nessuna immagine configurata";
-
+      function getActivePortraitIndex(images, preferredPath) {
         if (!images.length) {
-          elements.galleryRail.innerHTML = `
-            <article class="gallery-card is-active" style="cursor: default;">
-              <img src="${getPlaceholderImage()}" alt="Nessuna immagine configurata" />
-              <figcaption>
-                <strong>Placeholder</strong>
-                <span>Metti i file di immagine nella cartella \`images/\` della scheda.</span>
-              </figcaption>
-            </article>
-          `;
-          elements.galleryPanel.hidden = false;
+          return -1;
+        }
+
+        const foundIndex = images.findIndex((image) => image.src === preferredPath);
+        return foundIndex >= 0 ? foundIndex : 0;
+      }
+
+      function updatePortraitControls(images, activeIndex) {
+        const total = images.length;
+
+        if (!total || activeIndex < 0) {
+          elements.portraitCounter.textContent = "0/0";
+          elements.portraitPrev.disabled = true;
+          elements.portraitNext.disabled = true;
           return;
         }
 
-        elements.galleryRail.innerHTML = images
-          .map((image) => {
-            const isActive = image.src === activePath;
-            return `
-            <figure class="gallery-card ${isActive ? "is-active" : ""}" data-gallery-src="${escapeHtml(image.src)}" role="button" tabindex="0" aria-label="${escapeHtml(image.caption)}">
-              <img src="${escapeHtml(image.resolvedSrc || image.src)}" alt="${escapeHtml(image.alt)}" />
-              <figcaption>
-                <strong>${escapeHtml(image.file)}</strong>
-                <span>${escapeHtml(image.caption)}</span>
-              </figcaption>
-            </figure>
-          `;
-          })
-          .join("");
+        elements.portraitCounter.textContent = `${activeIndex + 1}/${total}`;
+        const hasMultiple = total > 1;
+        elements.portraitPrev.disabled = !hasMultiple;
+        elements.portraitNext.disabled = !hasMultiple;
+      }
 
-        elements.galleryRail
-          .querySelectorAll("[data-gallery-src]")
-          .forEach((card) => {
-            const activate = () => {
-              const chosen = images.find(
-                (image) => image.src === card.dataset.gallerySrc,
-              );
-              if (chosen) {
-                state.activeImagePath = chosen.src;
-                state.character.meta.portrait = {
-                  src: chosen.src,
-                  alt: chosen.alt,
-                };
-                scheduleSave("gallery");
-                renderCharacter();
-              }
-            };
+      function stepPortrait(delta) {
+        const data = state.character;
+        if (!data) {
+          return;
+        }
 
-            card.addEventListener("click", activate);
-            card.addEventListener("keydown", (event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                activate();
-              }
-            });
-          });
+        const images = state.imageManifest.length
+          ? state.imageManifest
+          : getImageManifest(data);
+
+        if (images.length < 2) {
+          return;
+        }
+
+        const activeIndex = getActivePortraitIndex(
+          images,
+          state.activeImagePath || data.meta?.portrait?.src,
+        );
+        const nextIndex = (activeIndex + delta + images.length) % images.length;
+        const nextImage = images[nextIndex];
+
+        state.activeImagePath = nextImage.src;
+        state.character.meta = state.character.meta || {};
+        state.character.meta.portrait = {
+          src: nextImage.src,
+          alt: nextImage.alt,
+        };
+
+        scheduleSave("portrait-carousel");
+        renderCharacter();
       }
 
       function renderSpellTable(section) {
@@ -1188,7 +1079,6 @@
         if (!data) {
           elements.setupScreen.hidden = false;
           elements.hero.classList.remove("is-visible");
-          elements.galleryPanel.hidden = true;
           elements.layout.classList.remove("is-visible");
           document.getElementById("reconnect-btn").style.display = "none";
           document.title = "Character Sheet Platform";
@@ -1197,7 +1087,6 @@
 
         elements.setupScreen.hidden = true;
         elements.hero.classList.add("is-visible");
-        elements.galleryPanel.hidden = false;
         elements.layout.classList.add("is-visible");
         document.getElementById("reconnect-btn").style.display = "block";
 
@@ -1208,10 +1097,14 @@
         const images = state.imageManifest.length
           ? state.imageManifest
           : getImageManifest(data);
-        const activePortrait =
-          images.find((image) => image.src === state.activeImagePath) ||
-          images.find((image) => image.src === data.meta?.portrait?.src) ||
-          images[0];
+        const activeIndex = getActivePortraitIndex(
+          images,
+          state.activeImagePath || data.meta?.portrait?.src,
+        );
+        const activePortrait = activeIndex >= 0 ? images[activeIndex] : null;
+        if (activePortrait) {
+          state.activeImagePath = activePortrait.src;
+        }
         elements.portraitImage.src =
           activePortrait?.resolvedSrc ||
           data.meta?.portrait?.src ||
@@ -1221,6 +1114,7 @@
           data.meta?.portrait?.alt ||
           `Ritratto di ${data.meta?.name || "personaggio"}`;
         elements.portraitCaption.textContent = `${data.meta?.name || "Personaggio"}. ${activePortrait?.caption || data.meta?.portrait?.alt || "Scheda caricata da JSON."}`;
+        updatePortraitControls(images, activeIndex);
 
         elements.identityGrid.innerHTML = (data.identity || [])
           .map(
@@ -1301,7 +1195,6 @@
         elements.spellSections.innerHTML = (data.spellSections || [])
           .map(renderSpellTable)
           .join("");
-        renderImageGallery(data);
 
         elements.proficienciesList.innerHTML = (data.build?.proficiencies || [])
           .map((item) => `<li>${escapeHtml(item)}</li>`)
@@ -1644,6 +1537,9 @@
         document
           .getElementById("export-btn")
           .addEventListener("click", exportCopy);
+
+        elements.portraitPrev.addEventListener("click", () => stepPortrait(-1));
+        elements.portraitNext.addEventListener("click", () => stepPortrait(1));
 
         [
           elements.currentHp,
