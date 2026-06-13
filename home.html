@@ -172,6 +172,14 @@
         display: grid;
       }
 
+      .layout {
+        display: none;
+      }
+
+      .layout.is-visible {
+        display: grid;
+      }
+
       .portrait {
         position: relative;
         border-radius: 18px;
@@ -1568,6 +1576,7 @@
       };
 
       bindEvents();
+      renderCharacter();
       tryAutoLoad();
     </script>
   </body>

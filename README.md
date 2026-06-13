@@ -11,6 +11,10 @@ Ogni personaggio da caricare vive in una cartella dedicata con questa forma:
 
 La cartella di esempio da copiare è `pg.example/`.
 
+## Cartella locale consigliata
+
+La cartella `pg/` e' gitignorata, quindi puoi tenere qui dentro il tuo personaggio locale senza committarlo.
+
 ## Come funziona
 
 `home.html` non contiene i dati del personaggio in modo statico. La pagina è un renderer/editor che carica il file `character.json` dentro la cartella del personaggio, mostra la scheda e sincronizza i cambi nel JSON quando apri il file in modalità live.
