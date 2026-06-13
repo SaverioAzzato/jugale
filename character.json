@@ -1,0 +1,650 @@
+{
+  "schemaVersion": 1,
+  "platform": {
+    "name": "Character Sheet Platform",
+    "mode": "dnd-5e",
+    "description": "Scheda personaggio JSON-first per gestione al tavolo con UI HTML separata.",
+    "sourceOfTruth": "character.json"
+  },
+  "meta": {
+    "name": "Christ Han-Desic",
+    "player": "Saverio",
+    "summary": "Warlock 4 del Fiend con Patto del Tomo, scheda tavolo canonica con tracking JSON-first.",
+    "portrait": {
+      "src": "images/dragonide.jpeg",
+      "alt": "Christ Han-Desic, draconide percepito come umano"
+    }
+  },
+  "assets": {
+    "imageFolder": "images",
+    "images": [
+      {
+        "file": "dragonide.jpeg",
+        "alt": "Christ Han-Desic, draconide percepito come umano",
+        "caption": "Ritratto principale"
+      },
+      {
+        "file": "uomo.png",
+        "alt": "Christ Han-Desic visto come umano",
+        "caption": "Aspetto alternativo"
+      }
+    ]
+  },
+  "identity": [
+    {
+      "label": "Giocatore",
+      "value": "Saverio"
+    },
+    {
+      "label": "Classe e livello",
+      "value": "Warlock 4",
+      "link": "https://dnd5e.wikidot.com/warlock"
+    },
+    {
+      "label": "Patrono",
+      "value": "Immondo (Fiend)",
+      "link": "https://dnd5e.wikidot.com/warlock:the-fiend"
+    },
+    {
+      "label": "Patto",
+      "value": "Patto del Tomo",
+      "link": "https://dnd5e.wikidot.com/warlock#toc8"
+    },
+    {
+      "label": "Background",
+      "value": "Forestiero",
+      "link": "https://dnd5e.wikidot.com/background:outlander"
+    },
+    {
+      "label": "Razza",
+      "parts": [
+        {
+          "value": "Draconide",
+          "link": "https://dnd5e.wikidot.com/lineage:dragonborn"
+        },
+        {
+          "value": "Tiefling",
+          "link": "https://dnd5e.wikidot.com/lineage:tiefling"
+        }
+      ]
+    },
+    {
+      "label": "Allineamento",
+      "value": "Neutrale Buono"
+    },
+    {
+      "label": "Esperienza",
+      "value": "0"
+    }
+  ],
+  "build": {
+    "priorities": "Carisma > Costituzione > Destrezza.",
+    "baseStats": [
+      {
+        "label": "CA",
+        "value": "13",
+        "note": "cuoio 11 + Des 2"
+      },
+      {
+        "label": "Iniziativa",
+        "value": "+2"
+      },
+      {
+        "label": "Velocità",
+        "value": "9 m"
+      },
+      {
+        "label": "Bonus competenza",
+        "value": "+2"
+      },
+      {
+        "label": "PF massimi consigliati",
+        "value": "31",
+        "note": "16 attuali segnati in scheda originale"
+      },
+      {
+        "label": "Dadi vita",
+        "value": "4d8"
+      },
+      {
+        "label": "Percezione passiva",
+        "value": "10"
+      },
+      {
+        "label": "Ispirazione",
+        "value": "Non segnata"
+      }
+    ],
+    "abilities": [
+      {
+        "name": "Forza",
+        "score": 10,
+        "modifier": "+0"
+      },
+      {
+        "name": "Destrezza",
+        "score": 14,
+        "modifier": "+2"
+      },
+      {
+        "name": "Costituzione",
+        "score": 15,
+        "modifier": "+2"
+      },
+      {
+        "name": "Intelligenza",
+        "score": 13,
+        "modifier": "+1"
+      },
+      {
+        "name": "Saggezza",
+        "score": 10,
+        "modifier": "+0"
+      },
+      {
+        "name": "Carisma",
+        "score": 18,
+        "modifier": "+4"
+      }
+    ],
+    "savingThrows": [
+      {
+        "name": "For",
+        "value": "+0"
+      },
+      {
+        "name": "Des",
+        "value": "+2"
+      },
+      {
+        "name": "Cos",
+        "value": "+2"
+      },
+      {
+        "name": "Int",
+        "value": "+1"
+      },
+      {
+        "name": "Sag",
+        "value": "+2",
+        "note": "competente"
+      },
+      {
+        "name": "Car",
+        "value": "+6",
+        "note": "competente"
+      }
+    ],
+    "skills": [
+      {
+        "name": "Acrobazia",
+        "value": "+2"
+      },
+      {
+        "name": "Addestrare Animali",
+        "value": "+0"
+      },
+      {
+        "name": "Arcano",
+        "value": "+1"
+      },
+      {
+        "name": "Atletica",
+        "value": "+2",
+        "note": "competente"
+      },
+      {
+        "name": "Furtività",
+        "value": "+2"
+      },
+      {
+        "name": "Indagare",
+        "value": "+3",
+        "note": "competente"
+      },
+      {
+        "name": "Inganno",
+        "value": "+4"
+      },
+      {
+        "name": "Intimidire",
+        "value": "+6",
+        "note": "competente"
+      },
+      {
+        "name": "Intrattenere",
+        "value": "+4"
+      },
+      {
+        "name": "Intuizione",
+        "value": "+0"
+      },
+      {
+        "name": "Medicina",
+        "value": "+0"
+      },
+      {
+        "name": "Natura",
+        "value": "+1"
+      },
+      {
+        "name": "Percezione",
+        "value": "+0"
+      },
+      {
+        "name": "Persuasione",
+        "value": "+4"
+      },
+      {
+        "name": "Rapidità di Mano",
+        "value": "+2"
+      },
+      {
+        "name": "Religione",
+        "value": "+1"
+      },
+      {
+        "name": "Sopravvivenza",
+        "value": "+2",
+        "note": "competente"
+      },
+      {
+        "name": "Storia",
+        "value": "+1"
+      }
+    ],
+    "proficiencies": [
+      "Warlock: Armature leggere, armi semplici, nessuno strumento, TS Saggezza e Carisma, abilità di classe scelte Indagare e Intimidire.",
+      "Background Forestiero: Atletica, Sopravvivenza, strumento armonica.",
+      "Competenze segnate in scheda: Atletica, Indagare, Intimidire, Sopravvivenza."
+    ]
+  },
+  "combat": {
+    "spellcasting": {
+      "ability": "Carisma",
+      "saveDc": "14",
+      "attackBonus": "+6",
+      "slots": "2 slot di 2 livello (riposo breve/lungo)"
+    },
+    "attacks": [
+      {
+        "name": "Randello pesante",
+        "link": "https://dnd5e.wikidot.com/weapons",
+        "level": "Base",
+        "range": "Mischia",
+        "attack": "1d20 +2 vs CA",
+        "defense": "Nessuno",
+        "effect": "1d8 contundenti",
+        "notes": "Attacco in mischia"
+      },
+      {
+        "name": "Pugnale",
+        "link": "https://dnd5e.wikidot.com/weapons",
+        "level": "Base",
+        "range": "6/18 m",
+        "attack": "1d20 +4 vs CA",
+        "defense": "Nessuno",
+        "effect": "1d4+2 perforanti",
+        "notes": "Mischia o lancio"
+      },
+      {
+        "name": "Arco corto",
+        "link": "https://dnd5e.wikidot.com/weapons",
+        "level": "Base",
+        "range": "24/96 m",
+        "attack": "1d20 +4 vs CA",
+        "defense": "Nessuno",
+        "effect": "1d6+2 perforanti",
+        "notes": "Munizioni: 15 frecce segnate"
+      },
+      {
+        "name": "Arma a soffio (Draconide rosso)",
+        "link": "https://dnd5e.wikidot.com/lineage:dragonborn",
+        "level": "Razza",
+        "range": "Cono 4,5 m",
+        "attack": "Nessun tiro per colpire",
+        "defense": "TS Des CD 12",
+        "effect": "2d6 fuoco, metà con successo",
+        "notes": "CD = 8 + Cos + competenza; danni 2d6 (L1-5), 3d6 (L6-10), 4d6 (L11-15), 5d6 (L16+); recupero su riposo breve/lungo"
+      }
+    ],
+    "levelNotes": [
+      "Nota livello 4: hai preso Incremento dei Punteggi di Caratteristica (+2 Carisma)."
+    ]
+  },
+  "spellSections": [
+    {
+      "title": "Trucchetti",
+      "summary": "Totale trucchetti conosciuti al livello 4: 6 (3 Warlock + 3 dal Patto del Tomo).",
+      "entries": [
+        {
+          "name": "Deflagrazione occulta",
+          "link": "https://dnd5e.wikidot.com/spell:eldritch-blast",
+          "level": "Trucchetto",
+          "range": "36 m",
+          "attack": "1d20 +6 vs CA",
+          "defense": "Nessuno",
+          "effect": "1d10 forza",
+          "concentration": "No"
+        },
+        {
+          "name": "Mano magica",
+          "link": "https://dnd5e.wikidot.com/spell:mage-hand",
+          "level": "Trucchetto",
+          "range": "9 m",
+          "attack": "Nessuno",
+          "defense": "Nessuno",
+          "effect": "Mano spettrale per interazioni",
+          "concentration": "No"
+        },
+        {
+          "name": "Illusione minore",
+          "link": "https://dnd5e.wikidot.com/spell:minor-illusion",
+          "level": "Trucchetto",
+          "range": "9 m",
+          "attack": "Nessuno",
+          "defense": "Nessuno",
+          "effect": "Crea un suono o un'immagine illusoria statica",
+          "concentration": "No"
+        },
+        {
+          "name": "Infestazione",
+          "link": "https://dnd5e.wikidot.com/spell:infestation",
+          "level": "Trucchetto",
+          "range": "9 m",
+          "attack": "Nessuno",
+          "defense": "TS Cos CD 14",
+          "effect": "1d6 necrotici + spostamento casuale su fallimento",
+          "concentration": "No"
+        },
+        {
+          "name": "Guida",
+          "link": "https://dnd5e.wikidot.com/spell:guidance",
+          "level": "Trucchetto",
+          "range": "Contatto",
+          "attack": "Nessuno",
+          "defense": "Nessuno",
+          "effect": "+1d4 a una prova di caratteristica",
+          "concentration": "Sì, fino a 1 min"
+        },
+        {
+          "name": "Controlla fiamme",
+          "link": "https://dnd5e.wikidot.com/spell:control-flames",
+          "level": "Trucchetto",
+          "range": "18 m",
+          "attack": "Nessuno",
+          "defense": "Nessuno",
+          "effect": "Modifica fiamme non magiche",
+          "concentration": "No"
+        }
+      ]
+    },
+    {
+      "title": "Incantesimi di 1 livello",
+      "summary": "Incantesimi Warlock conosciuti di 1 livello.",
+      "entries": [
+        {
+          "name": "Comando",
+          "link": "https://dnd5e.wikidot.com/spell:command",
+          "level": "1",
+          "range": "18 m",
+          "attack": "Nessuno",
+          "defense": "TS Sag CD 14",
+          "effect": "Ordine di 1 parola (controllo)",
+          "concentration": "No"
+        },
+        {
+          "name": "Ritirata rapida",
+          "link": "https://dnd5e.wikidot.com/spell:expeditious-retreat",
+          "level": "1",
+          "range": "Personale",
+          "attack": "Nessuno",
+          "defense": "Nessuno",
+          "effect": "Scatto come bonus action ogni turno",
+          "concentration": "Sì, fino a 10 min"
+        }
+      ]
+    },
+    {
+      "title": "Rituali annotati nel Libro delle Ombre",
+      "summary": "Rituali annotati nel Libro delle Ombre tramite Libro degli Antichi Segreti.",
+      "entries": [
+        {
+          "name": "Comprendi lingue",
+          "link": "https://dnd5e.wikidot.com/spell:comprehend-languages",
+          "level": "1",
+          "range": "Personale",
+          "attack": "Nessuno",
+          "defense": "Nessuno",
+          "effect": "Comprendi linguaggi uditi/scritti",
+          "concentration": "No",
+          "notes": "rituale"
+        },
+        {
+          "name": "Servo invisibile",
+          "link": "https://dnd5e.wikidot.com/spell:unseen-servant",
+          "level": "1",
+          "range": "18 m",
+          "attack": "Nessuno",
+          "defense": "Nessuno",
+          "effect": "Servitore invisibile per compiti semplici",
+          "concentration": "No",
+          "notes": "rituale"
+        },
+        {
+          "name": "Allarme",
+          "link": "https://dnd5e.wikidot.com/spell:alarm",
+          "level": "1",
+          "range": "9 m",
+          "attack": "Nessuno",
+          "defense": "Nessuno",
+          "effect": "Protegge un'area e ti avvisa di intrusioni",
+          "concentration": "No",
+          "notes": "rituale"
+        }
+      ]
+    },
+    {
+      "title": "Incantesimi di 2 livello",
+      "summary": "Totale incantesimi Warlock conosciuti al livello 4: 5. I rituali nel Libro delle Ombre non contano nel totale degli incantesimi conosciuti da Warlock.",
+      "entries": [
+        {
+          "name": "Raggio rovente",
+          "link": "https://dnd5e.wikidot.com/spell:scorching-ray",
+          "level": "2",
+          "range": "36 m",
+          "attack": "3 attacchi: per ogni raggio 1d20 +6 vs CA",
+          "defense": "Nessuno",
+          "effect": "Per raggio: 2d6 fuoco",
+          "concentration": "No"
+        },
+        {
+          "name": "Invisibilità",
+          "link": "https://dnd5e.wikidot.com/spell:invisibility",
+          "level": "2",
+          "range": "Contatto",
+          "attack": "Nessuno",
+          "defense": "Nessuno",
+          "effect": "Creatura invisibile finché non attacca/lancia spell",
+          "concentration": "Sì, fino a 1 ora"
+        },
+        {
+          "name": "Oscurità",
+          "link": "https://dnd5e.wikidot.com/spell:darkness",
+          "level": "2",
+          "range": "18 m",
+          "attack": "Nessuno",
+          "defense": "Nessuno",
+          "effect": "Sfera di oscurità magica di 4,5 m di raggio",
+          "concentration": "Sì, fino a 10 min"
+        }
+      ]
+    }
+  ],
+  "reminders": {
+    "warlock": [
+      "Gli slot del Patto restano 2 e restano di 2 livello fino al livello 5.",
+      "Non ottieni una nuova Invocazione Mistica al livello 4.",
+      "Non ottieni nuovi rituali automaticamente: Allarme e gli altri rituali vanno copiati nel Libro delle Ombre quando li trovi o se il DM te li concede."
+    ],
+    "tablePlay": [
+      "Attacco vs CA: tira 1d20 + bonus attacco. Se colpisci, tira i dadi danno.",
+      "Incantesimo con TS: bersaglio tira il TS indicato contro CD 14.",
+      "Raggio rovente: fai 3 tiri separati per colpire, poi danno solo sui raggi che colpiscono.",
+      "Arma a soffio: nessun tiro per colpire; ogni bersaglio nel cono tira Des CD 12."
+    ]
+  },
+  "features": {
+    "items": [
+      {
+        "label": "Benedizione dell'oscuro (Fiend)",
+        "link": "https://dnd5e.wikidot.com/warlock:the-fiend",
+        "text": "Quando porti una creatura ostile a 0 PF, guadagni PF temporanei = mod Car + livello warlock (ora 8)."
+      },
+      {
+        "label": "Patto del Tomo",
+        "link": "https://dnd5e.wikidot.com/warlock#toc8",
+        "text": "3 trucchetti extra da qualunque lista."
+      },
+      {
+        "label": "Aspetto della Luna",
+        "link": "https://dnd5e.wikidot.com/warlock:eldritch-invocations",
+        "text": "Non devi dormire e non puoi essere forzato magicamente a dormire."
+      },
+      {
+        "label": "Libro degli Antichi Segreti",
+        "link": "https://dnd5e.wikidot.com/warlock:eldritch-invocations",
+        "text": "Puoi aggiungere rituali al Libro delle Ombre e lanciare come rituale quelli copiati nel libro, anche se non sono incantesimi conosciuti da Warlock."
+      }
+    ],
+    "levelChecklist": [
+      "Incremento dei punteggi di caratteristica: +2 Carisma.",
+      "Carisma 18: aggiornati CD, attacco incantesimi, abilità sociali, TS Carisma e Benedizione dell'oscuro.",
+      "Nuovo trucchetto Warlock scelto: Illusione minore.",
+      "Nuovo incantesimo Warlock conosciuto scelto: Oscurità.",
+      "Nuovo rituale annotato per il Libro degli Antichi Segreti: Allarme.",
+      "PF consigliati portati a 31 e dadi vita a 4d8.",
+      "Nessuna nuova invocazione al livello 4.",
+      "Slot Patto invariati: 2 slot di 2 livello."
+    ]
+  },
+  "inventory": {
+    "items": [
+      {
+        "name": "Catene costringenti della divinità",
+        "quantity": 1,
+        "notes": "Oggetto unico"
+      },
+      {
+        "name": "Randello pesante",
+        "quantity": 1,
+        "notes": "1d8 contundenti, due mani",
+        "link": "https://dnd5e.wikidot.com/weapons"
+      },
+      {
+        "name": "Arco corto",
+        "quantity": 1,
+        "notes": "Usa il tracciamento frecce rapido",
+        "link": "https://dnd5e.wikidot.com/weapons"
+      },
+      {
+        "name": "Armatura di cuoio",
+        "quantity": 1,
+        "notes": "CA base 11 + Des",
+        "link": "https://dnd5e.wikidot.com/armor"
+      },
+      {
+        "name": "Pugnale",
+        "quantity": 2,
+        "notes": "Mischia o lancio",
+        "link": "https://dnd5e.wikidot.com/weapons"
+      },
+      {
+        "name": "Focus arcano: collana",
+        "quantity": 1,
+        "notes": "Un filo con una pietra scura appesa come ciondolo; il portatore e chi è entro 3 m dall'oggetto, se draconide o immondo, viene percepito come umano da chi non ha mai visto l'entità del tipo corretto"
+      },
+      {
+        "name": "Dotazione da avventuriero",
+        "quantity": 1,
+        "notes": "Pack generico non dettagliato in scheda"
+      }
+    ],
+    "currencies": {
+      "gold": 738,
+      "silver": 5,
+      "copper": 5
+    },
+    "notes": [
+      "Nota focus arcano: per regola di tavolo può ricaricare fino a 2 slot incantesimo per long rest."
+    ]
+  },
+  "origin": {
+    "languages": ["Comune", "Draconico"],
+    "raceNotes": [
+      "Draconide: +2 Forza, +1 Carisma.",
+      "Tiefling: +1 Intelligenza.",
+      "Scurovisione (Tiefling): 18 m.",
+      "Resistenza/Immunità al fuoco (Tiefling): immunità al fuoco (homebrew approvata al tavolo)."
+    ],
+    "backgroundFeature": [
+      "Viandante (Forestiero): memoria geografica, orientamento eccellente, capacità di trovare cibo e acqua fresca (in territori non aridi/inospitali)."
+    ]
+  },
+  "narrative": {
+    "roleplay": [
+      "Tratti caratteriali: buono e generoso ma testardo.",
+      "Ideali: capire le proprie origini e cosa è successo.",
+      "Legami: collana e persone del villaggio.",
+      "Difetti: mammone, ha bisogno di una figura guida."
+    ],
+    "appearance": [
+      "Età: 20",
+      "Altezza: 190",
+      "Peso: 100",
+      "Occhi: blue",
+      "Carnagione: non chiaramente compilata",
+      "Capelli: neri",
+      "Aspetto percepito: normalmente visto come umano grazie al talismano"
+    ],
+    "story": [
+      "Trovato da bambino tra macerie dopo un attacco di demoni fuggiti alle difese della faglia, Christ viene cresciuto da un gruppo di maghi che gli insegnano le arti magiche e lo impiegano nelle difese stesse. Un giorno però si ritrova solo: maghi e villaggio sono spariti. Sentendosi inesperto e alla ricerca di una guida, passa dal villaggio, raccoglie equipaggiamento e parte in viaggio per scoprire cosa sia accaduto ai suoi concittadini.",
+      "Dopo S1, Christ si rende conto di aver contribuito a un massacro costruito su menzogne: i maghi che lo avevano cresciuto probabilmente temevano ciò che era davvero e gli avevano nascosto la sua identità. Dopo aver assistito alla strage e al controllo mentale compiuto da quella che poteva essere descritta solo come una divinità dell'acqua e della vita, smette di credere a qualsiasi bussola morale imposta dal mondo e decide di vivere solo secondo il proprio senso di giusto.",
+      "Dal risveglio porta dentro una rabbia costante verso quell'entità e verso l'ordine generale delle cose. Ogni volta che prova disgusto o insofferenza per lo stato del mondo, la rabbia ritorna insieme a voci pulsanti provenienti dal ciondolo, che cercano di spingerlo verso la distruzione. A queste si accompagnano emicranie violente, tremori e panico. Odia sia quelle voci sia le divinità cosiddette buone dell'acqua che lasciano dietro di loro villaggi sterminati e terre inaridite.",
+      "Dopo il massacro finisce per vagabondare anche per autopunirsi. Per tenere a bada le emicranie comincia a bere: in realtà il suo corpo non subisce davvero gli effetti dell'alcol, che sembra quasi bruciare nello stomaco di un drago, ma l'effetto placebo basta a calmarlo e a fermare i tremori.",
+      "Ha tirato avanti scommettendo denaro nelle risse e nei combattimenti clandestini a cui partecipa, sopravvivendo solo con la propria forza e sviluppando un forte carisma e veri istinti di sopravvivenza da strada. La saggezza che credeva di aver ereditato dai maghi si è rivelata soltanto un'illusione, come gran parte della sua vita.",
+      "Ora si nasconde nei vicoli di Vomase, dove avrebbe dovuto perdere un incontro truccato. Invece, accecato dalla rabbia, ha sconfitto il suo avversario e si è attirato addosso l'attenzione di creditori e organizzatori poco raccomandabili."
+    ],
+    "unfilled": ["Alleati e organizzazioni", "Tesoro"]
+  },
+  "corrections": [
+    "Setup attuale: For 10, Des 14, Cos 15, Int 13, Sag 10, Car 18.",
+    "TS attuali: For +0, Des +2, Cos +2, Int +1, Sag +2, Car +6.",
+    "Abilità ricalcolate sulla distribuzione attuale.",
+    "Arma a soffio portata a CD 12 (8 + Cos + competenza, secondo tua nota).",
+    "Immunità al fuoco impostata come homebrew di campagna (sostituisce la normale resistenza tiefling).",
+    "Carisma allineato a mod +4.",
+    "Dati da incantatore allineati a CD 14 e attacco +6.",
+    "Benedizione dell'oscuro allineata a 8 PF temporanei.",
+    "Livello 4 applicato con +2 Carisma: Carisma 18, CD 14, attacco incantesimi +6, Carisma TS +6.",
+    "PF consigliati al livello 4: 31, dadi vita 4d8.",
+    "Trucchetto Warlock aggiunto: Illusione minore.",
+    "Incantesimo Warlock aggiunto: Oscurità.",
+    "Rituale annotato per Libro degli Antichi Segreti: Allarme.",
+    "Focus arcano aggiornato con la regola di tavolo: ricarica fino a 2 slot incantesimo per long rest."
+  ],
+  "session": {
+    "resources": {
+      "currentHp": 16,
+      "maxHp": 31,
+      "tempHp": 0,
+      "pactSlotsUsed": 0,
+      "pactSlotsTotal": 2,
+      "focusChargesUsed": 0,
+      "focusChargesTotal": 2,
+      "arrows": 15
+    },
+    "inventoryNotes": "",
+    "lastSavedAt": null
+  }
+}

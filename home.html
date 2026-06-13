@@ -1,0 +1,1481 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Character Sheet Platform</title>
+    <style>
+      :root {
+        --bg: #f3eee4;
+        --panel: rgba(255, 251, 245, 0.92);
+        --panel-strong: #fffaf1;
+        --ink: #1c1712;
+        --muted: #655849;
+        --accent: #b6421d;
+        --accent-deep: #7d2410;
+        --accent-soft: #e8c6a8;
+        --line: rgba(59, 41, 28, 0.18);
+        --ok: #2f6c46;
+        --warn: #8c5b17;
+        --shadow: 0 18px 60px rgba(55, 35, 20, 0.12);
+        --radius: 20px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(182, 66, 29, 0.18),
+            transparent 24%
+          ),
+          radial-gradient(
+            circle at top right,
+            rgba(103, 21, 11, 0.16),
+            transparent 22%
+          ),
+          linear-gradient(180deg, #efe4d4 0%, #f9f5ef 35%, #efe7db 100%);
+      }
+
+      a {
+        color: var(--accent-deep);
+      }
+      a:hover {
+        color: var(--accent);
+      }
+
+      .shell {
+        width: min(1400px, calc(100% - 32px));
+        margin: 24px auto 64px;
+      }
+
+      .hero,
+      .panel,
+      .table-wrap,
+      .story-card,
+      details {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+
+      .hero,
+      .panel,
+      .story-card,
+      details {
+        padding: 18px 20px;
+      }
+
+      button {
+        appearance: none;
+        border: 1px solid rgba(125, 36, 16, 0.28);
+        background: linear-gradient(180deg, #fff6ea, #f1d6b7);
+        color: var(--accent-deep);
+        border-radius: 999px;
+        padding: 10px 16px;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: linear-gradient(180deg, #fff2e2, #e8c29a);
+      }
+
+      /* ── Setup screen (shown only on first use) ── */
+      .setup-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 80vh;
+        gap: 20px;
+        text-align: center;
+      }
+
+      .setup-screen h1 {
+        margin: 0;
+        font-size: 2.4rem;
+      }
+      .setup-screen p {
+        margin: 0;
+        color: var(--muted);
+        max-width: 480px;
+      }
+
+      .setup-btn {
+        font-size: 1.1rem;
+        padding: 14px 28px;
+      }
+
+      /* ── Floating sync pill ── */
+      .sync-pill {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 100;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(61, 44, 26, 0.14);
+        background: rgba(255, 253, 249, 0.96);
+        backdrop-filter: blur(8px);
+        font-size: 0.88rem;
+        color: var(--muted);
+        box-shadow: 0 4px 16px rgba(55, 35, 20, 0.12);
+        cursor: default;
+        transition: opacity 200ms;
+      }
+
+      .sync-pill.ok {
+        color: var(--ok);
+        border-color: rgba(47, 108, 70, 0.22);
+      }
+      .sync-pill.warn {
+        color: var(--warn);
+        border-color: rgba(140, 91, 23, 0.22);
+      }
+      .sync-pill button {
+        padding: 3px 9px;
+        font-size: 0.82rem;
+        border-color: rgba(125, 36, 16, 0.18);
+      }
+
+      .sync-pill:hover {
+        opacity: 1;
+      }
+
+      .hero {
+        display: none;
+        grid-template-columns: minmax(220px, 320px) 1fr;
+        gap: 24px;
+        background: linear-gradient(
+          145deg,
+          rgba(255, 250, 241, 0.96),
+          rgba(244, 230, 208, 0.94)
+        );
+      }
+
+      .hero.is-visible {
+        display: grid;
+      }
+
+      .portrait {
+        position: relative;
+        border-radius: 18px;
+        overflow: hidden;
+        min-height: 320px;
+        background: linear-gradient(
+          180deg,
+          rgba(131, 35, 20, 0.75),
+          rgba(18, 13, 10, 0.55)
+        );
+      }
+
+      .portrait img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .portrait figcaption {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 14px 16px;
+        font-size: 0.92rem;
+        color: #fdf3ea;
+        background: linear-gradient(180deg, transparent, rgba(17, 12, 9, 0.82));
+      }
+
+      .hero-copy h2 {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 3.6rem);
+        line-height: 0.95;
+      }
+      .tagline {
+        margin: 10px 0 18px;
+        color: var(--muted);
+        font-size: 1.05rem;
+      }
+
+      .gallery-panel {
+        margin-top: 20px;
+      }
+
+      .gallery-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .gallery-head p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .gallery-rail {
+        display: flex;
+        gap: 14px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+        scroll-snap-type: x mandatory;
+      }
+
+      .gallery-card {
+        flex: 0 0 220px;
+        scroll-snap-align: start;
+        border: 1px solid rgba(61, 44, 26, 0.14);
+        border-radius: 18px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.72);
+        cursor: pointer;
+        transition:
+          transform 120ms ease,
+          box-shadow 120ms ease,
+          border-color 120ms ease;
+      }
+
+      .gallery-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(182, 66, 29, 0.36);
+        box-shadow: 0 10px 26px rgba(55, 35, 20, 0.14);
+      }
+
+      .gallery-card.is-active {
+        border-color: rgba(182, 66, 29, 0.8);
+        box-shadow:
+          0 0 0 2px rgba(182, 66, 29, 0.15),
+          0 10px 24px rgba(55, 35, 20, 0.16);
+      }
+
+      .gallery-card img {
+        display: block;
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+      }
+
+      .gallery-card figcaption {
+        padding: 10px 12px 12px;
+      }
+
+      .gallery-card figcaption strong {
+        display: block;
+        font-size: 0.98rem;
+        margin-bottom: 4px;
+      }
+
+      .gallery-card figcaption span {
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+
+      .identity-grid,
+      .stat-grid,
+      .session-grid,
+      .skills-grid,
+      .notes-grid {
+        display: grid;
+        gap: 12px;
+      }
+      .identity-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
+
+      .identity-card,
+      .stat-card {
+        background: rgba(255, 255, 255, 0.55);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 16px 18px;
+      }
+
+      .eyebrow {
+        display: block;
+        color: var(--muted);
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .identity-card strong,
+      .stat-card strong {
+        font-size: 1.05rem;
+      }
+
+      .layout {
+        display: none;
+        grid-template-columns: minmax(0, 1.5fr) minmax(310px, 0.9fr);
+        gap: 24px;
+        margin-top: 24px;
+      }
+      .layout.is-visible {
+        display: grid;
+      }
+      .column {
+        display: grid;
+        gap: 24px;
+      }
+      .section-title {
+        margin: 0 0 14px;
+        font-size: 1.4rem;
+      }
+      .section-subtitle {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      .stat-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+      .stat-card strong {
+        display: block;
+        margin-top: 4px;
+        font-size: 1.55rem;
+      }
+      .stat-card small {
+        color: var(--muted);
+      }
+      .session-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        margin-bottom: 16px;
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+      .field label {
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+      .field input,
+      .field textarea {
+        width: 100%;
+        border: 1px solid rgba(68, 45, 24, 0.22);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font: inherit;
+        color: var(--ink);
+        background: rgba(255, 253, 249, 0.92);
+      }
+      .field textarea {
+        min-height: 72px;
+        resize: vertical;
+      }
+
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .pill {
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(182, 66, 29, 0.08);
+        border: 1px solid rgba(182, 66, 29, 0.16);
+        font-size: 0.95rem;
+      }
+      .table-wrap {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 720px;
+      }
+      th,
+      td {
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(61, 44, 26, 0.12);
+        vertical-align: top;
+        text-align: left;
+      }
+      th {
+        font-size: 0.86rem;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        text-transform: uppercase;
+        background: rgba(136, 55, 26, 0.06);
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      .compact-table {
+        min-width: 100%;
+      }
+      .compact-table th,
+      .compact-table td {
+        padding: 10px 12px;
+      }
+
+      .meter {
+        margin-top: 12px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: rgba(47, 108, 70, 0.08);
+        border: 1px solid rgba(47, 108, 70, 0.18);
+      }
+      .meter-bar {
+        width: 100%;
+        height: 12px;
+        border-radius: 999px;
+        background: rgba(47, 108, 70, 0.14);
+        overflow: hidden;
+        margin-top: 8px;
+      }
+      .meter-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #2f6c46, #4d9565);
+        width: 0;
+      }
+      .skills-grid,
+      .notes-grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+      ul,
+      ol {
+        margin: 0;
+        padding-left: 18px;
+      }
+      li + li {
+        margin-top: 8px;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .story-card p {
+        margin: 0 0 14px;
+      }
+      .story-card p:last-child {
+        margin-bottom: 0;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 700;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: "SFMono-Regular", Consolas, Monaco, monospace;
+        font-size: 0.86rem;
+      }
+      .footer-note {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      @media (max-width: 1080px) {
+        .layout.is-visible {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 760px) {
+        .shell {
+          width: min(100% - 20px, 100%);
+          margin-top: 12px;
+        }
+        .hero.is-visible {
+          grid-template-columns: 1fr;
+          padding: 16px;
+        }
+        .portrait {
+          min-height: 260px;
+        }
+        table {
+          min-width: 640px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sync-pill warn" id="sync-pill" hidden>
+      <span id="sync-label"></span>
+      <button id="export-btn" type="button" title="Esporta copia JSON">
+        ⬇ Esporta
+      </button>
+    </div>
+
+    <div class="shell">
+      <section class="setup-screen" id="setup-screen">
+        <h1>Character Sheet Platform</h1>
+        <p>
+          Prima di iniziare scegli il file <code>character.json</code>. La
+          pagina lo ricorderà per le aperture successive.
+        </p>
+        <button class="setup-btn" id="connect-btn" type="button">
+          Scegli character.json
+        </button>
+      </section>
+
+      <header class="hero" id="hero">
+        <figure class="portrait">
+          <img id="portrait-image" alt="Ritratto del personaggio" />
+          <figcaption id="portrait-caption"></figcaption>
+        </figure>
+        <div class="hero-copy">
+          <h2 id="character-name">Personaggio</h2>
+          <p class="tagline" id="character-summary"></p>
+          <div class="identity-grid" id="identity-grid"></div>
+        </div>
+      </header>
+
+      <section class="panel gallery-panel" id="gallery-panel" hidden>
+        <div class="gallery-head">
+          <div>
+            <h2 class="section-title" style="margin-bottom: 6px">Immagini</h2>
+            <p>
+              Le immagini vengono lette da <span class="muted">images/</span> in
+              ordine alfabetico e puoi scegliere quale mostrare come ritratto
+              principale.
+            </p>
+          </div>
+          <p id="gallery-count" class="muted"></p>
+        </div>
+        <div class="gallery-rail" id="gallery-rail"></div>
+      </section>
+
+      <div class="layout" id="layout">
+        <main class="column">
+          <section class="panel">
+            <h2 class="section-title">Numeri base</h2>
+            <div class="stat-grid" id="base-stats"></div>
+          </section>
+
+          <section class="panel">
+            <h2 class="section-title">Risorse di sessione</h2>
+            <p class="section-subtitle">
+              I cambi in questa sezione aggiornano il JSON canonico. Se il file
+              è aperto in modalità live, ogni modifica viene scritta subito su
+              disco.
+            </p>
+            <div class="session-grid">
+              <div class="field">
+                <label for="currentHp">PF attuali</label
+                ><input id="currentHp" type="number" min="0" step="1" />
+              </div>
+              <div class="field">
+                <label for="tempHp">PF temporanei</label
+                ><input id="tempHp" type="number" min="0" step="1" />
+              </div>
+              <div class="field">
+                <label for="pactSlotsUsed">Slot del Patto usati</label
+                ><input id="pactSlotsUsed" type="number" min="0" step="1" />
+              </div>
+              <div class="field">
+                <label for="focusChargesUsed">Ricariche focus usate</label
+                ><input id="focusChargesUsed" type="number" min="0" step="1" />
+              </div>
+              <div class="field">
+                <label for="arrows">Frecce rimaste</label
+                ><input id="arrows" type="number" min="0" step="1" />
+              </div>
+              <div class="field">
+                <label for="inventoryNotes">Note di sessione</label
+                ><textarea id="inventoryNotes"></textarea>
+              </div>
+            </div>
+            <div class="meter">
+              <strong id="hp-summary"></strong>
+              <div class="meter-bar" aria-hidden="true">
+                <div class="meter-fill" id="hp-fill"></div>
+              </div>
+              <p class="footer-note" id="session-summary"></p>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2 class="section-title">Caratteristiche, TS e abilità</h2>
+            <p class="section-subtitle" id="build-priorities"></p>
+            <div class="skills-grid">
+              <div>
+                <h3 class="section-subtitle">Caratteristiche</h3>
+                <div class="table-wrap">
+                  <table class="compact-table" id="abilities-table"></table>
+                </div>
+              </div>
+              <div>
+                <h3 class="section-subtitle">Tiri salvezza</h3>
+                <div class="table-wrap">
+                  <table class="compact-table" id="saves-table"></table>
+                </div>
+              </div>
+              <div style="grid-column: 1 / -1">
+                <h3 class="section-subtitle">Abilità</h3>
+                <div class="table-wrap">
+                  <table class="compact-table" id="skills-table"></table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2 class="section-title">Attacchi e opzioni</h2>
+            <div class="table-wrap"><table id="attacks-table"></table></div>
+            <div id="combat-level-notes" class="footer-note"></div>
+          </section>
+
+          <section class="panel">
+            <h2 class="section-title">Incantesimi e rituali</h2>
+            <p class="section-subtitle" id="spellcasting-summary"></p>
+            <div id="spell-sections"></div>
+            <div class="story-card" style="margin-top: 16px">
+              <h3 class="section-subtitle">Promemoria build</h3>
+              <ul id="warlock-reminders"></ul>
+              <h3 class="section-subtitle" style="margin-top: 18px">
+                Come tirare i dadi al tavolo
+              </h3>
+              <ul id="table-reminders"></ul>
+            </div>
+          </section>
+        </main>
+
+        <aside class="column">
+          <section class="panel">
+            <h2 class="section-title">Competenze e privilegi</h2>
+            <div class="notes-grid">
+              <div>
+                <h3 class="section-subtitle">Competenze</h3>
+                <ul id="proficiencies-list"></ul>
+              </div>
+              <div>
+                <h3 class="section-subtitle">Invocazioni e privilegi</h3>
+                <ul id="features-list"></ul>
+              </div>
+              <div style="grid-column: 1 / -1">
+                <h3 class="section-subtitle">Checklist del livello corrente</h3>
+                <ul id="level-checklist"></ul>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2 class="section-title">Inventario e monete</h2>
+            <div class="table-wrap">
+              <table class="compact-table" id="inventory-table"></table>
+            </div>
+            <div class="session-grid" style="margin-top: 16px">
+              <div class="field">
+                <label for="gold">Monete d'oro</label
+                ><input id="gold" type="number" min="0" step="1" />
+              </div>
+              <div class="field">
+                <label for="silver">Monete d'argento</label
+                ><input id="silver" type="number" min="0" step="1" />
+              </div>
+              <div class="field">
+                <label for="copper">Monete di rame</label
+                ><input id="copper" type="number" min="0" step="1" />
+              </div>
+            </div>
+            <ul id="inventory-notes-list" style="margin-top: 16px"></ul>
+          </section>
+
+          <section class="panel">
+            <h2 class="section-title">Lingue, razza e background</h2>
+            <div class="pill-row" id="languages-row"></div>
+            <ul id="race-notes" style="margin-top: 16px"></ul>
+            <h3 class="section-subtitle" style="margin-top: 18px">
+              Privilegio background
+            </h3>
+            <ul id="background-feature"></ul>
+          </section>
+
+          <section class="story-card">
+            <h2 class="section-title">Personalità e storia</h2>
+            <h3 class="section-subtitle">Tratti ruolo</h3>
+            <ul id="roleplay-list"></ul>
+            <h3 class="section-subtitle" style="margin-top: 18px">
+              Aspetto e dati fisici
+            </h3>
+            <ul id="appearance-list"></ul>
+            <h3 class="section-subtitle" style="margin-top: 18px">
+              Storia consolidata
+            </h3>
+            <div id="story-paragraphs"></div>
+            <h3 class="section-subtitle" style="margin-top: 18px">
+              Campi non compilati
+            </h3>
+            <ul id="unfilled-list"></ul>
+          </section>
+
+          <details>
+            <summary>Note di correzione applicate</summary>
+            <ul id="corrections-list" style="margin-top: 14px"></ul>
+          </details>
+
+          <details>
+            <summary>JSON corrente in memoria</summary>
+            <pre id="source-data"></pre>
+          </details>
+        </aside>
+      </div>
+    </div>
+
+    <script>
+      const elements = {
+        syncPill: document.getElementById("sync-pill"),
+        syncLabel: document.getElementById("sync-label"),
+        setupScreen: document.getElementById("setup-screen"),
+        hero: document.getElementById("hero"),
+        layout: document.getElementById("layout"),
+        portraitImage: document.getElementById("portrait-image"),
+        portraitCaption: document.getElementById("portrait-caption"),
+        characterName: document.getElementById("character-name"),
+        characterSummary: document.getElementById("character-summary"),
+        identityGrid: document.getElementById("identity-grid"),
+        galleryPanel: document.getElementById("gallery-panel"),
+        galleryRail: document.getElementById("gallery-rail"),
+        galleryCount: document.getElementById("gallery-count"),
+        baseStats: document.getElementById("base-stats"),
+        buildPriorities: document.getElementById("build-priorities"),
+        abilitiesTable: document.getElementById("abilities-table"),
+        savesTable: document.getElementById("saves-table"),
+        skillsTable: document.getElementById("skills-table"),
+        attacksTable: document.getElementById("attacks-table"),
+        combatLevelNotes: document.getElementById("combat-level-notes"),
+        spellcastingSummary: document.getElementById("spellcasting-summary"),
+        spellSections: document.getElementById("spell-sections"),
+        proficienciesList: document.getElementById("proficiencies-list"),
+        featuresList: document.getElementById("features-list"),
+        levelChecklist: document.getElementById("level-checklist"),
+        inventoryTable: document.getElementById("inventory-table"),
+        inventoryNotesList: document.getElementById("inventory-notes-list"),
+        languagesRow: document.getElementById("languages-row"),
+        raceNotes: document.getElementById("race-notes"),
+        backgroundFeature: document.getElementById("background-feature"),
+        roleplayList: document.getElementById("roleplay-list"),
+        appearanceList: document.getElementById("appearance-list"),
+        storyParagraphs: document.getElementById("story-paragraphs"),
+        unfilledList: document.getElementById("unfilled-list"),
+        correctionsList: document.getElementById("corrections-list"),
+        warlockReminders: document.getElementById("warlock-reminders"),
+        tableReminders: document.getElementById("table-reminders"),
+        hpSummary: document.getElementById("hp-summary"),
+        hpFill: document.getElementById("hp-fill"),
+        sessionSummary: document.getElementById("session-summary"),
+        sourceData: document.getElementById("source-data"),
+        currentHp: document.getElementById("currentHp"),
+        tempHp: document.getElementById("tempHp"),
+        pactSlotsUsed: document.getElementById("pactSlotsUsed"),
+        focusChargesUsed: document.getElementById("focusChargesUsed"),
+        arrows: document.getElementById("arrows"),
+        gold: document.getElementById("gold"),
+        silver: document.getElementById("silver"),
+        copper: document.getElementById("copper"),
+        inventoryNotes: document.getElementById("inventoryNotes"),
+      };
+
+      const state = {
+        character: null,
+        fileHandle: null,
+        liveSync: false,
+        saveTimer: null,
+        dirty: false,
+        activeImagePath: null,
+      };
+
+      function linkify(value, href) {
+        return href
+          ? `<a href="${href}" target="_blank" rel="noreferrer noopener">${value}</a>`
+          : value;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function formatIdentityItem(item) {
+        if (item.parts) {
+          return item.parts
+            .map((part) => linkify(escapeHtml(part.value), part.link))
+            .join(" / ");
+        }
+
+        return linkify(escapeHtml(item.value), item.link);
+      }
+
+      function renderSimpleTable(target, headers, rows) {
+        target.innerHTML = `
+          <thead><tr>${headers.map((header) => `<th>${header}</th>`).join("")}</tr></thead>
+          <tbody>${rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody>
+        `;
+      }
+
+      function getImageManifest(data) {
+        const folder = data.assets?.imageFolder || "images";
+        const images = Array.isArray(data.assets?.images)
+          ? data.assets.images
+          : [];
+
+        return images
+          .map((item) => {
+            const file = String(item.file || item.src || "").trim();
+            if (!file) {
+              return null;
+            }
+
+            const normalizedFile = file.replace(/^images\//, "");
+            const src = file.includes("/")
+              ? file
+              : `${folder}/${normalizedFile}`;
+            return {
+              file: normalizedFile,
+              src,
+              alt: item.alt || item.caption || normalizedFile,
+              caption: item.caption || normalizedFile,
+            };
+          })
+          .filter(Boolean)
+          .sort((left, right) =>
+            left.file.localeCompare(right.file, "it", { sensitivity: "base" }),
+          );
+      }
+
+      function getPlaceholderImage() {
+        return (
+          "data:image/svg+xml;charset=UTF-8," +
+          encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-label="Nessuna immagine disponibile">
+            <defs>
+              <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0%" stop-color="#d8c0a6" />
+                <stop offset="100%" stop-color="#7d2410" />
+              </linearGradient>
+            </defs>
+            <rect width="800" height="1000" fill="url(#g)"/>
+            <circle cx="400" cy="330" r="150" fill="rgba(255,255,255,0.25)" />
+            <rect x="180" y="570" width="440" height="220" rx="110" fill="rgba(255,255,255,0.18)" />
+            <text x="50%" y="860" fill="#fff7f0" font-family="Georgia, serif" font-size="44" text-anchor="middle">Nessuna immagine</text>
+          </svg>
+        `)
+        );
+      }
+
+      function setActivePortrait(image, persist = false) {
+        if (!state.character) {
+          return;
+        }
+
+        state.activeImagePath = image?.src || null;
+        state.character.meta = state.character.meta || {};
+        state.character.meta.portrait = {
+          src: image?.src || state.character.meta.portrait?.src || "",
+          alt:
+            image?.alt ||
+            state.character.meta.portrait?.alt ||
+            state.character.meta.name ||
+            "Ritratto del personaggio",
+        };
+
+        renderCharacter();
+
+        if (persist) {
+          scheduleSave("portrait");
+        }
+      }
+
+      function renderImageGallery(data) {
+        const images = getImageManifest(data);
+        const activePath =
+          state.activeImagePath ||
+          data.meta?.portrait?.src ||
+          images[0]?.src ||
+          null;
+        state.activeImagePath = activePath;
+
+        elements.galleryCount.textContent = images.length
+          ? `${images.length} ${images.length === 1 ? "immagine" : "immagini"}`
+          : "Nessuna immagine configurata";
+
+        if (!images.length) {
+          elements.galleryRail.innerHTML = `
+            <article class="gallery-card is-active" style="cursor: default;">
+              <img src="${getPlaceholderImage()}" alt="Nessuna immagine configurata" />
+              <figcaption>
+                <strong>Placeholder</strong>
+                <span>Configura assets.images nel JSON e metti i file in images/.</span>
+              </figcaption>
+            </article>
+          `;
+          elements.galleryPanel.hidden = false;
+          return;
+        }
+
+        elements.galleryRail.innerHTML = images
+          .map((image) => {
+            const isActive = image.src === activePath;
+            return `
+            <figure class="gallery-card ${isActive ? "is-active" : ""}" data-gallery-src="${escapeHtml(image.src)}" role="button" tabindex="0" aria-label="${escapeHtml(image.caption)}">
+              <img src="${escapeHtml(image.src)}" alt="${escapeHtml(image.alt)}" />
+              <figcaption>
+                <strong>${escapeHtml(image.file)}</strong>
+                <span>${escapeHtml(image.caption)}</span>
+              </figcaption>
+            </figure>
+          `;
+          })
+          .join("");
+
+        elements.galleryRail
+          .querySelectorAll("[data-gallery-src]")
+          .forEach((card) => {
+            const activate = () => {
+              const chosen = images.find(
+                (image) => image.src === card.dataset.gallerySrc,
+              );
+              if (chosen) {
+                state.activeImagePath = chosen.src;
+                state.character.meta.portrait = {
+                  src: chosen.src,
+                  alt: chosen.alt,
+                };
+                scheduleSave("gallery");
+                renderCharacter();
+              }
+            };
+
+            card.addEventListener("click", activate);
+            card.addEventListener("keydown", (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                activate();
+              }
+            });
+          });
+      }
+
+      function renderSpellTable(section) {
+        return `
+          <div class="table-wrap" style="margin-top: 16px;">
+            <table>
+              <caption style="caption-side: top; text-align: left; padding: 0 0 10px; font-weight: 700;">${escapeHtml(section.title)}</caption>
+              <thead>
+                <tr>
+                  <th>Incantesimo</th><th>Livello</th><th>Gittata/Area</th><th>Tiro che fai tu</th><th>Tiro avversario</th><th>Danno/Effetto</th><th>Concentrazione</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${section.entries
+                  .map(
+                    (spell) => `
+                  <tr>
+                    <td>${linkify(escapeHtml(spell.name), spell.link)}${spell.notes ? `<br /><span class="muted">${escapeHtml(spell.notes)}</span>` : ""}</td>
+                    <td>${escapeHtml(spell.level)}</td>
+                    <td>${escapeHtml(spell.range)}</td>
+                    <td>${escapeHtml(spell.attack)}</td>
+                    <td>${escapeHtml(spell.defense)}</td>
+                    <td>${escapeHtml(spell.effect)}</td>
+                    <td>${escapeHtml(spell.concentration)}</td>
+                  </tr>
+                `,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+            ${section.summary ? `<p class="footer-note">${escapeHtml(section.summary)}</p>` : ""}
+          </div>
+        `;
+      }
+
+      // ── IndexedDB handle persistence ──
+      function openDb() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open("character-platform", 1);
+          req.onupgradeneeded = () => req.result.createObjectStore("handles");
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function saveHandle(handle) {
+        const db = await openDb();
+        return new Promise((resolve, reject) => {
+          const tx = db.transaction("handles", "readwrite");
+          tx.objectStore("handles").put(handle, "character-json");
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+        });
+      }
+
+      async function loadHandle() {
+        const db = await openDb();
+        return new Promise((resolve) => {
+          const req = db
+            .transaction("handles")
+            .objectStore("handles")
+            .get("character-json");
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+        });
+      }
+
+      function setSyncStatus(text, mode) {
+        elements.syncLabel.textContent = text;
+        elements.syncPill.className = `sync-pill ${mode}`;
+        elements.syncPill.hidden = false;
+      }
+
+      function renderCharacter() {
+        const data = state.character;
+        if (!data) {
+          elements.setupScreen.hidden = false;
+          elements.hero.classList.remove("is-visible");
+          elements.galleryPanel.hidden = true;
+          elements.layout.classList.remove("is-visible");
+          document.title = "Character Sheet Platform";
+          return;
+        }
+
+        elements.setupScreen.hidden = true;
+        elements.hero.classList.add("is-visible");
+        elements.galleryPanel.hidden = false;
+        elements.layout.classList.add("is-visible");
+
+        document.title = data.meta?.name || "Character Sheet Platform";
+        elements.characterName.textContent = data.meta?.name || "Personaggio";
+        elements.characterSummary.textContent =
+          data.meta?.summary || data.platform?.description || "";
+        const images = getImageManifest(data);
+        const activePortrait =
+          images.find((image) => image.src === state.activeImagePath) ||
+          images.find((image) => image.src === data.meta?.portrait?.src) ||
+          images[0];
+        elements.portraitImage.src =
+          activePortrait?.src ||
+          data.meta?.portrait?.src ||
+          getPlaceholderImage();
+        elements.portraitImage.alt =
+          activePortrait?.alt ||
+          data.meta?.portrait?.alt ||
+          `Ritratto di ${data.meta?.name || "personaggio"}`;
+        elements.portraitCaption.textContent = `${data.meta?.name || "Personaggio"}. ${activePortrait?.caption || data.meta?.portrait?.alt || "Scheda caricata da JSON."}`;
+
+        elements.identityGrid.innerHTML = (data.identity || [])
+          .map(
+            (item) => `
+          <article class="identity-card">
+            <span class="eyebrow">${escapeHtml(item.label)}</span>
+            <strong>${formatIdentityItem(item)}</strong>
+          </article>
+        `,
+          )
+          .join("");
+
+        elements.baseStats.innerHTML = (data.build?.baseStats || [])
+          .map(
+            (item) => `
+          <article class="stat-card">
+            <span class="eyebrow">${escapeHtml(item.label)}</span>
+            <strong>${escapeHtml(item.value)}</strong>
+            ${item.note ? `<small>${escapeHtml(item.note)}</small>` : ""}
+          </article>
+        `,
+          )
+          .join("");
+
+        elements.buildPriorities.textContent = data.build?.priorities || "";
+        renderSimpleTable(
+          elements.abilitiesTable,
+          ["Caratteristica", "Punteggio", "Mod"],
+          (data.build?.abilities || []).map((item) => [
+            escapeHtml(item.name),
+            escapeHtml(item.score),
+            escapeHtml(item.modifier),
+          ]),
+        );
+        renderSimpleTable(
+          elements.savesTable,
+          ["TS", "Bonus"],
+          (data.build?.savingThrows || []).map((item) => [
+            escapeHtml(item.name),
+            `${escapeHtml(item.value)}${item.note ? ` (${escapeHtml(item.note)})` : ""}`,
+          ]),
+        );
+        renderSimpleTable(
+          elements.skillsTable,
+          ["Abilità", "Bonus"],
+          (data.build?.skills || []).map((item) => [
+            escapeHtml(item.name),
+            `${escapeHtml(item.value)}${item.note ? ` (${escapeHtml(item.note)})` : ""}`,
+          ]),
+        );
+        renderSimpleTable(
+          elements.attacksTable,
+          [
+            "Opzione",
+            "Livello",
+            "Gittata/Area",
+            "Tiro che fai tu",
+            "Tiro avversario",
+            "Danno/Effetto",
+            "Note",
+          ],
+          (data.combat?.attacks || []).map((item) => [
+            linkify(escapeHtml(item.name), item.link),
+            escapeHtml(item.level),
+            escapeHtml(item.range),
+            escapeHtml(item.attack),
+            escapeHtml(item.defense),
+            escapeHtml(item.effect),
+            escapeHtml(item.notes || ""),
+          ]),
+        );
+        elements.combatLevelNotes.innerHTML = (data.combat?.levelNotes || [])
+          .map((note) => `<div>${escapeHtml(note)}</div>`)
+          .join("");
+
+        const spellcasting = data.combat?.spellcasting || {};
+        elements.spellcastingSummary.textContent = `Riferimenti incantatore: ${spellcasting.ability || ""}, CD incantesimi ${spellcasting.saveDc || ""}, attacco incantesimi ${spellcasting.attackBonus || ""}, ${spellcasting.slots || ""}.`;
+        elements.spellSections.innerHTML = (data.spellSections || [])
+          .map(renderSpellTable)
+          .join("");
+        renderImageGallery(data);
+
+        elements.proficienciesList.innerHTML = (data.build?.proficiencies || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+        elements.featuresList.innerHTML = (data.features?.items || [])
+          .map(
+            (item) =>
+              `<li>${linkify(escapeHtml(item.label), item.link)}: ${escapeHtml(item.text)}</li>`,
+          )
+          .join("");
+        elements.levelChecklist.innerHTML = (
+          data.features?.levelChecklist || []
+        )
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+        elements.languagesRow.innerHTML = (data.origin?.languages || [])
+          .map((item) => `<span class="pill">${escapeHtml(item)}</span>`)
+          .join("");
+        elements.raceNotes.innerHTML = (data.origin?.raceNotes || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+        elements.backgroundFeature.innerHTML = (
+          data.origin?.backgroundFeature || []
+        )
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+        elements.roleplayList.innerHTML = (data.narrative?.roleplay || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+        elements.appearanceList.innerHTML = (data.narrative?.appearance || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+        elements.storyParagraphs.innerHTML = (data.narrative?.story || [])
+          .map((item) => `<p>${escapeHtml(item)}</p>`)
+          .join("");
+        elements.unfilledList.innerHTML = (data.narrative?.unfilled || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+        elements.correctionsList.innerHTML = (data.corrections || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+        elements.warlockReminders.innerHTML = (data.reminders?.warlock || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+        elements.tableReminders.innerHTML = (data.reminders?.tablePlay || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+        elements.inventoryNotesList.innerHTML = (data.inventory?.notes || [])
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
+          .join("");
+
+        renderInventoryTable();
+        syncFormFromData();
+        renderSessionSummary();
+        elements.sourceData.textContent = JSON.stringify(data, null, 2);
+      }
+
+      function renderInventoryTable() {
+        const items = state.character?.inventory?.items || [];
+        elements.inventoryTable.innerHTML = `
+          <thead><tr><th>Oggetto</th><th>Quantità</th><th>Note</th></tr></thead>
+          <tbody>
+            ${items
+              .map(
+                (item, index) => `
+              <tr>
+                <td>${linkify(escapeHtml(item.name), item.link)}</td>
+                <td><input type="number" min="0" step="1" data-inventory-qty="${index}" value="${escapeHtml(item.quantity)}" /></td>
+                <td><textarea data-inventory-notes="${index}">${escapeHtml(item.notes || "")}</textarea></td>
+              </tr>
+            `,
+              )
+              .join("")}
+          </tbody>
+        `;
+
+        elements.inventoryTable
+          .querySelectorAll("[data-inventory-qty]")
+          .forEach((input) => {
+            input.addEventListener("input", (event) => {
+              const index = Number(event.target.dataset.inventoryQty);
+              state.character.inventory.items[index].quantity = Number(
+                event.target.value || 0,
+              );
+              scheduleSave("inventory");
+            });
+          });
+
+        elements.inventoryTable
+          .querySelectorAll("[data-inventory-notes]")
+          .forEach((input) => {
+            input.addEventListener("input", (event) => {
+              const index = Number(event.target.dataset.inventoryNotes);
+              state.character.inventory.items[index].notes = event.target.value;
+              scheduleSave("inventory-notes");
+            });
+          });
+      }
+
+      function syncFormFromData() {
+        const resources = state.character?.session?.resources || {};
+        const currencies = state.character?.inventory?.currencies || {};
+        elements.currentHp.value = resources.currentHp ?? 0;
+        elements.tempHp.value = resources.tempHp ?? 0;
+        elements.pactSlotsUsed.value = resources.pactSlotsUsed ?? 0;
+        elements.focusChargesUsed.value = resources.focusChargesUsed ?? 0;
+        elements.arrows.value = resources.arrows ?? 0;
+        elements.gold.value = currencies.gold ?? 0;
+        elements.silver.value = currencies.silver ?? 0;
+        elements.copper.value = currencies.copper ?? 0;
+        elements.inventoryNotes.value =
+          state.character?.session?.inventoryNotes || "";
+      }
+
+      function updateDataFromForm() {
+        const resources = state.character.session.resources;
+        const currencies = state.character.inventory.currencies;
+        resources.currentHp = Number(elements.currentHp.value || 0);
+        resources.tempHp = Number(elements.tempHp.value || 0);
+        resources.pactSlotsUsed = Number(elements.pactSlotsUsed.value || 0);
+        resources.focusChargesUsed = Number(
+          elements.focusChargesUsed.value || 0,
+        );
+        resources.arrows = Number(elements.arrows.value || 0);
+        currencies.gold = Number(elements.gold.value || 0);
+        currencies.silver = Number(elements.silver.value || 0);
+        currencies.copper = Number(elements.copper.value || 0);
+        state.character.session.inventoryNotes = elements.inventoryNotes.value;
+      }
+
+      function renderSessionSummary() {
+        const resources = state.character?.session?.resources || {};
+        const currencies = state.character?.inventory?.currencies || {};
+        const hpPercent = Math.max(
+          0,
+          Math.min(
+            100,
+            ((resources.currentHp || 0) / Math.max(1, resources.maxHp || 1)) *
+              100,
+          ),
+        );
+        const pactRemaining = Math.max(
+          0,
+          (resources.pactSlotsTotal || 0) - (resources.pactSlotsUsed || 0),
+        );
+        const focusRemaining = Math.max(
+          0,
+          (resources.focusChargesTotal || 0) -
+            (resources.focusChargesUsed || 0),
+        );
+        elements.hpSummary.textContent = `PF ${resources.currentHp || 0} / ${resources.maxHp || 0} | PF temporanei ${resources.tempHp || 0}`;
+        elements.hpFill.style.width = `${hpPercent}%`;
+        elements.sessionSummary.textContent = `Slot Patto rimasti: ${pactRemaining}/${resources.pactSlotsTotal || 0}. Ricariche focus rimaste: ${focusRemaining}/${resources.focusChargesTotal || 0}. Frecce rimaste: ${resources.arrows || 0}. Monete: ${currencies.gold || 0} mo, ${currencies.silver || 0} ma, ${currencies.copper || 0} mr.`;
+      }
+
+      async function saveToHandle() {
+        if (!state.fileHandle || !state.character) {
+          throw new Error("Nessun file handle live disponibile.");
+        }
+
+        state.character.session.lastSavedAt = new Date().toISOString();
+        const writable = await state.fileHandle.createWritable();
+        await writable.write(JSON.stringify(state.character, null, 2));
+        await writable.close();
+        state.dirty = false;
+        elements.sourceData.textContent = JSON.stringify(
+          state.character,
+          null,
+          2,
+        );
+        setSyncStatus(
+          `Sync live attivo · ultimo salvataggio ${new Date(state.character.session.lastSavedAt).toLocaleTimeString("it-IT")}`,
+          "ok",
+        );
+      }
+
+      function scheduleSave(reason) {
+        if (!state.character) {
+          return;
+        }
+
+        updateDataFromForm();
+        renderSessionSummary();
+        elements.sourceData.textContent = JSON.stringify(
+          state.character,
+          null,
+          2,
+        );
+        state.dirty = true;
+
+        if (!state.liveSync || !state.fileHandle) {
+          setSyncStatus(
+            `JSON caricato senza sync live · modifica locale: ${reason}`,
+            "warn",
+          );
+          return;
+        }
+
+        window.clearTimeout(state.saveTimer);
+        state.saveTimer = window.setTimeout(() => {
+          saveToHandle().catch((error) => {
+            console.error(error);
+            setSyncStatus(`Errore di sync: ${error.message}`, "warn");
+          });
+        }, 250);
+      }
+
+      async function loadCharacterData(data, options = {}) {
+        state.character = data;
+        state.fileHandle = options.fileHandle || null;
+        state.liveSync = Boolean(options.liveSync && options.fileHandle);
+        state.activeImagePath =
+          data.meta?.portrait?.src || getImageManifest(data)[0]?.src || null;
+        if (state.fileHandle) {
+          await saveHandle(state.fileHandle);
+        }
+        renderCharacter();
+        if (state.liveSync) {
+          setSyncStatus("Sync live attivo", "ok");
+        } else {
+          setSyncStatus("In sola lettura", "warn");
+        }
+      }
+
+      async function connectJson() {
+        const [handle] = await window.showOpenFilePicker({
+          multiple: false,
+          types: [
+            {
+              description: "Character JSON",
+              accept: { "application/json": [".json"] },
+            },
+          ],
+        });
+        const permission = await handle.requestPermission({
+          mode: "readwrite",
+        });
+        if (permission !== "granted") throw new Error("Permesso negato.");
+        const parsed = JSON.parse(await (await handle.getFile()).text());
+        await loadCharacterData(parsed, { fileHandle: handle, liveSync: true });
+      }
+
+      async function tryAutoLoad() {
+        const handle = await loadHandle();
+        if (!handle) return false;
+        try {
+          const permission = await handle.queryPermission({
+            mode: "readwrite",
+          });
+          if (
+            permission === "granted" ||
+            (await handle.requestPermission({ mode: "readwrite" })) ===
+              "granted"
+          ) {
+            const parsed = JSON.parse(await (await handle.getFile()).text());
+            await loadCharacterData(parsed, {
+              fileHandle: handle,
+              liveSync: true,
+            });
+            return true;
+          }
+        } catch (_) {}
+        return false;
+      }
+
+      function exportCopy() {
+        if (!state.character) return;
+        updateDataFromForm();
+        const blob = new Blob([JSON.stringify(state.character, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        Object.assign(document.createElement("a"), {
+          href: url,
+          download: "character.json",
+        }).click();
+        URL.revokeObjectURL(url);
+      }
+
+      function bindEvents() {
+        document
+          .getElementById("connect-btn")
+          .addEventListener("click", async () => {
+            try {
+              await connectJson();
+            } catch (error) {
+              console.error(error);
+              setSyncStatus(`Connessione fallita: ${error.message}`, "warn");
+            }
+          });
+
+        document
+          .getElementById("export-btn")
+          .addEventListener("click", exportCopy);
+
+        [
+          elements.currentHp,
+          elements.tempHp,
+          elements.pactSlotsUsed,
+          elements.focusChargesUsed,
+          elements.arrows,
+          elements.gold,
+          elements.silver,
+          elements.copper,
+          elements.inventoryNotes,
+        ].forEach((input) =>
+          input.addEventListener("input", () => scheduleSave("session")),
+        );
+      }
+
+      window.characterPlatform = {
+        async loadCharacterData(data) {
+          await loadCharacterData(JSON.parse(JSON.stringify(data)), {
+            liveSync: false,
+          });
+        },
+        getCharacterData() {
+          return JSON.parse(JSON.stringify(state.character));
+        },
+      };
+
+      bindEvents();
+      tryAutoLoad();
+    </script>
+  </body>
+</html>
