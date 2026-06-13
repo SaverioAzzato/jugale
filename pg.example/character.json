@@ -165,6 +165,14 @@
         "focus": {
           "total": 0,
           "used": 0
+        },
+        "lvl1": {
+          "total": 0,
+          "used": 0
+        },
+        "lvl2": {
+          "total": 0,
+          "used": 0
         }
       },
       "arrows": 0

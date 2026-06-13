@@ -19,6 +19,7 @@
         --warn: #8c5b17;
         --shadow: 0 18px 60px rgba(55, 35, 20, 0.12);
         --radius: 20px;
+        --rail-width: minmax(250px, 290px);
       }
 
       * {
@@ -159,8 +160,9 @@
 
       .hero {
         display: none;
-        grid-template-columns: minmax(220px, 320px) 1fr;
+        grid-template-columns: var(--rail-width) minmax(0, 1fr);
         gap: 24px;
+        align-items: start;
         background: linear-gradient(
           145deg,
           rgba(255, 250, 241, 0.96),
@@ -174,17 +176,174 @@
 
       .layout {
         display: none;
+        grid-template-columns: var(--rail-width) minmax(0, 1fr);
+        gap: 24px;
+        align-items: start;
       }
 
       .layout.is-visible {
         display: grid;
       }
 
+      .layout.is-visible.toc-collapsed {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .layout.is-visible.toc-collapsed .toc-sidebar:not(.overlay) {
+        display: none;
+      }
+
+      .toc-sidebar {
+        display: block;
+      }
+
+      .toc-sidebar {
+        position: sticky;
+        top: 24px;
+        height: fit-content;
+        max-height: calc(100vh - 48px);
+        overflow-y: auto;
+      }
+
+      .toc-sidebar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .toc-sidebar-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .toc-close {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border-radius: 999px;
+        border: 1px solid rgba(125, 36, 16, 0.24);
+        background: rgba(255, 246, 234, 0.92);
+        color: var(--accent-deep);
+        font-size: 1.1rem;
+        line-height: 1;
+      }
+
+      .toc-dock {
+        display: none;
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        border-radius: 999px;
+        border: 1px solid rgba(125, 36, 16, 0.24);
+        background: rgba(255, 246, 234, 0.92);
+        color: var(--accent-deep);
+        font-size: 1.5rem;
+        line-height: 1;
+      }
+
+      .toc-sidebar.overlay .toc-dock {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .toc-open-fab {
+        position: fixed;
+        left: 20px;
+        top: 20px;
+        z-index: 950;
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(61, 44, 26, 0.18);
+        background: rgba(255, 253, 249, 0.95);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 8px 28px rgba(55, 35, 20, 0.16);
+      }
+
+      .toc-open-fab.is-visible {
+        display: inline-flex;
+      }
+
+      .toc-overlay-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 940;
+        background: rgba(20, 14, 10, 0.38);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 180ms ease;
+      }
+
+      .toc-overlay-backdrop.is-visible {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .toc-sidebar.overlay {
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        bottom: 16px;
+        width: min(320px, calc(100vw - 32px));
+        max-height: none;
+        z-index: 960;
+      }
+
+      .toc-sidebar ul {
+        padding-left: 0;
+        list-style: none;
+      }
+
+      .toc-sidebar li {
+        margin-top: 0;
+      }
+
+      .toc-sidebar a {
+        display: block;
+        padding: 8px 12px;
+        border-radius: 8px;
+        color: var(--accent-deep);
+        text-decoration: none;
+        font-size: 0.95rem;
+        transition: all 150ms ease;
+        border-left: 3px solid transparent;
+        outline: none;
+      }
+
+      .toc-sidebar a:hover {
+        background: rgba(182, 66, 29, 0.08);
+        border-left-color: var(--accent);
+        padding-left: 14px;
+      }
+
+      .toc-sidebar a.active {
+        background: rgba(182, 66, 29, 0.12);
+        border-left-color: var(--accent);
+        font-weight: 600;
+        color: var(--accent);
+      }
+
+      .toc-sidebar a:focus-visible {
+        background: rgba(182, 66, 29, 0.12);
+        border-left-color: var(--accent);
+      }
+
+      section.panel,
+      section.story-card,
+      details {
+        scroll-margin-top: 24px;
+      }
+
       .portrait {
         position: relative;
         border-radius: 18px;
         overflow: hidden;
-        min-height: 320px;
+        aspect-ratio: 3 / 4;
         background: linear-gradient(
           180deg,
           rgba(131, 35, 20, 0.75),
@@ -192,11 +351,17 @@
         );
       }
 
+      .portrait-rail {
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+      }
+
       .portrait img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         display: block;
+        cursor: zoom-in;
       }
       .portrait figcaption {
         position: absolute;
@@ -269,8 +434,108 @@
         opacity: 0.35;
         cursor: default;
       }
+
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 1200;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 16px;
+        padding: 22px;
+        background: rgba(11, 8, 6, 0.86);
+        backdrop-filter: blur(4px);
+      }
+
+      .lightbox[hidden] {
+        display: none;
+      }
+
+      .lightbox-close {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        background: rgba(18, 13, 10, 0.6);
+        color: #fdf3ea;
+        font-size: 1.4rem;
+        line-height: 1;
+      }
+
+      .lightbox-arrow {
+        width: 52px;
+        height: 52px;
+        padding: 0;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        background: rgba(18, 13, 10, 0.62);
+        color: #fdf3ea;
+        font-size: 2rem;
+        line-height: 1;
+      }
+
+      .lightbox-arrow:disabled {
+        opacity: 0.35;
+        cursor: default;
+      }
+
+      .lightbox-figure {
+        margin: 0;
+        width: 100%;
+        max-height: calc(100vh - 44px);
+        display: grid;
+        gap: 12px;
+        justify-items: center;
+      }
+
+      .lightbox-figure img {
+        width: min(1100px, 100%);
+        max-height: calc(100vh - 130px);
+        border-radius: 14px;
+        object-fit: contain;
+        background: rgba(0, 0, 0, 0.3);
+      }
+
+      .lightbox-figure figcaption {
+        color: #f8eadd;
+        text-align: center;
+        font-size: 0.95rem;
+      }
       .stat-card small {
         color: var(--muted);
+      }
+      .identity-grid,
+      .stat-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+        display: grid;
+        margin-bottom: 12px;
+      }
+      .identity-card,
+      .stat-card {
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: rgba(255, 253, 249, 0.72);
+        border: 1px solid rgba(61, 44, 26, 0.12);
+      }
+      .identity-card .eyebrow,
+      .stat-card .eyebrow {
+        display: block;
+        font-size: 0.82rem;
+        color: var(--muted);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+      .identity-card strong,
+      .stat-card strong {
+        display: block;
+        font-size: 1.05rem;
       }
       .session-grid {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -446,8 +711,27 @@
       }
 
       @media (max-width: 1080px) {
+        .hero.is-visible,
         .layout.is-visible {
           grid-template-columns: 1fr;
+        }
+
+        .toc-sidebar {
+          display: none !important;
+        }
+
+        .toc-sidebar.overlay {
+          display: block !important;
+          left: 10px;
+          right: 10px;
+          width: auto;
+          top: 10px;
+          bottom: 10px;
+        }
+
+        .toc-open-fab {
+          left: 10px;
+          top: 10px;
         }
       }
       @media (max-width: 760px) {
@@ -459,9 +743,36 @@
           grid-template-columns: 1fr;
           padding: 16px;
         }
+
         .portrait {
-          min-height: 260px;
+          aspect-ratio: 4 / 5;
         }
+
+        .lightbox {
+          grid-template-columns: 1fr;
+          justify-items: center;
+          gap: 10px;
+          padding: 14px;
+        }
+
+        .lightbox-arrow {
+          width: 44px;
+          height: 44px;
+          font-size: 1.6rem;
+        }
+
+        .lightbox-figure {
+          order: 1;
+        }
+
+        #lightbox-prev {
+          order: 2;
+        }
+
+        #lightbox-next {
+          order: 3;
+        }
+
         table {
           min-width: 640px;
         }
@@ -475,6 +786,17 @@
         ⬇ Esporta
       </button>
     </div>
+
+    <button
+      class="toc-open-fab"
+      id="toc-open-btn"
+      type="button"
+      aria-label="Apri indice sezioni"
+      hidden
+    >
+      ☰ Sezioni
+    </button>
+    <div class="toc-overlay-backdrop" id="toc-overlay-backdrop" hidden></div>
 
     <div class="shell">
       <section class="setup-screen" id="setup-screen">
@@ -490,7 +812,7 @@
       </section>
 
       <header class="hero" id="hero">
-        <figure class="portrait">
+        <figure class="portrait portrait-rail">
           <span class="portrait-counter" id="portrait-counter">0/0</span>
           <div class="portrait-nav" aria-label="Navigazione immagini ritratto">
             <button
@@ -513,6 +835,7 @@
           <img id="portrait-image" alt="Ritratto del personaggio" />
           <figcaption id="portrait-caption"></figcaption>
         </figure>
+
         <div class="hero-copy">
           <h2 id="character-name">Personaggio</h2>
           <p class="tagline" id="character-summary"></p>
@@ -528,6 +851,39 @@
       </header>
 
       <div class="layout" id="layout">
+        <nav
+          class="toc-sidebar panel"
+          id="toc-sidebar"
+          aria-label="Indice della scheda"
+        >
+          <div class="toc-sidebar-header">
+            <h2 class="section-title" style="margin: 0; font-size: 1rem">
+              Sezioni
+            </h2>
+            <div class="toc-sidebar-actions">
+              <button
+                id="toc-dock-btn"
+                class="toc-dock"
+                type="button"
+                aria-label="Aggancia indice al layout"
+                title="Aggancia indice al layout"
+              >
+                ↔
+              </button>
+              <button
+                id="toc-close-btn"
+                class="toc-close"
+                type="button"
+                aria-label="Chiudi indice"
+                title="Chiudi indice"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+          <ul id="toc-list"></ul>
+        </nav>
+
         <main class="column">
           <section class="panel">
             <h2 class="section-title">Numeri base</h2>
@@ -617,9 +973,6 @@
               <ul id="table-reminders"></ul>
             </div>
           </section>
-        </main>
-
-        <aside class="column">
           <section class="panel">
             <h2 class="section-title">Competenze e privilegi</h2>
             <div class="notes-grid">
@@ -692,8 +1045,46 @@
             <summary>JSON corrente in memoria</summary>
             <pre id="source-data"></pre>
           </details>
-        </aside>
+        </main>
       </div>
+    </div>
+
+    <div
+      class="lightbox"
+      id="lightbox"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-label="Visualizzatore immagini"
+    >
+      <button
+        id="lightbox-close"
+        class="lightbox-close"
+        type="button"
+        aria-label="Chiudi visualizzatore"
+      >
+        ×
+      </button>
+      <button
+        id="lightbox-prev"
+        class="lightbox-arrow"
+        type="button"
+        aria-label="Immagine precedente"
+      >
+        ‹
+      </button>
+      <figure class="lightbox-figure">
+        <img id="lightbox-image" alt="Anteprima immagine" />
+        <figcaption id="lightbox-caption"></figcaption>
+      </figure>
+      <button
+        id="lightbox-next"
+        class="lightbox-arrow"
+        type="button"
+        aria-label="Immagine successiva"
+      >
+        ›
+      </button>
     </div>
 
     <script>
@@ -708,6 +1099,12 @@
         portraitCounter: document.getElementById("portrait-counter"),
         portraitPrev: document.getElementById("portrait-prev"),
         portraitNext: document.getElementById("portrait-next"),
+        lightbox: document.getElementById("lightbox"),
+        lightboxImage: document.getElementById("lightbox-image"),
+        lightboxCaption: document.getElementById("lightbox-caption"),
+        lightboxClose: document.getElementById("lightbox-close"),
+        lightboxPrev: document.getElementById("lightbox-prev"),
+        lightboxNext: document.getElementById("lightbox-next"),
         characterName: document.getElementById("character-name"),
         characterSummary: document.getElementById("character-summary"),
         identityGrid: document.getElementById("identity-grid"),
@@ -747,6 +1144,12 @@
         silver: document.getElementById("silver"),
         copper: document.getElementById("copper"),
         inventoryNotes: document.getElementById("inventoryNotes"),
+        tocList: document.getElementById("toc-list"),
+        tocSidebar: document.getElementById("toc-sidebar"),
+        tocOpenBtn: document.getElementById("toc-open-btn"),
+        tocDockBtn: document.getElementById("toc-dock-btn"),
+        tocCloseBtn: document.getElementById("toc-close-btn"),
+        tocOverlayBackdrop: document.getElementById("toc-overlay-backdrop"),
       };
 
       const state = {
@@ -759,6 +1162,9 @@
         activeImagePath: null,
         imageManifest: [],
         imageObjectUrls: [],
+        lightboxOpen: false,
+        tocCollapsed: false,
+        tocOverlayOpen: false,
       };
 
       function linkify(value, href) {
@@ -1034,6 +1440,61 @@
         renderCharacter();
       }
 
+      function renderLightbox() {
+        const data = state.character;
+        if (!data || !state.lightboxOpen) {
+          return;
+        }
+
+        const images = state.imageManifest.length
+          ? state.imageManifest
+          : getImageManifest(data);
+        const activeIndex = getActivePortraitIndex(
+          images,
+          state.activeImagePath || data.meta?.portrait?.src,
+        );
+        const activePortrait = activeIndex >= 0 ? images[activeIndex] : null;
+        const hasMultiple = images.length > 1;
+
+        elements.lightboxImage.src =
+          activePortrait?.resolvedSrc ||
+          data.meta?.portrait?.src ||
+          getPlaceholderImage();
+        elements.lightboxImage.alt =
+          activePortrait?.alt ||
+          data.meta?.portrait?.alt ||
+          `Ritratto di ${data.meta?.name || "personaggio"}`;
+        elements.lightboxCaption.textContent = `${data.meta?.name || "Personaggio"}. ${activePortrait?.caption || data.meta?.portrait?.alt || "Scheda caricata da JSON."}`;
+        elements.lightboxPrev.disabled = !hasMultiple;
+        elements.lightboxNext.disabled = !hasMultiple;
+      }
+
+      function openLightbox() {
+        if (!state.character) {
+          return;
+        }
+
+        state.lightboxOpen = true;
+        elements.lightbox.hidden = false;
+        document.body.style.overflow = "hidden";
+        renderLightbox();
+      }
+
+      function closeLightbox() {
+        state.lightboxOpen = false;
+        elements.lightbox.hidden = true;
+        document.body.style.overflow = "";
+      }
+
+      function stepLightbox(delta) {
+        if (!state.lightboxOpen) {
+          return;
+        }
+
+        stepPortrait(delta);
+        renderLightbox();
+      }
+
       function renderSpellTable(section) {
         return `
           <div class="table-wrap" style="margin-top: 16px;">
@@ -1128,12 +1589,131 @@
         elements.syncPill.hidden = false;
       }
 
+      function isCompactTocMode() {
+        return window.matchMedia("(max-width: 1080px)").matches;
+      }
+
+      function syncTocUi() {
+        const isVisible = elements.layout.classList.contains("is-visible");
+        const compact = isCompactTocMode();
+        const collapsed = state.tocCollapsed;
+        const overlayVisible = state.tocOverlayOpen && isVisible;
+
+        elements.layout.classList.toggle("toc-collapsed", compact || collapsed);
+
+        if ((compact || collapsed) && isVisible && !overlayVisible) {
+          elements.tocOpenBtn.hidden = false;
+          elements.tocOpenBtn.classList.add("is-visible");
+        } else {
+          elements.tocOpenBtn.hidden = true;
+          elements.tocOpenBtn.classList.remove("is-visible");
+        }
+
+        if (overlayVisible) {
+          elements.tocSidebar.classList.add("overlay");
+          elements.tocOverlayBackdrop.hidden = false;
+          elements.tocOverlayBackdrop.classList.add("is-visible");
+        } else {
+          elements.tocSidebar.classList.remove("overlay");
+          elements.tocOverlayBackdrop.classList.remove("is-visible");
+          elements.tocOverlayBackdrop.hidden = true;
+          state.tocOverlayOpen = false;
+        }
+
+        elements.tocDockBtn.hidden = compact;
+      }
+
+      function collapseToc() {
+        state.tocCollapsed = true;
+        state.tocOverlayOpen = false;
+        syncTocUi();
+      }
+
+      function openTocOverlay() {
+        if (!state.tocCollapsed && !isCompactTocMode()) {
+          return;
+        }
+        state.tocOverlayOpen = true;
+        syncTocUi();
+      }
+
+      function closeTocOverlay() {
+        state.tocOverlayOpen = false;
+        syncTocUi();
+      }
+
+      function expandTocInline() {
+        state.tocCollapsed = false;
+        state.tocOverlayOpen = false;
+        syncTocUi();
+      }
+
+      function generateTableOfContents() {
+        const main = document.querySelector(".layout.is-visible main.column");
+        if (!main) {
+          elements.tocList.innerHTML = "";
+          return;
+        }
+
+        const sections = main.querySelectorAll(
+          "section.panel, section.story-card, details",
+        );
+        const tocItems = [];
+
+        sections.forEach((section, index) => {
+          const title = section.querySelector(".section-title, summary");
+          if (!title && !section.textContent.trim()) {
+            return;
+          }
+
+          let sectionId = section.id;
+          if (!sectionId) {
+            sectionId = `section-${index}`;
+            section.id = sectionId;
+          }
+
+          const label = title?.textContent || `Sezione ${index + 1}`;
+          tocItems.push({ id: sectionId, label });
+        });
+
+        elements.tocList.innerHTML = tocItems
+          .map(
+            (item) =>
+              `<li><a href="#${item.id}" data-target="${item.id}">${escapeHtml(item.label)}</a></li>`,
+          )
+          .join("");
+
+        tocItems.forEach((item) => {
+          const link = elements.tocList.querySelector(
+            `a[data-target="${item.id}"]`,
+          );
+          if (!link) return;
+
+          link.addEventListener("click", (event) => {
+            event.preventDefault();
+            const section = document.getElementById(item.id);
+            if (!section) return;
+
+            elements.tocList
+              .querySelectorAll("a")
+              .forEach((anchor) => anchor.classList.remove("active"));
+            link.classList.add("active");
+            section.scrollIntoView({ behavior: "smooth", block: "start" });
+            if (state.tocCollapsed) {
+              closeTocOverlay();
+            }
+          });
+        });
+      }
+
       function renderCharacter() {
         const data = state.character;
         if (!data) {
           elements.setupScreen.hidden = false;
           elements.hero.classList.remove("is-visible");
           elements.layout.classList.remove("is-visible");
+          state.tocOverlayOpen = false;
+          syncTocUi();
           document.getElementById("reconnect-btn").style.display = "none";
           document.title = "Character Sheet Platform";
           return;
@@ -1142,6 +1722,7 @@
         elements.setupScreen.hidden = true;
         elements.hero.classList.add("is-visible");
         elements.layout.classList.add("is-visible");
+        syncTocUi();
         document.getElementById("reconnect-btn").style.display = "block";
 
         document.title = data.meta?.name || "Character Sheet Platform";
@@ -1169,6 +1750,10 @@
           `Ritratto di ${data.meta?.name || "personaggio"}`;
         elements.portraitCaption.textContent = `${data.meta?.name || "Personaggio"}. ${activePortrait?.caption || data.meta?.portrait?.alt || "Scheda caricata da JSON."}`;
         updatePortraitControls(images, activeIndex);
+
+        if (state.lightboxOpen) {
+          renderLightbox();
+        }
 
         elements.identityGrid.innerHTML = (data.identity || [])
           .map(
@@ -1300,6 +1885,7 @@
         renderInventoryTable();
         syncFormFromData();
         renderSessionSummary();
+        generateTableOfContents();
         elements.sourceData.textContent = JSON.stringify(data, null, 2);
       }
 
@@ -1759,6 +2345,68 @@
 
         elements.portraitPrev.addEventListener("click", () => stepPortrait(-1));
         elements.portraitNext.addEventListener("click", () => stepPortrait(1));
+        elements.portraitImage.addEventListener("click", openLightbox);
+        elements.tocCloseBtn.addEventListener("click", () => {
+          if (state.tocOverlayOpen) {
+            closeTocOverlay();
+          } else {
+            collapseToc();
+          }
+        });
+        elements.tocDockBtn.addEventListener("click", expandTocInline);
+        elements.tocOpenBtn.addEventListener("click", openTocOverlay);
+        elements.tocOverlayBackdrop.addEventListener("click", closeTocOverlay);
+        elements.lightboxPrev.addEventListener("click", () => stepLightbox(-1));
+        elements.lightboxNext.addEventListener("click", () => stepLightbox(1));
+        elements.lightboxClose.addEventListener("click", closeLightbox);
+        elements.lightbox.addEventListener("click", (event) => {
+          if (event.target === elements.lightbox) {
+            closeLightbox();
+          }
+        });
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            if (state.lightboxOpen) {
+              closeLightbox();
+              return;
+            }
+
+            if (state.tocOverlayOpen) {
+              closeTocOverlay();
+            }
+            return;
+          }
+
+          if (event.key.toLowerCase() === "t") {
+            if (state.tocCollapsed) {
+              if (state.tocOverlayOpen) {
+                closeTocOverlay();
+              } else {
+                openTocOverlay();
+              }
+            } else {
+              collapseToc();
+            }
+            return;
+          }
+
+          if (!state.lightboxOpen) {
+            return;
+          }
+
+          if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            stepLightbox(-1);
+            return;
+          }
+
+          if (event.key === "ArrowRight") {
+            event.preventDefault();
+            stepLightbox(1);
+          }
+        });
+
+        window.addEventListener("resize", syncTocUi);
 
         [
           elements.currentHp,
@@ -1785,6 +2433,7 @@
       };
 
       bindEvents();
+      expandTocInline();
       renderCharacter();
       tryAutoLoad();
     </script>
