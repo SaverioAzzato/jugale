@@ -14,7 +14,7 @@ Help the user build, refine, level, and manage characters with strong rules accu
 ## Repository Workflow
 
 - In this repository, the canonical character source is `character.json`.
-- Use `home.html` as a presentation and editing layer only.
+- Use `index.html` as a presentation and editing layer only.
 - Prefer updating `character.json` directly when the user changes build data, level, inventory structure, spells, class features, or other persistent character information.
 - Treat Markdown sheets as legacy or transitional artifacts unless the user explicitly asks for Markdown output or archival sync.
 - Preserve all existing character information when editing the JSON source.

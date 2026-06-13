@@ -14,7 +14,7 @@ Help the user build, refine, level, and play Warlock Tome characters with table-
 ## Repository Workflow
 
 - In this repository, the canonical character source is `character.json`.
-- Use `home.html` only as the UI/rendering layer.
+- Use `index.html` only as the UI/rendering layer.
 - Prefer editing `character.json` directly for persistent character changes, including level-ups, invocations, rituals, spell packages, inventory structure, and Warlock resource definitions.
 - Treat any Markdown sheet as legacy or transitional unless the user explicitly requests Markdown output.
 - Preserve all existing JSON fields when making changes.

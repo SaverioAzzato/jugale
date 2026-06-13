@@ -17,7 +17,7 @@ La cartella `pg/` e' gitignorata, quindi puoi tenere qui dentro il tuo personagg
 
 ## Come funziona
 
-`home.html` non contiene i dati del personaggio in modo statico. La pagina è un renderer/editor che carica il file `character.json` dentro la cartella del personaggio, mostra la scheda e sincronizza i cambi nel JSON quando apri il file in modalità live.
+`index.html` non contiene i dati del personaggio in modo statico. La pagina è un renderer/editor che carica il file `character.json` dentro la cartella del personaggio, mostra la scheda e sincronizza i cambi nel JSON quando apri il file in modalità live.
 
 Se il browser supporta la File System Access API, puoi aprire `character.json` in lettura/scrittura e ogni modifica ai campi di sessione viene salvata direttamente sul file.
 
@@ -30,7 +30,7 @@ Le immagini del personaggio stanno dentro `images/`. La UI le scansiona automati
 1. Copia la cartella `pg.example/` e rinominala con il nome del tuo personaggio.
 2. Rinomina o modifica `character.json` dentro la nuova cartella.
 3. Metti tutte le immagini in `images/` con nomi coerenti alfabeticamente (la UI le leggerà in ordine automaticamente).
-4. Apri `home.html` nel browser.
+4. Apri `index.html` nel browser.
 5. Usa il pulsante per aprire la cartella del personaggio in modalità live.
 6. Modifica solo i campi di sessione quando sei al tavolo.
 7. Quando cambi build, livelli, inventario strutturale, spell, privilegi o altra informazione permanente, aggiorna `character.json`.

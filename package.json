@@ -1,0 +1,49 @@
+{
+  "name": "dnd-manager",
+  "version": "1.0.0",
+  "description": "D&D Character Sheet Platform",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^42.4.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.dndmanager.app",
+    "productName": "D&D Manager",
+    "files": [
+      "index.html",
+      "styles/**/*",
+      "js/**/*",
+      "pg.example/**/*",
+      "electron-main.js",
+      "preload.js"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.utilities"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220,
+          "type": "file"
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
+  }
+}
