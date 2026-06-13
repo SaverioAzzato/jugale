@@ -1,17 +1,26 @@
 /**
- * Theme management (dark/light)
+ * Theme management (Mihon-style presets)
  */
 
 import { state } from "./state.js";
 
 const STORAGE_KEY = "dnd-manager-theme";
-const THEMES = {
-  DARK: "dark",
-  LIGHT: "light",
+const THEME_ORDER = ["dark", "night", "light"];
+
+const THEME_LABELS = {
+  dark: "Mihon Dark",
+  night: "Mihon Night",
+  light: "Mihon Light",
 };
 
 function normalizeTheme(theme) {
-  return theme === THEMES.LIGHT ? THEMES.LIGHT : THEMES.DARK;
+  return THEME_ORDER.includes(theme) ? theme : "dark";
+}
+
+function getNextTheme(theme) {
+  const index = THEME_ORDER.indexOf(theme);
+  const nextIndex = (index + 1) % THEME_ORDER.length;
+  return THEME_ORDER[nextIndex];
 }
 
 function setThemeToggleLabel(button, theme) {
@@ -19,13 +28,13 @@ function setThemeToggleLabel(button, theme) {
     return;
   }
 
-  const isDark = theme === THEMES.DARK;
-  const label = isDark ? "Tema: Scuro" : "Tema: Chiaro";
-  const action = isDark ? "Passa al tema chiaro" : "Passa al tema scuro";
+  const currentLabel = THEME_LABELS[theme] || THEME_LABELS.dark;
+  const nextTheme = getNextTheme(theme);
+  const nextLabel = THEME_LABELS[nextTheme] || THEME_LABELS.dark;
 
-  button.textContent = label;
-  button.setAttribute("aria-label", action);
-  button.title = action;
+  button.textContent = `Tema: ${currentLabel}`;
+  button.setAttribute("aria-label", `Cambia tema (prossimo: ${nextLabel})`);
+  button.title = `Prossimo: ${nextLabel}`;
 }
 
 function persistTheme(theme) {
@@ -52,7 +61,7 @@ export function applyTheme(theme, button) {
 }
 
 export function toggleTheme(button) {
-  const nextTheme = state.theme === THEMES.DARK ? THEMES.LIGHT : THEMES.DARK;
+  const nextTheme = getNextTheme(state.theme);
   applyTheme(nextTheme, button);
   persistTheme(nextTheme);
 }
