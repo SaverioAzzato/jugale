@@ -111,9 +111,7 @@
         "value": "+0"
       }
     ],
-    "proficiencies": [
-      "Compila qui le competenze del personaggio."
-    ]
+    "proficiencies": ["Compila qui le competenze del personaggio."]
   },
   "combat": {
     "attacks": [],
@@ -141,9 +139,7 @@
       "silver": 0,
       "copper": 0
     },
-    "notes": [
-      "Inserisci qui oggetti, monete e appunti di inventario."
-    ]
+    "notes": ["Inserisci qui oggetti, monete e appunti di inventario."]
   },
   "origin": {
     "languages": [],
@@ -161,12 +157,17 @@
       "currentHp": 0,
       "maxHp": 0,
       "tempHp": 0,
-      "pactSlotsTotal": 0,
-      "pactSlotsUsed": 0,
-      "focusChargesTotal": 0,
-      "focusChargesUsed": 0,
+      "slots": {
+        "pact": {
+          "total": 0,
+          "used": 0
+        },
+        "focus": {
+          "total": 0,
+          "used": 0
+        }
+      },
       "arrows": 0
     }
-  },
-
+  }
 }

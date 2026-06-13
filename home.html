@@ -365,6 +365,43 @@
         background: linear-gradient(90deg, #2f6c46, #4d9565);
         width: 0;
       }
+      .meter-stack {
+        display: grid;
+        gap: 12px;
+        margin-top: 14px;
+      }
+      .resource-meter {
+        padding: 10px 12px;
+        border: 1px solid rgba(47, 108, 70, 0.16);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.58);
+      }
+      .resource-meter strong {
+        display: block;
+      }
+      .resource-meter .meter-bar {
+        margin-top: 6px;
+      }
+      .slot-grid {
+        display: grid;
+        gap: 10px;
+      }
+      .slot-card {
+        padding: 10px 12px;
+        border: 1px solid rgba(61, 44, 26, 0.14);
+        border-radius: 12px;
+        background: rgba(255, 253, 249, 0.72);
+      }
+      .slot-card-title {
+        margin: 0 0 8px;
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+      .slot-card-fields {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 8px;
+      }
       .skills-grid,
       .notes-grid {
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -479,7 +516,11 @@
           <h2 id="character-name">Personaggio</h2>
           <p class="tagline" id="character-summary"></p>
           <div class="identity-grid" id="identity-grid"></div>
-          <button id="reconnect-btn" type="button" style="margin-top: 16px; display: none;">
+          <button
+            id="reconnect-btn"
+            type="button"
+            style="margin-top: 16px; display: none"
+          >
             ⟳ Cambia personaggio
           </button>
         </div>
@@ -509,14 +550,6 @@
                 ><input id="tempHp" type="number" min="0" step="1" />
               </div>
               <div class="field">
-                <label for="pactSlotsUsed">Slot del Patto usati</label
-                ><input id="pactSlotsUsed" type="number" min="0" step="1" />
-              </div>
-              <div class="field">
-                <label for="focusChargesUsed">Ricariche focus usate</label
-                ><input id="focusChargesUsed" type="number" min="0" step="1" />
-              </div>
-              <div class="field">
                 <label for="arrows">Frecce rimaste</label
                 ><input id="arrows" type="number" min="0" step="1" />
               </div>
@@ -525,12 +558,17 @@
                 ><textarea id="inventoryNotes"></textarea>
               </div>
             </div>
+            <div class="field" style="margin-bottom: 16px">
+              <label>Slot incantesimo (dizionario generico)</label>
+              <div id="slot-fields" class="slot-grid"></div>
+            </div>
             <div class="meter">
               <strong id="hp-summary"></strong>
               <div class="meter-bar" aria-hidden="true">
                 <div class="meter-fill" id="hp-fill"></div>
               </div>
-              <p class="footer-note" id="session-summary"></p>
+              <div id="session-bars" class="meter-stack"></div>
+              <p id="session-coins" class="footer-note"></p>
             </div>
           </section>
 
@@ -697,13 +735,13 @@
         tableReminders: document.getElementById("table-reminders"),
         hpSummary: document.getElementById("hp-summary"),
         hpFill: document.getElementById("hp-fill"),
-        sessionSummary: document.getElementById("session-summary"),
+        sessionBars: document.getElementById("session-bars"),
+        sessionCoins: document.getElementById("session-coins"),
         sourceData: document.getElementById("source-data"),
         currentHp: document.getElementById("currentHp"),
         tempHp: document.getElementById("tempHp"),
-        pactSlotsUsed: document.getElementById("pactSlotsUsed"),
-        focusChargesUsed: document.getElementById("focusChargesUsed"),
         arrows: document.getElementById("arrows"),
+        slotFields: document.getElementById("slot-fields"),
         gold: document.getElementById("gold"),
         silver: document.getElementById("silver"),
         copper: document.getElementById("copper"),
@@ -759,7 +797,10 @@
       }
 
       async function scanImageFolder(sourceHandle) {
-        if (!sourceHandle || typeof sourceHandle.getDirectoryHandle !== "function") {
+        if (
+          !sourceHandle ||
+          typeof sourceHandle.getDirectoryHandle !== "function"
+        ) {
           return [];
         }
 
@@ -784,9 +825,7 @@
           }
 
           return files
-            .sort((a, b) =>
-              a.localeCompare(b, "it", { sensitivity: "base" }),
-            )
+            .sort((a, b) => a.localeCompare(b, "it", { sensitivity: "base" }))
             .map((file) => ({
               file,
               src: `images/${file}`,
@@ -841,7 +880,8 @@
 
           const byBaseName = files.find(
             (entry) =>
-              entry.name.toLowerCase().replace(/\.[^.]+$/, "") === requestedBase,
+              entry.name.toLowerCase().replace(/\.[^.]+$/, "") ===
+              requestedBase,
           );
           return byBaseName || null;
         };
@@ -857,7 +897,10 @@
           try {
             fileHandle = await currentDir.getFileHandle(requestedName);
           } catch (_) {
-            fileHandle = await findFallbackFileHandle(currentDir, requestedName);
+            fileHandle = await findFallbackFileHandle(
+              currentDir,
+              requestedName,
+            );
           }
 
           if (!fileHandle) {
@@ -936,7 +979,9 @@
           return -1;
         }
 
-        const foundIndex = images.findIndex((image) => image.src === preferredPath);
+        const foundIndex = images.findIndex(
+          (image) => image.src === preferredPath,
+        );
         return foundIndex >= 0 ? foundIndex : 0;
       }
 
@@ -1299,38 +1344,179 @@
           });
       }
 
+      function toNumber(value, fallback = 0) {
+        const parsed = Number(value);
+        return Number.isFinite(parsed) ? parsed : fallback;
+      }
+
+      function formatSlotKey(key) {
+        return String(key || "slot")
+          .replaceAll("_", " ")
+          .replaceAll("-", " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .replace(/^./, (char) => char.toUpperCase());
+      }
+
+      function ensureSessionResources() {
+        state.character.session = state.character.session || {};
+        state.character.session.resources =
+          state.character.session.resources || {};
+
+        const resources = state.character.session.resources;
+        resources.currentHp = toNumber(resources.currentHp, 0);
+        resources.maxHp = toNumber(resources.maxHp, 0);
+        resources.tempHp = toNumber(resources.tempHp, 0);
+        resources.arrows = toNumber(resources.arrows, 0);
+
+        // Backward compatibility for old single pact slot fields.
+        if (!resources.slots || typeof resources.slots !== "object") {
+          resources.slots = {};
+        }
+        if (
+          resources.slots.pact === undefined &&
+          (resources.pactSlotsTotal !== undefined ||
+            resources.pactSlotsUsed !== undefined)
+        ) {
+          resources.slots.pact = {
+            total: toNumber(resources.pactSlotsTotal, 0),
+            used: toNumber(resources.pactSlotsUsed, 0),
+          };
+        }
+        if (
+          resources.slots.focus === undefined &&
+          (resources.focusChargesTotal !== undefined ||
+            resources.focusChargesUsed !== undefined)
+        ) {
+          resources.slots.focus = {
+            total: toNumber(resources.focusChargesTotal, 0),
+            used: toNumber(resources.focusChargesUsed, 0),
+          };
+        }
+
+        Object.entries(resources.slots).forEach(([key, value]) => {
+          if (!value || typeof value !== "object") {
+            resources.slots[key] = { total: 0, used: 0 };
+            return;
+          }
+          resources.slots[key] = {
+            total: toNumber(value.total, 0),
+            used: toNumber(value.used, 0),
+          };
+        });
+
+        delete resources.pactSlotsTotal;
+        delete resources.pactSlotsUsed;
+        delete resources.focusChargesTotal;
+        delete resources.focusChargesUsed;
+      }
+
+      function renderSlotFields() {
+        const resources = state.character?.session?.resources || {};
+        const slots = resources.slots || {};
+        const slotKeys = Object.keys(slots);
+
+        if (!slotKeys.length) {
+          elements.slotFields.innerHTML =
+            '<p class="footer-note">Nessuno slot definito in session.resources.slots.</p>';
+          return;
+        }
+
+        elements.slotFields.innerHTML = slotKeys
+          .map((key) => {
+            const slot = slots[key] || { total: 0, used: 0 };
+            return `
+              <div class="slot-card">
+                <p class="slot-card-title">${escapeHtml(formatSlotKey(key))} (${escapeHtml(key)})</p>
+                <div class="slot-card-fields">
+                  <div class="field">
+                    <label for="slot-used-${escapeHtml(key)}">Usati</label>
+                    <input id="slot-used-${escapeHtml(key)}" type="number" min="0" step="1" data-slot-key="${escapeHtml(key)}" data-slot-field="used" value="${escapeHtml(slot.used)}" />
+                  </div>
+                  <div class="field">
+                    <label>Totali</label>
+                    <div class="pill">${escapeHtml(slot.total)}</div>
+                  </div>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+
+        elements.slotFields.querySelectorAll("input").forEach((input) => {
+          input.addEventListener("input", () => scheduleSave("slots"));
+        });
+      }
+
       function syncFormFromData() {
+        ensureSessionResources();
         const resources = state.character?.session?.resources || {};
         const currencies = state.character?.inventory?.currencies || {};
         elements.currentHp.value = resources.currentHp ?? 0;
         elements.tempHp.value = resources.tempHp ?? 0;
-        elements.pactSlotsUsed.value = resources.pactSlotsUsed ?? 0;
-        elements.focusChargesUsed.value = resources.focusChargesUsed ?? 0;
         elements.arrows.value = resources.arrows ?? 0;
         elements.gold.value = currencies.gold ?? 0;
         elements.silver.value = currencies.silver ?? 0;
         elements.copper.value = currencies.copper ?? 0;
         elements.inventoryNotes.value =
           state.character?.session?.inventoryNotes || "";
+        renderSlotFields();
       }
 
       function updateDataFromForm() {
+        ensureSessionResources();
         const resources = state.character.session.resources;
         const currencies = state.character.inventory.currencies;
         resources.currentHp = Number(elements.currentHp.value || 0);
         resources.tempHp = Number(elements.tempHp.value || 0);
-        resources.pactSlotsUsed = Number(elements.pactSlotsUsed.value || 0);
-        resources.focusChargesUsed = Number(
-          elements.focusChargesUsed.value || 0,
-        );
         resources.arrows = Number(elements.arrows.value || 0);
+
+        const currentSlots = resources.slots || {};
+        const nextSlots = {};
+        Object.keys(currentSlots).forEach((key) => {
+          nextSlots[key] = {
+            total: toNumber(currentSlots[key]?.total, 0),
+            used: toNumber(currentSlots[key]?.used, 0),
+          };
+        });
+
+        elements.slotFields
+          .querySelectorAll('[data-slot-key][data-slot-field="used"]')
+          .forEach((input) => {
+            const key = input.dataset.slotKey;
+            if (!key) {
+              return;
+            }
+            nextSlots[key] = nextSlots[key] || { total: 0, used: 0 };
+            nextSlots[key].used = Number(input.value || 0);
+          });
+        resources.slots = nextSlots;
+
         currencies.gold = Number(elements.gold.value || 0);
         currencies.silver = Number(elements.silver.value || 0);
         currencies.copper = Number(elements.copper.value || 0);
         state.character.session.inventoryNotes = elements.inventoryNotes.value;
       }
 
+      function buildResourceBar(label, current, total) {
+        const safeTotal = Math.max(0, toNumber(total, 0));
+        const safeCurrent = Math.max(0, toNumber(current, 0));
+        const clampedCurrent =
+          safeTotal > 0 ? Math.min(safeCurrent, safeTotal) : safeCurrent;
+        const percent = safeTotal > 0 ? (clampedCurrent / safeTotal) * 100 : 0;
+
+        return `
+          <div class="resource-meter">
+            <strong>${escapeHtml(label)}</strong>
+            <div class="meter-bar" aria-hidden="true">
+              <div class="meter-fill" style="width: ${Math.max(0, Math.min(100, percent))}%"></div>
+            </div>
+          </div>
+        `;
+      }
+
       function renderSessionSummary() {
+        ensureSessionResources();
         const resources = state.character?.session?.resources || {};
         const currencies = state.character?.inventory?.currencies || {};
         const hpPercent = Math.max(
@@ -1341,18 +1527,38 @@
               100,
           ),
         );
-        const pactRemaining = Math.max(
-          0,
-          (resources.pactSlotsTotal || 0) - (resources.pactSlotsUsed || 0),
-        );
-        const focusRemaining = Math.max(
-          0,
-          (resources.focusChargesTotal || 0) -
-            (resources.focusChargesUsed || 0),
-        );
         elements.hpSummary.textContent = `PF ${resources.currentHp || 0} / ${resources.maxHp || 0} | PF temporanei ${resources.tempHp || 0}`;
         elements.hpFill.style.width = `${hpPercent}%`;
-        elements.sessionSummary.textContent = `Slot Patto rimasti: ${pactRemaining}/${resources.pactSlotsTotal || 0}. Ricariche focus rimaste: ${focusRemaining}/${resources.focusChargesTotal || 0}. Frecce rimaste: ${resources.arrows || 0}. Monete: ${currencies.gold || 0} mo, ${currencies.silver || 0} ma, ${currencies.copper || 0} mr.`;
+
+        const slotBars = Object.entries(resources.slots || {}).map(
+          ([key, slot]) => {
+            const total = toNumber(slot?.total, 0);
+            const used = toNumber(slot?.used, 0);
+            const remaining = Math.max(0, total - used);
+            return buildResourceBar(
+              `Slot ${formatSlotKey(key)} rimasti: ${remaining}/${total}`,
+              remaining,
+              total,
+            );
+          },
+        );
+
+        const arrowsTotal = toNumber(
+          resources.arrowsTotal,
+          toNumber(resources.arrows, 0),
+        );
+        const arrowsCurrent = toNumber(resources.arrows, 0);
+
+        elements.sessionBars.innerHTML = [
+          ...slotBars,
+          buildResourceBar(
+            `Frecce rimaste: ${arrowsCurrent}/${arrowsTotal}`,
+            arrowsCurrent,
+            arrowsTotal,
+          ),
+        ].join("");
+
+        elements.sessionCoins.textContent = `Monete: ${currencies.gold || 0} mo, ${currencies.silver || 0} ma, ${currencies.copper || 0} mr.`;
       }
 
       async function saveToHandle() {
@@ -1438,7 +1644,9 @@
             fileHandle = await handle.getFileHandle("character.json");
           } catch (error) {
             if (error?.name === "NotFoundError") {
-              throw new Error("La cartella scelta non contiene character.json.");
+              throw new Error(
+                "La cartella scelta non contiene character.json.",
+              );
             }
             throw error;
           }
@@ -1484,7 +1692,9 @@
             (await fileHandle.requestPermission({ mode: "readwrite" })) ===
               "granted"
           ) {
-            const parsed = JSON.parse(await (await fileHandle.getFile()).text());
+            const parsed = JSON.parse(
+              await (await fileHandle.getFile()).text(),
+            );
             await loadCharacterData(parsed, {
               fileHandle,
               sourceHandle: handle,
@@ -1552,8 +1762,6 @@
         [
           elements.currentHp,
           elements.tempHp,
-          elements.pactSlotsUsed,
-          elements.focusChargesUsed,
           elements.arrows,
           elements.gold,
           elements.silver,
