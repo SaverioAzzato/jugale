@@ -1,0 +1,178 @@
+{
+  "schemaVersion": "2.0.0",
+  "meta": {
+    "name": "Esempio Warlock",
+    "player": "Da compilare",
+    "summary": "Tiefling Warlock — Patto del Tomo. Template v2 di esempio.",
+    "portrait": { "src": "images/01-portrait.svg", "alt": "Ritratto di esempio" },
+    "ruleset": ["PHB", "Tasha", "Xanathar"],
+    "tags": ["warlock", "example"]
+  },
+  "identity": {
+    "race": "Tiefling",
+    "lineage": "Asmodeus",
+    "background": "Sage",
+    "alignment": "CN",
+    "size": "Medium",
+    "age": "24"
+  },
+  "classes": [
+    {
+      "name": "Warlock",
+      "subclass": "The Fiend",
+      "level": 5,
+      "hitDie": "d8",
+      "link": "https://www.dndbeyond.com/classes/warlock",
+      "spellcasting": { "ability": "cha", "type": "known", "prepares": false, "slotProgression": "warlock" }
+    }
+  ],
+  "abilities": {
+    "str": { "score": 8 },
+    "dex": { "score": 14, "saveProficient": false },
+    "con": { "score": 14 },
+    "int": { "score": 12 },
+    "wis": { "score": 10, "saveProficient": true },
+    "cha": { "score": 17, "saveProficient": true }
+  },
+  "proficiencies": {
+    "skills": [
+      { "id": "arcana", "proficient": true },
+      { "id": "deception", "proficient": true },
+      { "id": "investigation", "proficient": true }
+    ],
+    "languages": ["Comune", "Infernale", "Abissale"],
+    "armor": ["Leggera"],
+    "weapons": ["Semplici"]
+  },
+  "combat": {
+    "armorClass": 13,
+    "speed": { "walk": 30 },
+    "hp": { "max": 38, "current": 38, "temp": 0, "hitDiceRemaining": 5 },
+    "attacks": [
+      {
+        "name": "Eldritch Blast",
+        "link": "https://www.dndbeyond.com/spells/eldritch-blast",
+        "level": "Trucchetto",
+        "range": "120 ft",
+        "attack": "Attacco a distanza con incantesimo",
+        "defense": "—",
+        "effect": "2 raggi · 1d10 forza ciascuno",
+        "notes": "Agonizing Blast: +CAR ai danni di ogni raggio"
+      }
+    ]
+  },
+  "resources": [
+    {
+      "id": "pact-slots",
+      "label": "Slot del Patto",
+      "category": "spellSlot",
+      "max": 2,
+      "current": 2,
+      "level": 3,
+      "resetOn": "shortRest",
+      "link": "https://www.dndbeyond.com/sources/basic-rules/warlock#PactMagic"
+    }
+  ],
+  "spellcasting": { "summary": "Incantatore basato su Carisma; CD e bonus d'attacco derivati dal livello." },
+  "spellSections": [
+    {
+      "id": "trucchetti",
+      "title": "Trucchetti",
+      "entries": [
+        {
+          "name": "Eldritch Blast",
+          "link": "https://www.dndbeyond.com/spells/eldritch-blast",
+          "level": "0",
+          "school": "Invocazione",
+          "castingTime": "1 azione",
+          "range": "120 ft",
+          "components": "V, S",
+          "duration": "Istantaneo",
+          "concentration": false,
+          "attack": "Attacco a distanza con incantesimo",
+          "defense": "—",
+          "effect": "1d10 danni da forza per raggio",
+          "description": "Scaglia un raggio di energia crepitante. Ai livelli 5/11/17 aggiunge raggi.",
+          "notes": "Con Agonizing Blast aggiungi il mod. CAR ai danni di ogni raggio."
+        }
+      ]
+    },
+    {
+      "id": "livello-1-3",
+      "title": "Incantesimi (slot del patto, liv. 3)",
+      "entries": [
+        {
+          "name": "Hex",
+          "link": "https://www.dndbeyond.com/spells/hex",
+          "level": "1",
+          "school": "Ammaliamento",
+          "castingTime": "1 bonus",
+          "range": "90 ft",
+          "components": "V, S, M",
+          "duration": "Concentrazione, 1 ora",
+          "concentration": true,
+          "attack": "—",
+          "defense": "—",
+          "effect": "+1d6 necrotici sugli attacchi al bersaglio; svantaggio a una caratteristica",
+          "notes": ""
+        }
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "pact-of-the-tome",
+      "name": "Patto del Tomo",
+      "source": "subclass",
+      "level": 3,
+      "link": "https://www.dndbeyond.com/sources/basic-rules/warlock#PactoftheTome",
+      "description": "Ottieni il Libro delle Ombre con tre trucchetti extra a tua scelta."
+    },
+    {
+      "id": "dark-ones-blessing",
+      "name": "Benedizione dell'Oscuro",
+      "source": "subclass",
+      "level": 1,
+      "description": "Quando riduci a 0 PF una creatura ostile, ottieni PF temporanei pari a CAR + livello da warlock."
+    }
+  ],
+  "inventory": {
+    "items": [
+      { "id": "potion-healing", "name": "Pozione di guarigione", "link": "https://www.dndbeyond.com/magic-items/potion-of-healing", "quantity": 3, "category": "consumable", "notes": "2d4+2 PF" },
+      { "id": "book-of-shadows", "name": "Libro delle Ombre", "quantity": 1, "equipped": true }
+    ],
+    "currencies": { "pp": 0, "gp": 120, "ep": 0, "sp": 5, "cp": 0 },
+    "notes": ["Focus arcano: il Libro delle Ombre."]
+  },
+  "origin": {
+    "raceTraits": [
+      { "name": "Resistenza Infernale", "description": "Resistenza ai danni da fuoco." },
+      { "name": "Eredità Infernale", "description": "Conosci il trucchetto Thaumaturgy." }
+    ],
+    "backgroundFeature": { "name": "Ricercatore", "description": "Sai dove e da chi ottenere informazioni." },
+    "languages": ["Comune", "Infernale", "Abissale"]
+  },
+  "narrative": {
+    "personality": ["Curioso fino all'incoscienza."],
+    "ideals": ["La conoscenza è potere."],
+    "bonds": ["Devo tutto al mio patrono."],
+    "flaws": ["Non resisto a un segreto."],
+    "appearance": ["Corna ricurve, occhi ambrati."],
+    "backstory": ["Ha stretto un patto in cambio di sapere proibito."],
+    "notes": []
+  },
+  "customSections": [
+    {
+      "id": "invocazioni",
+      "title": "Invocazioni Occulte",
+      "layout": "list",
+      "items": ["Agonizing Blast", "Devil's Sight", "Book of Ancient Secrets"]
+    }
+  ],
+  "session": {
+    "conditions": [],
+    "inspiration": false,
+    "deathSaves": { "successes": 0, "failures": 0 },
+    "notes": ""
+  }
+}

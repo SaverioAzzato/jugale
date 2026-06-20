@@ -1,3 +1,18 @@
-.tmp/
-pg/
+# dependencies
 node_modules/
+
+# build output
+dist/
+dist-ssr/
+
+# local character folders (keep your real PGs out of git)
+pg/
+characters/local/
+
+# tauri (added in M4)
+src-tauri/target/
+
+# misc
+.tmp/
+.DS_Store
+*.local

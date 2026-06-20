@@ -1,49 +1,29 @@
 {
   "name": "dnd-manager",
-  "version": "1.0.0",
-  "description": "D&D Character Sheet Platform",
-  "main": "electron-main.js",
+  "version": "2.0.0-dev",
+  "private": true,
+  "type": "module",
+  "description": "D&D, but Digital — JSON-source-of-truth character sheet platform (web + desktop + mobile).",
   "scripts": {
-    "start": "electron .",
-    "dev": "electron .",
-    "build": "electron-builder"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.23.5"
   },
   "devDependencies": {
-    "electron": "^42.4.0",
-    "electron-builder": "^26.15.3"
-  },
-  "build": {
-    "appId": "com.dndmanager.app",
-    "productName": "D&D Manager",
-    "files": [
-      "index.html",
-      "styles/**/*",
-      "js/**/*",
-      "pg.example/**/*",
-      "electron-main.js",
-      "preload.js"
-    ],
-    "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "category": "public.app-category.utilities"
-    },
-    "dmg": {
-      "contents": [
-        {
-          "x": 130,
-          "y": 220,
-          "type": "file"
-        },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ]
-    }
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.2",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.8",
+    "vitest": "^2.1.2"
   }
 }
