@@ -5,6 +5,7 @@
 import { state, elements } from "./state.js";
 import {
   connectJson,
+  openRecentCharacter,
   reconnectJson,
   exportCopy,
   scheduleSave,
@@ -28,6 +29,26 @@ export function bindEvents() {
       console.error(error);
     }
   });
+
+  if (elements.setupRecentList) {
+    elements.setupRecentList.addEventListener("click", async (event) => {
+      const button = event.target.closest("[data-recent-index]");
+      if (!button) {
+        return;
+      }
+
+      const index = Number(button.dataset.recentIndex);
+      if (Number.isNaN(index)) {
+        return;
+      }
+
+      try {
+        await openRecentCharacter(index);
+      } catch (error) {
+        console.error(error);
+      }
+    });
+  }
 
   document
     .getElementById("reconnect-btn")

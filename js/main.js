@@ -8,6 +8,7 @@ import { renderCharacter, renderSessionSummaryContent } from "./render.js";
 import { initPortrait } from "./portrait.js";
 import {
   initCharacterData,
+  openCharacterPayload,
   tryAutoLoad,
   scheduleSave,
 } from "./character-data.js";
@@ -35,6 +36,16 @@ initTheme(elements.themeToggleBtn);
 
 // Initialize UI
 expandTocInline();
+
+if (window.electronAPI?.onCharacterOpenFromMenu) {
+  window.electronAPI.onCharacterOpenFromMenu(async (payload) => {
+    try {
+      await openCharacterPayload(payload);
+    } catch (error) {
+      console.error(error);
+    }
+  });
+}
 
 // Try to auto-load previously opened character
 renderCharacter();

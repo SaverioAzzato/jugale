@@ -3,6 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    />
     <title>Character Sheet Platform</title>
     <link rel="stylesheet" href="styles/main.css" />
   </head>
@@ -45,6 +49,11 @@
         <button class="setup-btn" id="connect-btn" type="button">
           Apri cartella personaggio
         </button>
+        <section class="setup-recent" id="setup-recent" hidden>
+          <h2>Apri Recenti</h2>
+          <p id="setup-recent-empty" hidden>Nessun personaggio recente.</p>
+          <ul id="setup-recent-list"></ul>
+        </section>
       </section>
 
       <header class="hero" id="hero">

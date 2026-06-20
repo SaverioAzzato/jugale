@@ -6,7 +6,6 @@ import { state, elements } from "./state.js";
 import {
   loadHandle,
   saveHandle,
-  requestReadWritePermission,
 } from "./storage.js";
 import {
   prepareImageManifest,
@@ -24,15 +23,142 @@ export function initCharacterData(setSyncStatusFn, renderSessionSummaryFn) {
   renderSessionSummary = renderSessionSummaryFn;
 }
 
+function formatRecentDate(value) {
+  if (!value) {
+    return "Usato di recente";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Usato di recente";
+  }
+
+  return `Ultimo uso: ${date.toLocaleString("it-IT", {
+    dateStyle: "short",
+    timeStyle: "short",
+  })}`;
+}
+
+function renderRecentDirectories() {
+  if (!elements.setupRecent || !elements.setupRecentList || !elements.setupRecentEmpty) {
+    return;
+  }
+
+  const hasRecent = state.recentDirectories.length > 0;
+  elements.setupRecent.hidden = !hasRecent;
+  elements.setupRecentEmpty.hidden = hasRecent;
+  elements.setupRecentList.innerHTML = "";
+
+  state.recentDirectories.forEach((item, index) => {
+    const li = document.createElement("li");
+    const button = document.createElement("button");
+    const label = document.createElement("span");
+    const date = document.createElement("small");
+
+    button.type = "button";
+    button.className = "setup-recent-btn";
+    button.dataset.recentIndex = String(index);
+    button.title = `Apri ${item.name}`;
+
+    label.className = "setup-recent-name";
+    label.textContent = item.name || item.path;
+
+    date.className = "setup-recent-date";
+    date.textContent = formatRecentDate(item.lastUsedAt);
+
+    button.append(label, date);
+    li.appendChild(button);
+    elements.setupRecentList.appendChild(li);
+  });
+}
+
+export async function refreshRecentDirectories() {
+  try {
+    const items = await window.electronAPI.getRecentDirectories();
+    state.recentDirectories = Array.isArray(items) ? items : [];
+  } catch {
+    state.recentDirectories = [];
+  }
+  renderRecentDirectories();
+}
+
+function isContextPermissionError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return (
+    error?.name === "NotAllowedError" ||
+    error?.name === "SecurityError" ||
+    message.includes("not allowed by the user agent") ||
+    message.includes("current context")
+  );
+}
+
+function isPickerAbort(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return error?.name === "AbortError" || message.includes("user aborted");
+}
+
+function buildWritePermissionError(error) {
+  const name = error?.name || "Error";
+  const detail = error?.message || "Motivo non disponibile.";
+  const lower = `${name} ${detail}`.toLowerCase();
+
+  if (lower.includes("notallowed") || lower.includes("user agent")) {
+    return (
+      "Scrittura bloccata dal contesto Chromium/Electron. " +
+      "Riprova da click utente diretto e evita cartelle sensibili. " +
+      `Dettaglio: ${name}: ${detail}`
+    );
+  }
+
+  if (lower.includes("eperm") || lower.includes("eacces") || lower.includes("operation not permitted")) {
+    return (
+      "Scrittura negata dal sistema operativo (permessi filesystem). " +
+      "Su macOS verifica privacy/permessi per Terminal o Electron e usa una cartella non protetta. " +
+      `Dettaglio: ${name}: ${detail}`
+    );
+  }
+
+  return (
+    "Permesso scrittura obbligatorio: consenti l'accesso in scrittura per aprire il personaggio. " +
+    `Dettaglio: ${name}: ${detail}`
+  );
+}
+
+async function loadCharacterFromDirectoryPath(directoryPath) {
+  try {
+    const payload = await window.electronAPI.loadCharacterFromDirectory(
+      directoryPath,
+    );
+    await openCharacterPayload(payload);
+  } catch (error) {
+    throw new Error(buildWritePermissionError(error));
+  }
+}
+
+export async function openCharacterPayload(payload) {
+  if (!payload?.directoryPath || !payload?.character) {
+    throw new Error("Payload personaggio non valido.");
+  }
+
+  await loadCharacterData(payload.character, {
+    fileHandle: payload.directoryPath,
+    sourceHandle: payload.directoryPath,
+    liveSync: true,
+    imageManifest: payload.images,
+  });
+  await refreshRecentDirectories();
+}
+
 export async function saveToHandle() {
   if (!state.fileHandle || !state.character) {
     throw new Error("Nessun file handle live disponibile.");
   }
 
   state.character.session.lastSavedAt = new Date().toISOString();
-  const writable = await state.fileHandle.createWritable();
-  await writable.write(JSON.stringify(state.character, null, 2));
-  await writable.close();
+  await window.electronAPI.saveCharacterToDirectory(
+    state.sourceHandle,
+    state.character,
+  );
   state.dirty = false;
   elements.sourceData.textContent = JSON.stringify(state.character, null, 2);
   setSyncStatus(
@@ -53,7 +179,7 @@ export function scheduleSave(reason) {
 
   if (!state.liveSync || !state.fileHandle) {
     setSyncStatus(
-      `JSON caricato senza sync live · modifica locale: ${reason}`,
+      `Nessun file collegato in scrittura · modifica locale: ${reason}`,
       "warn",
     );
     return;
@@ -73,7 +199,7 @@ export async function loadCharacterData(data, options = {}) {
   state.fileHandle = options.fileHandle || null;
   state.sourceHandle = options.sourceHandle || options.fileHandle || null;
   state.liveSync = Boolean(options.liveSync && options.fileHandle);
-  await prepareImageManifest(data);
+  await prepareImageManifest(data, options.imageManifest || []);
   state.activeImagePath =
     data.meta?.portrait?.src || state.imageManifest[0]?.src || null;
   if (state.sourceHandle) {
@@ -83,57 +209,51 @@ export async function loadCharacterData(data, options = {}) {
   if (state.liveSync) {
     setSyncStatus("Sync live attivo", "ok");
   } else {
-    setSyncStatus("In sola lettura", "warn");
+    setSyncStatus("Nessun sync attivo", "warn");
   }
 }
 
 export async function connectJson() {
   try {
-    const handle = await window.showDirectoryPicker({
-      mode: "readwrite",
-    });
-    console.log("Directory picked.");
-    await requestReadWritePermission(handle);
-    let fileHandle;
-    try {
-      fileHandle = await handle.getFileHandle("character.json");
-    } catch (error) {
-      if (error?.name === "NotFoundError") {
-        throw new Error("La cartella scelta non contiene character.json.");
-      }
-      throw error;
+    const payload = await window.electronAPI.pickCharacterDirectory();
+    if (payload?.canceled) {
+      return false;
     }
-    await requestReadWritePermission(fileHandle);
-    const file = await fileHandle.getFile();
-    const text = await file.text();
-    const parsed = JSON.parse(text);
-    console.log("Character JSON parsed.");
-    await loadCharacterData(parsed, {
-      fileHandle,
-      sourceHandle: handle,
-      liveSync: true,
-    });
+
+    await openCharacterPayload(payload);
   } catch (error) {
+    if (isPickerAbort(error)) {
+      return false;
+    }
     setSyncStatus(`Errore di connessione: ${error.message}`, "warn");
+    throw error;
+  }
+
+  return true;
+}
+
+export async function openRecentCharacter(index) {
+  const item = state.recentDirectories[index];
+  if (!item?.path) {
+    return;
+  }
+
+  try {
+    await loadCharacterFromDirectoryPath(item.path);
+  } catch (error) {
+    setSyncStatus(`Errore apertura recente: ${error.message}`, "warn");
     throw error;
   }
 }
 
 export async function tryAutoLoad() {
   try {
-    const savedHandle = await loadHandle();
-    if (savedHandle) {
+    await refreshRecentDirectories();
+    const savedDirectoryPath = await loadHandle();
+    if (savedDirectoryPath) {
       console.log("Attempting to restore saved handle...");
-      const fileHandle = await savedHandle.getFileHandle("character.json");
-      const file = await fileHandle.getFile();
-      const text = await file.text();
-      const parsed = JSON.parse(text);
       console.log("Auto-loaded character data.");
-      await loadCharacterData(parsed, {
-        fileHandle,
-        sourceHandle: savedHandle,
-        liveSync: true,
-      });
+      await loadCharacterFromDirectoryPath(savedDirectoryPath);
     }
   } catch (error) {
     console.warn("Could not auto-load:", error.message);

@@ -188,16 +188,8 @@ body {
   line-height: 1.5;
   color: var(--ink);
   background:
-    radial-gradient(
-      circle at top left,
-      var(--bg-grad-1),
-      transparent 24%
-    ),
-    radial-gradient(
-      circle at top right,
-      var(--bg-grad-2),
-      transparent 22%
-    ),
+    radial-gradient(circle at top left, var(--bg-grad-1), transparent 24%),
+    radial-gradient(circle at top right, var(--bg-grad-2), transparent 22%),
     linear-gradient(
       180deg,
       var(--bg-grad-3-start) 0%,
@@ -283,6 +275,60 @@ button:focus-visible,
 .setup-btn {
   font-size: 1.1rem;
   padding: 14px 28px;
+}
+
+.setup-recent {
+  width: min(560px, 92vw);
+  margin-top: 6px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-strong);
+  text-align: left;
+}
+
+.setup-recent h2 {
+  margin: 0 0 10px;
+  font-size: 1.1rem;
+}
+
+.setup-recent p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.setup-recent ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.setup-recent-btn {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-soft);
+  color: var(--ink);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+}
+
+.setup-recent-btn:hover {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-soft));
+}
+
+.setup-recent-name {
+  font-weight: 700;
+}
+
+.setup-recent-date {
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 /* ── Floating sync pill ── */

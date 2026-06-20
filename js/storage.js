@@ -2,37 +2,75 @@
  * IndexedDB and file system persistence
  */
 
-import { state } from "./state.js";
+const DB_NAME = "character-platform";
+const DB_VERSION = 2;
+const STORE_HANDLES = "handles";
+const CURRENT_HANDLE_KEY = "character-json";
 
-export function openDb() {
+function openDbOnce() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open("character-platform", 1);
-    req.onupgradeneeded = () => req.result.createObjectStore("handles");
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      if (!req.result.objectStoreNames.contains(STORE_HANDLES)) {
+        req.result.createObjectStore(STORE_HANDLES);
+      }
+    };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
 }
 
-export async function saveHandle(handle) {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction("handles", "readwrite");
-    tx.objectStore("handles").put(handle, "character-json");
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
+function deleteDb() {
+  return new Promise((resolve) => {
+    const req = indexedDB.deleteDatabase(DB_NAME);
+    req.onsuccess = () => resolve();
+    req.onerror = () => resolve();
+    req.onblocked = () => resolve();
   });
 }
 
+export async function openDb() {
+  try {
+    return await openDbOnce();
+  } catch (error) {
+    console.warn("IndexedDB open failed, resetting database.", error);
+    await deleteDb();
+    return openDbOnce();
+  }
+}
+
+export async function saveHandle(handle) {
+  try {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_HANDLES, "readwrite");
+      tx.objectStore(STORE_HANDLES).put(handle, CURRENT_HANDLE_KEY);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch (error) {
+    console.warn("Could not persist current handle.", error);
+  }
+}
+
 export async function loadHandle() {
-  const db = await openDb();
-  return new Promise((resolve) => {
-    const req = db
-      .transaction("handles")
-      .objectStore("handles")
-      .get("character-json");
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => resolve(null);
-  });
+  try {
+    const db = await openDb();
+    return new Promise((resolve) => {
+      const req = db
+        .transaction(STORE_HANDLES)
+        .objectStore(STORE_HANDLES)
+        .get(CURRENT_HANDLE_KEY);
+      req.onsuccess = () => {
+        const value = req.result;
+        resolve(typeof value === "string" ? value : null);
+      };
+      req.onerror = () => resolve(null);
+    });
+  } catch (error) {
+    console.warn("Could not load current handle.", error);
+    return null;
+  }
 }
 
 export async function resolveCharacterFileHandle(handle) {
@@ -52,10 +90,25 @@ export async function resolveCharacterFileHandle(handle) {
 }
 
 export async function requestReadWritePermission(handle) {
-  const permission = await handle.requestPermission({
-    mode: "readwrite",
-  });
-  if (permission !== "granted") throw new Error("Permesso negato.");
+  if (!handle || typeof handle.requestPermission !== "function") {
+    throw new Error("Handle non valido.");
+  }
+
+  const current =
+    typeof handle.queryPermission === "function"
+      ? await handle.queryPermission({ mode: "readwrite" })
+      : "prompt";
+
+  if (current === "granted") {
+    return;
+  }
+
+  const requested = await handle.requestPermission({ mode: "readwrite" });
+  if (requested !== "granted") {
+    const error = new Error("Permesso in scrittura negato.");
+    error.code = "PERMISSION_DENIED";
+    throw error;
+  }
 }
 
 export async function loadCharacterFromFile(fileHandle) {
