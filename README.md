@@ -43,7 +43,7 @@ The platform will ship four copy-ready prompts (base / create / level-up / valid
 
 ## Content & licensing
 
-By default, characters ship with `meta.ruleset: ["SRD"]` — the freely-licensed D&D 5e System Reference Document. Nothing in the schema, the prompts, or the `.github/agents/` seed material hardcodes a commercial sourcebook. You're free to point your own character (or chatbot session) at other guides — Xanathar's Guide to Everything, Tasha's Cauldron of Everything, third-party homebrew, etc. — *as an example* — but that's your own choice and your own responsibility to make sure you hold the rights/license to use that material. Neither this project nor its maintainers are responsible for misuse of copyrighted content by users.
+By default, characters ship with `meta.ruleset: ["SRD"]` — the freely-licensed D&D 5e System Reference Document. Nothing in the schema, the prompts, or the `.github/agents/` seed material hardcodes a commercial sourcebook. You're free to point your own character (or chatbot session) at other guides — Xanathar's Guide to Everything, Tasha's Cauldron of Everything, third-party homebrew, etc. — *as an example* — but that's your own choice. **It's your responsibility to hold the rights/license to that material, to respect its license terms and any usage policy, and to use it responsibly and legally.** Neither this project nor its maintainers are responsible for misuse of copyrighted content by users.
 
 ## Distribution
 

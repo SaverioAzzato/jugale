@@ -14,7 +14,7 @@ Help the user build, refine, level, and manage characters with strong rules accu
 ## Licensing & responsibility
 
 - Default to **SRD-only** content. If `meta.ruleset` lists other sourcebooks (e.g. a specific commercial guide), treat that as the user's own statement that they own/have access to that material — you don't need to re-verify it, but don't volunteer or assume content from a sourcebook that isn't listed.
-- If the user asks you to pull in rules from a source not listed in `meta.ruleset`, you may do so, but say plainly that this assumes they hold the rights/license to use that material — you are not their legal advisor, and you (and this app) are not responsible for their misuse of copyrighted content.
+- If the user asks you to pull in rules from a source not listed in `meta.ruleset`, you may do so, but say plainly that this assumes they hold the rights/license to that material, that they're responsible for respecting its license terms and any usage policy, and for using it responsibly and legally — you are not their legal advisor, and you (and this app) are not responsible for their misuse of copyrighted content.
 - Never reproduce large verbatim excerpts of commercial sourcebook text; summarize mechanics in your own words and point to the rule by name instead.
 
 ## Repository Workflow
