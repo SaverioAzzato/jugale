@@ -28,7 +28,7 @@ a {
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   padding: 10px 20px;
   background: var(--surface);
   backdrop-filter: blur(8px);
@@ -39,11 +39,25 @@ a {
   letter-spacing: 0.5px;
   font-family: var(--font-display);
 }
-.samples {
+.toolbar-file {
   display: flex;
-  gap: 8px;
-  flex: 1;
-  flex-wrap: wrap;
+  gap: 6px;
+  padding-left: 16px;
+  border-left: 1px solid var(--border);
+}
+.toolbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.toolbar-name {
+  font-weight: 600;
+  color: var(--muted);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .sample {
   background: transparent;
@@ -144,11 +158,24 @@ a {
   font-size: 22px;
 }
 
-.sheet-grid {
+/* Two independent columns — each stacks on its own, so there are no shared
+   grid rows and therefore no vertical gaps. Left = play/action, right = reference. */
+.sheet-columns {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
   align-items: start;
+}
+.sheet-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+@media (max-width: 880px) {
+  .sheet-columns {
+    grid-template-columns: 1fr;
+  }
 }
 
 .panel {
@@ -362,6 +389,54 @@ a {
 .btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+/* ---- empty / welcome state ---- */
+.empty-state {
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.empty-card {
+  max-width: 520px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 32px 28px;
+}
+.empty-card h1 {
+  font-family: var(--font-display);
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+.empty-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0 8px;
+}
+.empty-samples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
 }
 .btn-danger:hover {
   border-color: var(--error);

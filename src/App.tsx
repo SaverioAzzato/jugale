@@ -37,10 +37,6 @@ export function App() {
   const exportCharacter = useCharacter((s) => s.exportCharacter);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!useCharacter.getState().character) loadRaw(SAMPLES[0].data, SAMPLES[0].label);
-  }, [loadRaw]);
-
   // Warn before leaving with unsaved in-memory edits (live-synced files save themselves).
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -74,7 +70,7 @@ export function App() {
       <nav className="toolbar">
         <span className="brand">D&amp;D Manager</span>
 
-        <div className="toolbar-actions">
+        <div className="toolbar-file">
           {isFileAccessSupported() && (
             <button className="btn" onClick={handleOpen} title="Apri un character.json con sincronizzazione dal vivo">
               Apri file
@@ -89,43 +85,67 @@ export function App() {
           <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={handleImportFile} />
         </div>
 
-        <div className="samples">
-          {SAMPLES.map((s) => (
-            <button
-              key={s.key}
-              className={sourceName === s.label ? "sample is-active" : "sample"}
-              onClick={() => loadRaw(s.data, s.label)}
-            >
-              {s.label}
-            </button>
-          ))}
+        <div className="toolbar-right">
+          {character && <span className="toolbar-name">{sourceName || character.meta.name}</span>}
+          {character && <SyncStatus liveSync={liveSync} dirty={dirty} saveError={saveError} />}
+          {character && <ValidationBadge issues={issues} migrated={migrated} ok={ok} />}
+          <ThemeSwitcher />
         </div>
-
-        <ThemeSwitcher />
-        <SyncStatus liveSync={liveSync} dirty={dirty} saveError={saveError} sourceName={sourceName} />
-        <ValidationBadge issues={issues} migrated={migrated} ok={ok} />
       </nav>
 
-      {character && <Sheet c={character} />}
+      {character ? (
+        <Sheet c={character} />
+      ) : (
+        <EmptyState onOpen={handleOpen} onImport={() => fileInput.current?.click()} onSample={(d, l) => loadRaw(d, l)} />
+      )}
     </div>
   );
 }
 
-function SyncStatus({
-  liveSync,
-  dirty,
-  saveError,
-  sourceName,
+function EmptyState({
+  onOpen,
+  onImport,
+  onSample,
 }: {
-  liveSync: boolean;
-  dirty: boolean;
-  saveError: string | null;
-  sourceName: string;
+  onOpen: () => void;
+  onImport: () => void;
+  onSample: (data: unknown, label: string) => void;
 }) {
+  return (
+    <div className="empty-state">
+      <div className="empty-card">
+        <h1>Il tuo personaggio, sempre tuo.</h1>
+        <p className="muted">
+          Apri il tuo <code>character.json</code> per giocarci con salvataggio dal vivo, oppure importane una copia.
+        </p>
+        <div className="empty-actions">
+          {isFileAccessSupported() && (
+            <button className="btn btn-primary" onClick={onOpen}>
+              Apri file
+            </button>
+          )}
+          <button className="btn" onClick={onImport}>
+            Importa JSON
+          </button>
+        </div>
+        <div className="empty-samples">
+          <span className="muted">oppure prova un esempio:</span>
+          {SAMPLES.map((s) => (
+            <button key={s.key} className="sample" onClick={() => onSample(s.data, s.label)}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SyncStatus({ liveSync, dirty, saveError }: { liveSync: boolean; dirty: boolean; saveError: string | null }) {
   if (saveError) return <span className="sync is-error" title={saveError}>⚠ errore salvataggio</span>;
   if (liveSync) return <span className="sync is-live">● file in sync{dirty ? "…" : ""}</span>;
   if (dirty) return <span className="sync is-dirty" title="Esporta per non perdere le modifiche">● non salvato</span>;
-  return <span className="sync is-mem">{sourceName ? "in memoria" : ""}</span>;
+  return <span className="sync is-mem">in memoria</span>;
 }
 
 function ValidationBadge({ issues, migrated, ok }: { issues: Issue[]; migrated: boolean; ok: boolean }) {
