@@ -41,6 +41,10 @@ Rule of thumb: almost everything is **structural** (changes only on level-up/edi
 
 The platform will ship four copy-ready prompts (base / create / level-up / validate) — in the README, [docs](docs/), and an in-app section — plus a published JSON Schema so any external chatbot knows exactly how to write the file.
 
+## Content & licensing
+
+By default, characters ship with `meta.ruleset: ["SRD"]` — the freely-licensed D&D 5e System Reference Document. Nothing in the schema, the prompts, or the `.github/agents/` seed material hardcodes a commercial sourcebook. You're free to point your own character (or chatbot session) at other guides — Xanathar's Guide to Everything, Tasha's Cauldron of Everything, third-party homebrew, etc. — *as an example* — but that's your own choice. **It's your responsibility to hold the rights/license to that material, to respect its license terms and any usage policy, and to use it responsibly and legally.** Neither this project nor its maintainers are responsible for misuse of copyrighted content by users.
+
 ## Distribution
 
 Free and open: the **web app is the GitHub Pages site**; desktop and mobile binaries are attached to **GitHub Releases** (no app stores, no hosting bills). Built and shipped by GitHub Actions.

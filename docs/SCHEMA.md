@@ -56,7 +56,8 @@ Only `schemaVersion` and `meta.name` are strictly required; every section has a 
   "player": "Saverio",
   "summary": "Tiefling Warlock, Patto del Tomo.",
   "portrait": { "src": "images/01-portrait.png", "alt": "..." },
-  "ruleset": ["PHB", "Tasha", "Xanathar"],   // default; user-overridable, drives the prompts
+  "ruleset": ["SRD"],   // default is the freely-licensed SRD only; user-overridable, drives the prompts —
+                         // adding other sourcebooks here is the user's own choice and licensing responsibility
   "tags": ["warlock", "draconide"]
 }
 ```

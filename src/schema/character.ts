@@ -48,7 +48,8 @@ const Meta = z
     player: z.string().default(""),
     summary: z.string().default(""),
     portrait: Portrait,
-    ruleset: z.array(z.string()).default(["PHB", "Tasha", "Xanathar"]),
+    // Default is the freely-licensed SRD only; adding other sourcebooks is the user's own call (and licensing responsibility).
+    ruleset: z.array(z.string()).default(["SRD"]),
     tags: strings,
   })
   .passthrough();
