@@ -1,91 +1,61 @@
-import { useMemo } from "react";
-import { loadCharacter, proficiencyBonus, totalLevel, abilityModifierFor } from "./schema";
-import exampleRaw from "../characters/example-warlock/character.json";
+import { useEffect } from "react";
+import { useCharacter } from "./state/store";
+import { Sheet } from "./render/Sheet";
+import type { Issue } from "./schema";
+import warlock from "../characters/example-warlock/character.json";
+import fighter from "../characters/example-fighter/character.json";
+import multiclass from "../characters/example-multiclass/character.json";
+
+const SAMPLES = [
+  { key: "warlock", label: "Warlock (Tomo)", data: warlock },
+  { key: "fighter", label: "Fighter", data: fighter },
+  { key: "multiclass", label: "Pal/Sorc multiclasse", data: multiclass },
+];
 
 /**
- * M0 shell. This is intentionally minimal: its job is to prove the engine
- * end-to-end (load → migrate → validate → derive) on a real character.
- * The data-driven sheet UI arrives in M1/M2.
+ * M1.1 shell: a data-driven, read-only sheet that renders any character from the
+ * v2 schema. Sample switcher proves generality across classes; live editing and
+ * real file load/save arrive in M1.2.
  */
 export function App() {
-  const result = useMemo(() => loadCharacter(exampleRaw), []);
-  const { character, issues, migrated, ok } = result;
+  const { character, issues, migrated, ok, sourceName, loadRaw } = useCharacter();
+
+  useEffect(() => {
+    loadRaw(SAMPLES[0].data, SAMPLES[0].label);
+  }, [loadRaw]);
 
   return (
-    <main style={shell}>
-      <header>
-        <p style={eyebrow}>D&amp;D, but Digital — M0 engine preview</p>
-        <h1 style={{ margin: "4px 0 0" }}>{character.meta.name}</h1>
-        <p style={{ color: "#9aa", margin: "4px 0 0" }}>{character.meta.summary}</p>
-      </header>
+    <div className="app">
+      <nav className="toolbar">
+        <span className="brand">D&amp;D Manager</span>
+        <div className="samples">
+          {SAMPLES.map((s) => (
+            <button
+              key={s.key}
+              className={sourceName === s.label ? "sample is-active" : "sample"}
+              onClick={() => loadRaw(s.data, s.label)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <ValidationBadge issues={issues} migrated={migrated} ok={ok} />
+      </nav>
 
-      <section style={card}>
-        <h2 style={h2}>Derived</h2>
-        <dl style={grid}>
-          <Stat label="Livello totale" value={totalLevel(character)} />
-          <Stat label="Bonus competenza" value={`+${proficiencyBonus(character)}`} />
-          <Stat label="Mod. CAR" value={fmt(abilityModifierFor(character, "cha"))} />
-          <Stat label="Classi" value={character.classes.map((c) => `${c.name} ${c.level}`).join(" / ") || "—"} />
-        </dl>
-      </section>
-
-      <section style={card}>
-        <h2 style={h2}>Risorse</h2>
-        {character.resources.length === 0 && <p style={{ color: "#9aa" }}>Nessuna risorsa.</p>}
-        {character.resources.map((r) => (
-          <div key={r.id} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}>
-            <span>{r.label}</span>
-            <span style={{ color: "#9aa" }}>
-              {r.current}/{r.max} · reset: {r.resetOn}
-            </span>
-          </div>
-        ))}
-      </section>
-
-      <section style={card}>
-        <h2 style={h2}>
-          Validazione {ok ? "✓" : "✗"} {migrated && <span style={{ color: "#e0a44c" }}>(migrato da v1)</span>}
-        </h2>
-        {issues.length === 0 ? (
-          <p style={{ color: "#5fbf7f" }}>Nessun problema rilevato.</p>
-        ) : (
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {issues.map((i, idx) => (
-              <li key={idx} style={{ color: i.severity === "error" ? "#e06c6c" : "#e0a44c" }}>
-                <code>{i.path || "(root)"}</code>: {i.message}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </main>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div>
-      <dt style={{ color: "#9aa", fontSize: 12, textTransform: "uppercase", letterSpacing: 1 }}>{label}</dt>
-      <dd style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>{value}</dd>
+      {character && <Sheet c={character} />}
     </div>
   );
 }
 
-const fmt = (n: number) => (n >= 0 ? `+${n}` : `${n}`);
-
-const shell: React.CSSProperties = {
-  maxWidth: 760,
-  margin: "0 auto",
-  padding: "32px 20px 64px",
-  fontFamily: "system-ui, sans-serif",
-};
-const card: React.CSSProperties = {
-  marginTop: 20,
-  padding: "16px 20px",
-  borderRadius: 14,
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.08)",
-};
-const h2: React.CSSProperties = { margin: "0 0 10px", fontSize: 14, textTransform: "uppercase", letterSpacing: 1, color: "#cbd" };
-const eyebrow: React.CSSProperties = { margin: 0, color: "#7a7af0", fontSize: 12, textTransform: "uppercase", letterSpacing: 2 };
-const grid: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14, margin: 0 };
+function ValidationBadge({ issues, migrated, ok }: { issues: Issue[]; migrated: boolean; ok: boolean }) {
+  const errors = issues.filter((i) => i.severity === "error").length;
+  const warnings = issues.filter((i) => i.severity === "warning").length;
+  const label = !ok ? `✗ ${errors} errori` : warnings ? `⚠ ${warnings}` : "✓ valido";
+  const tone = !ok ? "is-error" : warnings ? "is-warn" : "is-ok";
+  return (
+    <span className={`validation ${tone}`} title={issues.map((i) => `${i.path}: ${i.message}`).join("\n")}>
+      {label}
+      {migrated && <span className="migrated"> · migrato v1</span>}
+    </span>
+  );
+}
