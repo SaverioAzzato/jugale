@@ -2,15 +2,7 @@ import type { ReactNode } from "react";
 import type { Character } from "../schema";
 import { totalLevel, proficiencyBonus } from "../schema";
 import { fmtMod } from "./primitives";
-import { AbilitiesSection } from "./AbilitiesSection";
-import { SkillsSection } from "./SkillsSection";
-import { CombatSection } from "./CombatSection";
-import { ResourcesSection } from "./ResourcesSection";
-import { SpellsSection } from "./SpellsSection";
-import { FeaturesSection } from "./FeaturesSection";
-import { InventorySection } from "./InventorySection";
-import { ProficienciesSection, OriginSection, NarrativeSection } from "./TextSections";
-import { CustomSections } from "./CustomSection";
+import { TabContent } from "./tabs";
 
 function HeaderStat({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -21,8 +13,11 @@ function HeaderStat({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
-/** The whole sheet, derived entirely from the character data. No class-specific assumptions. */
-export function Sheet({ c }: { c: Character }) {
+/**
+ * The character identity header (always visible) + the active tab's sections.
+ * The tab bar itself lives in the app's sticky header (App.tsx).
+ */
+export function Sheet({ c, tab }: { c: Character; tab: string }) {
   const classLine = c.classes
     .map((cl) => `${cl.name}${cl.subclass ? ` (${cl.subclass})` : ""} ${cl.level}`)
     .join(" / ");
@@ -42,19 +37,7 @@ export function Sheet({ c }: { c: Character }) {
         </div>
       </header>
 
-      <div className="sheet-grid">
-        <AbilitiesSection c={c} />
-        <CombatSection c={c} />
-        <ResourcesSection c={c} />
-        <SkillsSection c={c} />
-        <SpellsSection c={c} />
-        <FeaturesSection c={c} />
-        <InventorySection c={c} />
-        <ProficienciesSection c={c} />
-        <OriginSection c={c} />
-        <NarrativeSection c={c} />
-        <CustomSections c={c} />
-      </div>
+      <TabContent c={c} tab={tab} />
     </article>
   );
 }

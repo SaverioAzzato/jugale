@@ -35,15 +35,14 @@ export function InventorySection({ c }: { c: Character }) {
       {currencyCodes.length > 0 && (
         <div className="currencies">
           {currencyCodes.map((code) => (
-            <label key={code} className="currency">
+            <div key={code} className="currency">
               <span>{COIN[code] ?? code}</span>
-              <input
-                type="number"
-                min={0}
+              <Stepper
                 value={c.inventory.currencies[code]}
-                onChange={(e) => setCurrency(code, Number(e.target.value))}
+                label={COIN[code] ?? code}
+                onChange={(next) => setCurrency(code, next)}
               />
-            </label>
+            </div>
           ))}
         </div>
       )}

@@ -1,7 +1,8 @@
 /**
  * Host-agnostic persistence. M1.2 ships the browser File System Access path plus
- * an import/export fallback; the Tauri `fs` implementation lands with the native
- * shells (M4). Everything above this layer talks only to `StorageProvider`.
+ * a JSON import/export fallback for browsers that cannot keep a writable file handle;
+ * the Tauri `fs` implementation lands with the native shells (M4). Everything above
+ * this layer talks only to `StorageProvider`.
  */
 export interface StorageProvider {
   readonly kind: "file";
@@ -50,12 +51,12 @@ export async function openCharacterFile(): Promise<{ provider: StorageProvider; 
   return { provider, raw: await provider.read() };
 }
 
-/** Fallback load: parse a JSON file chosen via <input type="file">. */
+/** Fallback load for browsers without live file access: parse a JSON file chosen via <input type="file">. */
 export async function importJsonFile(file: File): Promise<unknown> {
   return JSON.parse(await file.text());
 }
 
-/** Fallback save: download the current character as a JSON file. */
+/** Fallback save or manual backup: download the current character as a JSON file. */
 export function exportJson(data: unknown, filename: string): void {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);

@@ -21,29 +21,76 @@ a {
   color: var(--muted);
 }
 
-/* ---- toolbar ---- */
-.toolbar {
+/* ---- app header (sticky): toolbar row + tab row ---- */
+.appbar {
   position: sticky;
   top: 0;
   z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 10px 20px;
   background: var(--surface);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
 }
-.brand {
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  font-family: var(--font-display);
-}
-.samples {
+.toolbar {
   display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+.tabbar {
+  display: flex;
+  gap: 4px;
+  padding: 0 14px;
+  overflow-x: auto;
+  border-top: 1px solid var(--border);
+}
+.tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab.is-active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+.app {
+  min-height: 100vh;
+  padding-bottom: 34px;
+}
+.toolbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.toolbar-left {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  flex: 1;
-  flex-wrap: wrap;
+  min-height: 28px;
+}
+.btn-back {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.back-icon {
+  width: 18px;
+  height: 18px;
 }
 .sample {
   background: transparent;
@@ -71,10 +118,6 @@ a {
 }
 .validation.is-error {
   color: var(--error);
-}
-.migrated {
-  color: var(--gold);
-  font-weight: 400;
 }
 
 .theme-switcher {
@@ -144,11 +187,18 @@ a {
   font-size: 22px;
 }
 
-.sheet-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
-  align-items: start;
+/* Active tab content packed as masonry: no shared grid rows → no vertical gaps.
+   Falls to a single column when narrow (or for single-section tabs via .single). */
+.tab-panels {
+  columns: 360px 2;
+  column-gap: 16px;
+}
+.tab-panels.single {
+  columns: 1;
+}
+.tab-panels > * {
+  break-inside: avoid;
+  margin-bottom: 16px;
 }
 
 .panel {
@@ -363,6 +413,61 @@ a {
   opacity: 0.4;
   cursor: not-allowed;
 }
+.btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+/* ---- empty / welcome state ---- */
+.empty-state {
+  min-height: 70vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+.empty-card {
+  max-width: 520px;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 32px 28px;
+}
+.empty-card h1 {
+  font-family: var(--font-display);
+  margin: 0 0 8px;
+  font-size: 24px;
+}
+.empty-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0 8px;
+}
+.empty-samples {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(96px, 1fr));
+  justify-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.empty-samples-label {
+  grid-column: 1 / -1;
+  margin-bottom: 4px;
+}
+.sample-grid-item {
+  width: 100%;
+  max-width: 140px;
+}
 .btn-danger:hover {
   border-color: var(--error);
   color: var(--error);
@@ -374,6 +479,12 @@ a {
 .toolbar-actions {
   display: flex;
   gap: 6px;
+}
+
+@media (max-width: 640px) {
+  .empty-samples {
+    grid-template-columns: repeat(2, minmax(96px, 1fr));
+  }
 }
 
 .stepper {
@@ -480,13 +591,12 @@ input[type="number"] {
 }
 .currency {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   font-size: 13px;
+  font-weight: 600;
   color: var(--gold);
-}
-.currency input {
-  width: 70px;
 }
 
 .sync {
@@ -504,6 +614,47 @@ input[type="number"] {
 }
 .sync.is-mem {
   color: var(--muted);
+}
+
+.statusbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.statusbar-file {
+  color: var(--text);
+  font-weight: 600;
+  max-width: 48vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statusbar-sep {
+  color: var(--border-strong);
+}
+
+.statusbar-sync {
+  color: var(--muted);
+}
+
+.statusbar-error {
+  color: var(--error);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* lists */

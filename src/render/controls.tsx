@@ -1,5 +1,31 @@
 /** Small interactive primitives for live play-state editing. */
 
+import { useRef, useCallback } from "react";
+
+/** Fires `cb` immediately, then repeatedly after a delay + interval while held.
+ *  Uses a ref so the interval always sees the latest `cb` (avoids stale closures). */
+export function useHoldRepeat(cb: () => void) {
+  const cbRef = useRef(cb);
+  cbRef.current = cb;
+
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const start = useCallback(() => {
+    cbRef.current();
+    timeoutRef.current = setTimeout(() => {
+      intervalRef.current = setInterval(() => cbRef.current(), 80);
+    }, 400);
+  }, []);
+
+  const stop = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  }, []);
+
+  return { start, stop };
+}
+
 export function Stepper({
   value,
   onChange,
@@ -13,18 +39,41 @@ export function Stepper({
   max?: number;
   label?: string;
 }) {
+  const dec = useHoldRepeat(() => onChange(value - 1));
+  const inc = useHoldRepeat(() => onChange(value + 1));
+
   return (
     <span className="stepper" role="group" aria-label={label}>
-      <button type="button" className="stepper-btn" onClick={() => onChange(value - 1)} disabled={value <= min} aria-label="meno">
+      <button
+        type="button"
+        className="stepper-btn"
+        disabled={value <= min}
+        aria-label="meno"
+        onMouseDown={dec.start}
+        onMouseUp={dec.stop}
+        onMouseLeave={dec.stop}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          dec.start();
+        }}
+        onTouchEnd={dec.stop}
+      >
         −
       </button>
       <span className="stepper-value">{value}</span>
       <button
         type="button"
         className="stepper-btn"
-        onClick={() => onChange(value + 1)}
         disabled={max != null && value >= max}
         aria-label="più"
+        onMouseDown={inc.start}
+        onMouseUp={inc.stop}
+        onMouseLeave={inc.stop}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          inc.start();
+        }}
+        onTouchEnd={inc.stop}
       >
         +
       </button>
