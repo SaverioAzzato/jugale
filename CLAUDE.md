@@ -8,7 +8,7 @@ A general-purpose character sheet platform for tabletop characters (D&D 5e in pr
 
 The project is **mid-rewrite** from a vanilla-JS prototype to a generalized TypeScript app:
 - **Current app** (root): React + Vite + TypeScript. The engine (`src/schema/`) is in place; the data-driven sheet UI is being built milestone by milestone — see `docs/ROADMAP.md`.
-- **Legacy prototype** (`legacy/`): the original stateless ES6-module + Electron front end, frozen but still runnable (open `legacy/index.html` or run its Electron entry). Do not build new features here; it exists for reference and migration.
+- **Original prototype**: a stateless ES6-module + Electron front end that the v2 app replaces. It has been removed from the working tree; recover it from git if you need a reference (`git checkout prototype-v1 -- legacy/`). Don't resurrect it for new features.
 
 Read the spec-first docs before non-trivial work: `docs/ARCHITECTURE.md`, `docs/SCHEMA.md`, `docs/ROADMAP.md`, `docs/AUTOMATION.md`.
 
@@ -57,8 +57,8 @@ Rules that matter when editing character data (also encoded in `.github/agents/*
 
 Tests are first-class — the schema/model layer is exhaustively unit-tested. CI (`.github/workflows/ci.yml`) runs typecheck + tests + build on every PR; keep it green. Add/adjust tests with any schema, derivation, or migration change.
 
-## Custom agents
+## Agents & automation
 
-`.github/agents/` defines two specialized D&D 5e rules agents (`dnd-5e-character-expert`, `dnd-5e-warlock-tome-draconide`) for character-building/optimization questions. They encode the same v2 `character.json`-is-canonical workflow described above.
+`.github/agents/` holds two D&D 5e **end-user** prompt prototypes (`dnd-5e-character-expert`, `dnd-5e-warlock-tome-draconide`) — early sketches of chatbot guidance for building/leveling a character against `character.json`. They are **not** Claude Code subagents (Claude Code reads `.claude/agents/`); treat them as reference/seed material for the M3 prompts work.
 
-`.github/workflows/claude.yml` enables the `@claude` ticket→PR automation (setup in `docs/AUTOMATION.md`); it relies on this file for project standards.
+`.github/workflows/claude.yml` enables the `@claude` ticket→PR automation (setup in `docs/AUTOMATION.md`); it relies on this file (CLAUDE.md) for project standards.

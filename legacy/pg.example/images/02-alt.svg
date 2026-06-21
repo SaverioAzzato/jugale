@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" role="img" aria-label="Immagine secondaria di esempio">
-  <rect width="800" height="1000" fill="#243447" />
-  <circle cx="400" cy="330" r="150" fill="#5e7da1" opacity="0.42" />
-  <rect x="160" y="540" width="480" height="250" rx="42" fill="#d9e3f0" opacity="0.16" />
-  <text x="50%" y="860" fill="#f8fafc" font-family="Georgia, serif" font-size="40" text-anchor="middle">Immagine secondaria</text>
-</svg>

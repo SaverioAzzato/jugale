@@ -2,7 +2,7 @@
 
 A character-sheet platform for tabletop RPGs (D&D 5e in practice) where **the JSON is the character** and the app is a beautiful, stateless lens over it. Build and edit characters with any chatbot (or by hand), then view and *play* them — track HP, resources, spell slots, currencies — with the app kept in sync with a plain, open `character.json`.
 
-> **Status:** mid-rewrite. The generalized v2 engine lives at the repo root (React + Vite + TypeScript); the original prototype is preserved, still runnable, under [`legacy/`](legacy/). See the [roadmap](docs/ROADMAP.md).
+> **Status:** mid-rewrite. The generalized v2 engine lives at the repo root (React + Vite + TypeScript). The original vanilla-JS prototype was retired when the rewrite began — it's tagged [`prototype-v1`](https://github.com/SaverioAzzato/dnd-pg-manager/releases/tag/prototype-v1) in git if you need it. See the [roadmap](docs/ROADMAP.md).
 
 ## Why
 
@@ -28,7 +28,6 @@ src/
   …              # model/ state/ storage/ render/ arrive in later milestones
 docs/            # spec-first: ARCHITECTURE, SCHEMA, ROADMAP, AUTOMATION
 characters/      # sample characters (also test fixtures); your real PGs go in pg/ (gitignored)
-legacy/          # the original prototype, frozen but runnable
 index.html       # Vite entry
 ```
 
