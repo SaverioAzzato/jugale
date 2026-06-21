@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "2.0.0",
+  "meta": {
+    "name": "Esempio Multiclasse",
+    "summary": "Paladino 3 / Stregone 2 — prova multiclasse: due incantatori, due CD, slot condivisi.",
+    "tags": ["paladin", "sorcerer", "multiclass", "example"]
+  },
+  "identity": { "race": "Mezzelfo", "background": "Noble", "alignment": "LG" },
+  "classes": [
+    {
+      "name": "Paladino", "subclass": "Giuramento di Devozione", "level": 3, "hitDie": "d10",
+      "link": "https://www.dndbeyond.com/classes/paladin",
+      "spellcasting": { "ability": "cha", "type": "prepared", "prepares": true, "slotProgression": "half" }
+    },
+    {
+      "name": "Stregone", "subclass": "Stirpe Draconica", "level": 2, "hitDie": "d6",
+      "link": "https://www.dndbeyond.com/classes/sorcerer",
+      "spellcasting": { "ability": "cha", "type": "known", "prepares": false, "slotProgression": "full" }
+    }
+  ],
+  "abilities": {
+    "str": { "score": 14, "saveProficient": false },
+    "dex": { "score": 10 },
+    "con": { "score": 14, "saveProficient": true },
+    "int": { "score": 8 },
+    "wis": { "score": 10, "saveProficient": true },
+    "cha": { "score": 16, "saveProficient": true }
+  },
+  "proficiencies": {
+    "skills": [
+      { "id": "persuasion", "proficient": true, "expertise": false },
+      { "id": "religion", "proficient": true },
+      { "id": "intimidation", "proficient": true }
+    ],
+    "armor": ["Tutte", "Scudi"],
+    "weapons": ["Semplici", "Da guerra"],
+    "languages": ["Comune", "Elfico", "Draconico"]
+  },
+  "combat": {
+    "armorClass": 18,
+    "speed": { "walk": 30 },
+    "hp": { "max": 42, "current": 42, "temp": 0, "hitDiceRemaining": 5 },
+    "attacks": [
+      { "name": "Spada lunga", "link": "https://www.dndbeyond.com/equipment/longsword", "level": "Arma", "range": "Mischia", "attack": "+5 colpire", "defense": "CA", "effect": "1d8+2 taglienti" },
+      { "name": "Divine Smite", "level": "1+", "range": "Mischia", "attack": "—", "defense": "—", "effect": "+2d8 radianti (slot liv.1), +1d8 per livello slot", "notes": "Consuma uno slot a colpo andato a segno" }
+    ]
+  },
+  "resources": [
+    { "id": "spell-slots-1", "label": "Slot incantesimo liv. 1", "category": "spellSlot", "level": 1, "max": 4, "current": 4, "resetOn": "longRest" },
+    { "id": "sorcery-points", "label": "Punti Stregoneria", "category": "points", "max": 2, "current": 2, "resetOn": "longRest", "link": "https://www.dndbeyond.com/sources/basic-rules/sorcerer#FontofMagic" },
+    { "id": "channel-divinity", "label": "Incanalare Divinità", "category": "charges", "max": 1, "current": 1, "resetOn": "shortRest" },
+    { "id": "lay-on-hands", "label": "Imposizione delle Mani (pool)", "category": "points", "max": 15, "current": 15, "resetOn": "longRest" }
+  ],
+  "spellcasting": { "summary": "Due incantatori basati su Carisma; gli slot multiclasse sono condivisi." },
+  "spellSections": [
+    {
+      "id": "paladino-prep", "title": "Paladino — preparati",
+      "entries": [
+        { "name": "Bless", "link": "https://www.dndbeyond.com/spells/bless", "level": "1", "castingTime": "1 azione", "range": "30 ft", "components": "V, S, M", "duration": "Conc. 1 min", "concentration": true, "attack": "—", "defense": "—", "effect": "Fino a 3 creature: +1d4 a tiri per colpire e TS" },
+        { "name": "Shield of Faith", "link": "https://www.dndbeyond.com/spells/shield-of-faith", "level": "1", "range": "60 ft", "concentration": true, "attack": "—", "defense": "—", "effect": "+2 CA a un alleato" }
+      ]
+    },
+    {
+      "id": "stregone-noti", "title": "Stregone — conosciuti",
+      "entries": [
+        { "name": "Chaos Bolt", "link": "https://www.dndbeyond.com/spells/chaos-bolt", "level": "1", "range": "120 ft", "concentration": false, "attack": "Attacco con incantesimo a distanza", "defense": "—", "effect": "2d8 + 1d6 (tipo casuale); può rimbalzare" },
+        { "name": "Fire Bolt", "link": "https://www.dndbeyond.com/spells/fire-bolt", "level": "0", "range": "120 ft", "concentration": false, "attack": "Attacco con incantesimo a distanza", "defense": "—", "effect": "1d10 da fuoco" }
+      ]
+    }
+  ],
+  "features": [
+    { "id": "divine-smite", "name": "Divine Smite", "source": "class", "level": 2, "link": "https://www.dndbeyond.com/sources/basic-rules/paladin#DivineSmite", "description": "Spendi uno slot per infliggere danni radianti extra a un colpo in mischia." },
+    { "id": "sacred-oath", "name": "Giuramento Sacro (Devozione)", "source": "subclass", "level": 3, "description": "Channel Divinity: Sacred Weapon / Turn the Unholy." },
+    { "id": "font-of-magic", "name": "Fonte di Magia", "source": "class", "level": 2, "description": "Converti slot in punti stregoneria e viceversa.", "uses": { "resourceId": "sorcery-points", "amount": 1 } },
+    { "id": "draconic-resilience", "name": "Resilienza Draconica", "source": "subclass", "level": 1, "description": "+1 PF per livello da stregone; CA base 13 + DES senza armatura." }
+  ],
+  "inventory": {
+    "items": [
+      { "id": "longsword", "name": "Spada lunga", "quantity": 1, "equipped": true },
+      { "id": "shield", "name": "Scudo", "quantity": 1, "equipped": true },
+      { "id": "holy-symbol", "name": "Simbolo sacro", "quantity": 1 }
+    ],
+    "currencies": { "gp": 40, "sp": 10 }
+  },
+  "customSections": [
+    {
+      "id": "regole-multiclasse", "title": "Promemoria multiclasse", "layout": "checklist",
+      "items": [
+        { "label": "Slot da tabella multiclasse (liv. incantatore = Pal/2 + Sorc)", "done": true },
+        { "label": "Incantesimi noti/preparati restano per classe", "done": true }
+      ]
+    }
+  ]
+}

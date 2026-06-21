@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "2.0.0",
+  "meta": {
+    "name": "Esempio Fighter",
+    "summary": "Umano Fighter (Champion) — nessun incantesimo, prova la generalità su un non-caster.",
+    "tags": ["fighter", "example", "martial"]
+  },
+  "identity": { "race": "Umano", "background": "Soldier", "alignment": "LN" },
+  "classes": [
+    { "name": "Fighter", "subclass": "Champion", "level": 5, "hitDie": "d10", "link": "https://www.dndbeyond.com/classes/fighter" }
+  ],
+  "abilities": {
+    "str": { "score": 17, "saveProficient": true },
+    "dex": { "score": 14 },
+    "con": { "score": 15, "saveProficient": true },
+    "int": { "score": 10 },
+    "wis": { "score": 12 },
+    "cha": { "score": 8 }
+  },
+  "proficiencies": {
+    "skills": [
+      { "id": "athletics", "proficient": true },
+      { "id": "intimidation", "proficient": true },
+      { "id": "perception", "proficient": true }
+    ],
+    "armor": ["Tutte", "Scudi"],
+    "weapons": ["Semplici", "Da guerra"],
+    "languages": ["Comune", "Orchesco"]
+  },
+  "combat": {
+    "armorClass": 18,
+    "speed": { "walk": 30 },
+    "hp": { "max": 44, "current": 44, "temp": 0, "hitDiceRemaining": 5 },
+    "attacks": [
+      {
+        "name": "Spadone",
+        "link": "https://www.dndbeyond.com/equipment/greatsword",
+        "level": "Arma",
+        "range": "Mischia",
+        "attack": "+6 colpire",
+        "defense": "CA",
+        "effect": "2d6+3 taglienti (×2 con Extra Attack)",
+        "notes": "Critico migliorato: 19-20"
+      },
+      {
+        "name": "Balestra pesante",
+        "level": "Arma",
+        "range": "100/400 ft",
+        "attack": "+4 colpire",
+        "defense": "CA",
+        "effect": "1d10+2 perforanti"
+      }
+    ]
+  },
+  "resources": [
+    { "id": "second-wind", "label": "Second Wind", "category": "charges", "max": 1, "current": 1, "resetOn": "shortRest", "link": "https://www.dndbeyond.com/sources/basic-rules/fighter#SecondWind" },
+    { "id": "action-surge", "label": "Action Surge", "category": "charges", "max": 1, "current": 1, "resetOn": "shortRest" }
+  ],
+  "features": [
+    { "id": "second-wind", "name": "Second Wind", "source": "class", "level": 1, "description": "Bonus action: recuperi 1d10 + livello da fighter PF.", "uses": { "resourceId": "second-wind", "amount": 1 } },
+    { "id": "action-surge", "name": "Action Surge", "source": "class", "level": 2, "description": "Un'azione extra nel tuo turno.", "uses": { "resourceId": "action-surge", "amount": 1 } },
+    { "id": "extra-attack", "name": "Attacco Extra", "source": "class", "level": 5, "description": "Attacchi due volte quando esegui l'azione di Attacco." },
+    { "id": "improved-critical", "name": "Critico Migliorato", "source": "subclass", "level": 3, "description": "I tuoi attakki con arma vanno a critico con un 19-20." }
+  ],
+  "inventory": {
+    "items": [
+      { "id": "greatsword", "name": "Spadone", "quantity": 1, "equipped": true },
+      { "id": "rations", "name": "Razioni", "quantity": 10, "category": "consumable" }
+    ],
+    "currencies": { "gp": 75, "sp": 0, "cp": 0 }
+  },
+  "origin": {
+    "raceTraits": [{ "name": "Versatile", "description": "+1 a due caratteristiche, una competenza, un talento (variante)." }],
+    "backgroundFeature": { "name": "Grado Militare", "description": "Sei riconosciuto da soldati alleati." }
+  },
+  "narrative": {
+    "personality": ["Diretto, leale al reparto."],
+    "ideals": ["Disciplina."],
+    "bonds": ["Non lascio indietro nessuno."],
+    "flaws": ["Obbedisco agli ordini anche quando sbagliati."]
+  }
+}
