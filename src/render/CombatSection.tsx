@@ -1,7 +1,9 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { Character } from "../schema";
 import { abilityModifierFor } from "../schema";
 import { Panel, fmtMod, DataTable, WikiLink } from "./primitives";
+import { Stepper } from "./controls";
+import { useCharacter } from "../state/store";
 
 function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -12,17 +14,76 @@ function Stat({ label, value }: { label: string; value: ReactNode }) {
   );
 }
 
+function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
+  const damage = useCharacter((s) => s.damage);
+  const heal = useCharacter((s) => s.heal);
+  const setCurrentHp = useCharacter((s) => s.setCurrentHp);
+  const setTempHp = useCharacter((s) => s.setTempHp);
+  const [amount, setAmount] = useState(1);
+  const pct = hp.max > 0 ? Math.round((hp.current / hp.max) * 100) : 0;
+
+  return (
+    <div className="hp-control">
+      <div className="hp-readout">
+        <strong className="hp-current">{hp.current}</strong>
+        <span className="hp-max">/ {hp.max}</span>
+        {hp.temp > 0 && <span className="hp-temp">+{hp.temp} temp</span>}
+      </div>
+      <div className="hp-bar" aria-hidden>
+        <div className="hp-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <div className="hp-actions">
+        <input
+          type="number"
+          min={0}
+          className="hp-amount"
+          value={amount}
+          onChange={(e) => setAmount(Math.max(0, Number(e.target.value)))}
+          aria-label="quantità"
+        />
+        <button type="button" className="btn btn-danger" onClick={() => damage(amount)}>
+          Danno
+        </button>
+        <button type="button" className="btn btn-heal" onClick={() => heal(amount)}>
+          Cura
+        </button>
+      </div>
+      <div className="hp-fine">
+        <label>
+          PF <Stepper value={hp.current} max={hp.max || undefined} onChange={setCurrentHp} label="PF correnti" />
+        </label>
+        <label>
+          Temp <Stepper value={hp.temp} onChange={setTempHp} label="PF temporanei" />
+        </label>
+      </div>
+    </div>
+  );
+}
+
 export function CombatSection({ c }: { c: Character }) {
+  const shortRest = useCharacter((s) => s.shortRest);
+  const longRest = useCharacter((s) => s.longRest);
   const initiative = c.combat.initiativeOverride ?? abilityModifierFor(c, "dex");
-  const hp = c.combat.hp;
+
   return (
     <Panel title="Combattimento" id="combat">
       <div className="stat-row">
         <Stat label="CA" value={c.combat.armorClass} />
         <Stat label="Iniziativa" value={fmtMod(initiative)} />
         <Stat label="Velocità" value={`${c.combat.speed.walk} ft`} />
-        <Stat label="PF" value={`${hp.current}/${hp.max}${hp.temp ? ` (+${hp.temp})` : ""}`} />
       </div>
+
+      <HpControl hp={c.combat.hp} />
+
+      <div className="rest-actions">
+        <button type="button" className="btn" onClick={shortRest}>
+          Riposo breve
+        </button>
+        <button type="button" className="btn" onClick={longRest}>
+          Riposo lungo
+        </button>
+      </div>
+
       {c.combat.attacks.length > 0 && (
         <DataTable
           headers={["Opzione", "Livello", "Gittata", "Tiro che fai tu", "Tiro avversario", "Danno/Effetto", "Note"]}

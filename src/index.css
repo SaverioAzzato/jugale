@@ -327,6 +327,165 @@ a {
   color: var(--muted);
 }
 
+/* ---- interactive controls (M1.2) ---- */
+.btn {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn:hover {
+  border-color: var(--accent);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-danger:hover {
+  border-color: var(--error);
+  color: var(--error);
+}
+.btn-heal:hover {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+.toolbar-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.stepper-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  cursor: pointer;
+  line-height: 1;
+}
+.stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.stepper-value {
+  min-width: 22px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-2);
+  font-weight: 700;
+}
+
+/* HP control */
+.hp-control {
+  margin: 4px 0 12px;
+}
+.hp-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.hp-current {
+  font-size: 26px;
+}
+.hp-max {
+  color: var(--muted);
+}
+.hp-temp {
+  margin-left: 8px;
+  color: var(--accent);
+  font-size: 13px;
+}
+.hp-bar {
+  height: 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  margin: 6px 0;
+}
+.hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--ok), var(--accent-2));
+  transition: width 0.15s;
+}
+.hp-actions {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0;
+}
+.hp-amount {
+  width: 60px;
+}
+.hp-fine {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--muted);
+  align-items: center;
+}
+.hp-fine label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rest-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+input[type="number"] {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 4px 6px;
+  width: 64px;
+  font: inherit;
+}
+
+.currencies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.currency {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--accent-2);
+}
+.currency input {
+  width: 70px;
+}
+
+.sync {
+  font-size: 12px;
+  font-weight: 600;
+}
+.sync.is-live {
+  color: var(--ok);
+}
+.sync.is-dirty {
+  color: var(--warn);
+}
+.sync.is-error {
+  color: var(--error);
+}
+.sync.is-mem {
+  color: var(--muted);
+}
+
 /* lists */
 .feature-list,
 .bullets,
