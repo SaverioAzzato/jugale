@@ -6,12 +6,16 @@ import type { Issue } from "./schema";
 import { isFileAccessSupported, openCharacterFile, importJsonFile } from "./storage/provider";
 import warlock from "../characters/example-warlock/character.json";
 import fighter from "../characters/example-fighter/character.json";
+import cleric from "../characters/example-cleric/character.json";
+import sorcerer from "../characters/example-sorcerer/character.json";
 import multiclass from "../characters/example-multiclass/character.json";
 
 const SAMPLES = [
-  { key: "warlock", label: "Warlock (Tomo)", data: warlock },
+  { key: "warlock", label: "Warlock", data: warlock },
   { key: "fighter", label: "Fighter", data: fighter },
-  { key: "multiclass", label: "Pal/Sorc multiclasse", data: multiclass },
+  { key: "cleric", label: "Cleric", data: cleric },
+  { key: "sorcerer", label: "Sorcerer", data: sorcerer },
+  { key: "multiclass", label: "Multiclasse", data: multiclass },
 ];
 
 export function App() {
