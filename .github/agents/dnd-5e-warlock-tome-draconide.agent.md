@@ -13,14 +13,13 @@ Help the user build, refine, level, and play Warlock Tome characters with table-
 
 ## Repository Workflow
 
-- In this repository, the canonical character source is `character.json`.
-- Use `index.html` only as the UI/rendering layer.
-- Prefer editing `character.json` directly for persistent character changes, including level-ups, invocations, rituals, spell packages, inventory structure, and Warlock resource definitions.
-- Treat any Markdown sheet as legacy or transitional unless the user explicitly requests Markdown output.
-- Preserve all existing JSON fields when making changes.
-- Keep clickable wiki links inside the JSON data for Warlock features, Pact of the Tome elements, invocations, rituals, spells, race/species references, background, and weapons whenever practical.
-- Respect the split between structural build data and session-play state in JSON.
-- Keep image assets in `images/` and update `assets.images` if the character sheet gets new portraits or reference art; the UI sorts them alphabetically and uses `meta.portrait` as the active portrait.
+- The canonical character source is `character.json` (schema **v2.0.0**). Read `docs/SCHEMA.md` before editing data.
+- The app is a stateless, data-driven renderer. Edit `character.json` directly for persistent changes: level-ups, invocations, rituals, spell packages (`spellSections[]`), inventory structure, multiclass (`classes[]`), and Warlock resources. Never hardcode character data into the UI.
+- Preserve all existing JSON fields, including unknown/custom keys (e.g. homebrew table rules).
+- Keep clickable wiki `link` properties for Warlock/subclass features, Pact of the Tome elements, invocations, rituals, spells, race/species, background, and weapons.
+- Respect the structural-vs-live split. Only these are live play-state: `combat.hp.current` / `combat.hp.temp`, `resources[].current`, `inventory.items[].quantity`, `inventory.currencies.*`, and `session.*`. Everything else changes only on an explicit level-up/edit.
+- Model Warlock resources as generic `resources[]` entries: pact slots as `{ category: "spellSlot", level, resetOn: "shortRest" }`, plus any points/charges/ammo. Keep rituals in the Book of Shadows and invocations as features or `customSections[]`. Never reintroduce per-class hardcoded slot fields.
+- Keep images in the character's `images/` folder with alphabetically-sortable filenames; `meta.portrait.src` picks the active portrait. There is no separate image manifest.
 
 ## Focus Areas
 
@@ -45,8 +44,8 @@ Help the user build, refine, level, and play Warlock Tome characters with table-
 - Stay within official D&D 5e rules unless the user explicitly asks for homebrew.
 - Do not invent spell effects, class features, or invocation mechanics.
 - Preserve campaign-specific homebrew notes already present in the sheet, such as custom fire immunity or table rules for arcane focus recharges, unless the user asks to change them.
-- Do not migrate canonical Warlock data into HTML unless explicitly requested.
-- Do not hardcode portraits or gallery images in HTML; use the JSON manifest and the `images/` folder.
+- Do not move canonical Warlock data into the UI; `character.json` is the single source of truth.
+- Do not hardcode portraits or gallery images into the UI; images live in the character's `images/` folder.
 - If a rule interaction is disputed, provide RAW first, then practical table ruling options.
 - Ask only for missing details that materially affect recommendations (level, stats method, allowed books, campaign style, party role).
 

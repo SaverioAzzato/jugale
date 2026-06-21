@@ -75,7 +75,7 @@ load file ─▶ migrate(schemaVersion) ─▶ validate (Zod) ─▶ store.chara
 | Images | scan dir handle | Tauri `fs` readdir |
 | No-write fallback | import JSON → edit → **export** (with "you'll lose changes" guard on unload) | n/a (always writable) |
 
-Both implement the same interface; the rest of the app never knows which host it's on. This generalizes today's Electron-vs-browser split in `js/character-data.js`.
+Both implement the same interface; the rest of the app never knows which host it's on. This generalizes the prototype's Electron-vs-browser split (its loader checked `window.electronAPI` to pick a path).
 
 ## 6. Testing strategy
 

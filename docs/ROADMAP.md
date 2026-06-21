@@ -32,6 +32,7 @@ Cross-cutting from day one: every milestone ships with tests, runs through CI, a
   3. **Level-up** — ordered changes, choices, multiclass-aware.
   4. **Validate** — check vs rules + schema, propose fixes on confirmation.
 - Surfaced in **README + `docs/PROMPTS.md` + an in-app Prompts section** (copy-ready), plus the published JSON Schema for GPTs.
+- Seed material: the early end-user agent sketches in `.github/agents/` (the project's first take on chatbot-driven character editing).
 - **Deliverable:** a user can build/level/validate a character with any external chatbot.
 
 ## M4 — Multiplatform packaging & distribution

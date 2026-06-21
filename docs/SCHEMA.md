@@ -52,7 +52,7 @@ Only `schemaVersion` and `meta.name` are strictly required; every section has a 
 ### `meta`
 ```jsonc
 {
-  "name": "Christ Han-Desic",
+  "name": "Esempio Warlock",
   "player": "Saverio",
   "summary": "Tiefling Warlock, Patto del Tomo.",
   "portrait": { "src": "images/01-portrait.png", "alt": "..." },
@@ -221,4 +221,4 @@ The app validates on load but **never refuses to render**:
 - Unknown fields preserved under the nearest section or `customSections`.
 
 ## 5. Worked example
-A complete `characters/example-warlock/character.json` ships as the canonical v2 template (replacing `pg.example/`), plus fixtures for a non-caster (Fighter), a prepared caster (Cleric), a points caster (Sorcerer), and a multiclass — each exercising a different mechanic and doubling as a test fixture.
+The canonical v2 template is `characters/example-warlock/character.json` (it supersedes the prototype's `pg.example/` template). Additional fixtures — a non-caster (Fighter), a prepared caster (Cleric), a points caster (Sorcerer), and a multiclass — land in **M1**, each exercising a different mechanic and doubling as a test fixture.
