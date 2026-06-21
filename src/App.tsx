@@ -4,6 +4,7 @@ import { useCharacter } from "./state/store";
 import { Sheet } from "./render/Sheet";
 import type { Issue } from "./schema";
 import { isFileAccessSupported, openCharacterFile, importJsonFile } from "./storage/provider";
+import { ThemeSwitcher } from "./theme/ThemeSwitcher";
 import warlock from "../characters/example-warlock/character.json";
 import fighter from "../characters/example-fighter/character.json";
 import cleric from "../characters/example-cleric/character.json";
@@ -100,6 +101,7 @@ export function App() {
           ))}
         </div>
 
+        <ThemeSwitcher />
         <SyncStatus liveSync={liveSync} dirty={dirty} saveError={saveError} sourceName={sourceName} />
         <ValidationBadge issues={issues} migrated={migrated} ok={ok} />
       </nav>
