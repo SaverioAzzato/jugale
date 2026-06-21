@@ -48,7 +48,7 @@ Free and open: the **web app is the GitHub Pages site**; desktop and mobile bina
 ## Contributing & automation
 
 - CI (`.github/workflows/ci.yml`) runs typecheck + tests + build on every PR.
-- You can open a ticket and let Claude implement it: mention `@claude` in an issue/PR. Setup: **[docs/AUTOMATION.md](docs/AUTOMATION.md)**.
+- You can hand Claude a ticket and get a PR back — via [Claude Code on the web](https://claude.ai/code) (runs on Anthropic's cloud) or a local Claude Code session. See **[docs/AUTOMATION.md](docs/AUTOMATION.md)**.
 
 ## Docs
 

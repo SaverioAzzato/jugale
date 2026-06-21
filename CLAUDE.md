@@ -61,4 +61,4 @@ Tests are first-class — the schema/model layer is exhaustively unit-tested. CI
 
 `.github/agents/` holds two D&D 5e **end-user** prompt prototypes (`dnd-5e-character-expert`, `dnd-5e-warlock-tome-draconide`) — early sketches of chatbot guidance for building/leveling a character against `character.json`. They are **not** Claude Code subagents (Claude Code reads `.claude/agents/`); treat them as reference/seed material for the M3 prompts work.
 
-`.github/workflows/claude.yml` enables the `@claude` ticket→PR automation (setup in `docs/AUTOMATION.md`); it relies on this file (CLAUDE.md) for project standards.
+"Ticket → PR" automation runs on Anthropic's cloud (Claude Code on the web) or locally, not on GitHub runners — there is deliberately no `claude.yml`. Either way Claude follows this file (CLAUDE.md) for project standards. See `docs/AUTOMATION.md`.
