@@ -1,7 +1,8 @@
-import { useEffect, useRef, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useCharacter } from "./state/store";
 import { Sheet } from "./render/Sheet";
+import { getVisibleTabs } from "./render/tabs";
 import type { Issue } from "./schema";
 import { isFileAccessSupported, openCharacterFile, importJsonFile } from "./storage/provider";
 import { ThemeSwitcher } from "./theme/ThemeSwitcher";
@@ -37,6 +38,10 @@ export function App() {
   const exportCharacter = useCharacter((s) => s.exportCharacter);
   const fileInput = useRef<HTMLInputElement>(null);
 
+  const [activeTab, setActiveTab] = useState("gioco");
+  const tabs = character ? getVisibleTabs(character) : [];
+  const tab = tabs.some((t) => t.id === activeTab) ? activeTab : (tabs[0]?.id ?? "gioco");
+
   // Warn before leaving with unsaved in-memory edits (live-synced files save themselves).
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -67,6 +72,7 @@ export function App() {
 
   return (
     <div className="app">
+      <header className="appbar">
       <nav className="toolbar">
         <span className="brand">D&amp;D Manager</span>
 
@@ -93,8 +99,25 @@ export function App() {
         </div>
       </nav>
 
+        {character && tabs.length > 0 && (
+          <nav className="tabbar" role="tablist" aria-label="Sezioni">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                role="tab"
+                aria-selected={tab === t.id}
+                className={tab === t.id ? "tab is-active" : "tab"}
+                onClick={() => setActiveTab(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </nav>
+        )}
+      </header>
+
       {character ? (
-        <Sheet c={character} />
+        <Sheet c={character} tab={tab} />
       ) : (
         <EmptyState onOpen={handleOpen} onImport={() => fileInput.current?.click()} onSample={(d, l) => loadRaw(d, l)} />
       )}

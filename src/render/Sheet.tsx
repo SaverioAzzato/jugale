@@ -2,15 +2,7 @@ import type { ReactNode } from "react";
 import type { Character } from "../schema";
 import { totalLevel, proficiencyBonus } from "../schema";
 import { fmtMod } from "./primitives";
-import { AbilitiesSection } from "./AbilitiesSection";
-import { SkillsSection } from "./SkillsSection";
-import { CombatSection } from "./CombatSection";
-import { ResourcesSection } from "./ResourcesSection";
-import { SpellsSection } from "./SpellsSection";
-import { FeaturesSection } from "./FeaturesSection";
-import { InventorySection } from "./InventorySection";
-import { ProficienciesSection, OriginSection, NarrativeSection } from "./TextSections";
-import { CustomSections } from "./CustomSection";
+import { TabContent } from "./tabs";
 
 function HeaderStat({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -22,13 +14,10 @@ function HeaderStat({ label, value }: { label: string; value: ReactNode }) {
 }
 
 /**
- * The whole sheet, derived entirely from the character data.
- * Layout is two independent columns (no shared row grid → no vertical gaps),
- * organised by purpose: left = what you act on during play (combat, resources,
- * spells); right = reference (stats, skills, gear, story). Collapses to one
- * column on narrow screens.
+ * The character identity header (always visible) + the active tab's sections.
+ * The tab bar itself lives in the app's sticky header (App.tsx).
  */
-export function Sheet({ c }: { c: Character }) {
+export function Sheet({ c, tab }: { c: Character; tab: string }) {
   const classLine = c.classes
     .map((cl) => `${cl.name}${cl.subclass ? ` (${cl.subclass})` : ""} ${cl.level}`)
     .join(" / ");
@@ -48,23 +37,7 @@ export function Sheet({ c }: { c: Character }) {
         </div>
       </header>
 
-      <div className="sheet-columns">
-        <div className="sheet-col">
-          <CombatSection c={c} />
-          <ResourcesSection c={c} />
-          <SpellsSection c={c} />
-        </div>
-        <div className="sheet-col">
-          <AbilitiesSection c={c} />
-          <SkillsSection c={c} />
-          <ProficienciesSection c={c} />
-          <FeaturesSection c={c} />
-          <InventorySection c={c} />
-          <OriginSection c={c} />
-          <NarrativeSection c={c} />
-          <CustomSections c={c} />
-        </div>
-      </div>
+      <TabContent c={c} tab={tab} />
     </article>
   );
 }

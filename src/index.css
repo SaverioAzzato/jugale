@@ -21,18 +21,47 @@ a {
   color: var(--muted);
 }
 
-/* ---- toolbar ---- */
-.toolbar {
+/* ---- app header (sticky): toolbar row + tab row ---- */
+.appbar {
   position: sticky;
   top: 0;
   z-index: 10;
+  background: var(--surface);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+.toolbar {
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 10px 20px;
-  background: var(--surface);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.tabbar {
+  display: flex;
+  gap: 4px;
+  padding: 0 14px;
+  overflow-x: auto;
+  border-top: 1px solid var(--border);
+}
+.tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab.is-active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
 }
 .brand {
   font-weight: 800;
@@ -158,24 +187,18 @@ a {
   font-size: 22px;
 }
 
-/* Two independent columns — each stacks on its own, so there are no shared
-   grid rows and therefore no vertical gaps. Left = play/action, right = reference. */
-.sheet-columns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  align-items: start;
+/* Active tab content packed as masonry: no shared grid rows → no vertical gaps.
+   Falls to a single column when narrow (or for single-section tabs via .single). */
+.tab-panels {
+  columns: 360px 2;
+  column-gap: 16px;
 }
-.sheet-col {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
+.tab-panels.single {
+  columns: 1;
 }
-@media (max-width: 880px) {
-  .sheet-columns {
-    grid-template-columns: 1fr;
-  }
+.tab-panels > * {
+  break-inside: avoid;
+  margin-bottom: 16px;
 }
 
 .panel {
