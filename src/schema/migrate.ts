@@ -3,7 +3,9 @@ import { SCHEMA_VERSION, type AbilityId } from "./character";
 /**
  * In-memory upgrade of older character files to the current schema.
  * Runs on load; the result is only persisted on a real save.
- * Defensive by design: any unknown/legacy field is preserved rather than lost.
+ * Defensive by design: high-confidence fields are mapped to typed v2 fields;
+ * everything else (unknown top-level keys, freeform v1 lists) is preserved
+ * verbatim — either by passthrough or as `customSections` — so nothing is lost.
  */
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,47 +50,150 @@ const ABILITY_BY_IT: Record<string, AbilityId> = {
   carisma: "cha",
 };
 
+/** Italian abbreviations / prefixes used for saving throws (e.g. "For", "Des", "Sag", "Car"). */
+const ABILITY_BY_ABBR: Record<string, AbilityId> = {
+  for: "str",
+  des: "dex",
+  cos: "con",
+  int: "int",
+  sag: "wis",
+  car: "cha",
+};
+
+const SKILL_BY_IT: Record<string, string> = {
+  acrobazia: "acrobatics",
+  "addestrare animali": "animal-handling",
+  arcano: "arcana",
+  atletica: "athletics",
+  inganno: "deception",
+  storia: "history",
+  intuizione: "insight",
+  intimidire: "intimidation",
+  indagare: "investigation",
+  medicina: "medicine",
+  natura: "nature",
+  percezione: "perception",
+  intrattenere: "performance",
+  persuasione: "persuasion",
+  religione: "religion",
+  "rapidità di mano": "sleight-of-hand",
+  furtività: "stealth",
+  sopravvivenza: "survival",
+};
+
 const truthy = (v: unknown): boolean => /s[iì]|y|yes|true|conc/i.test(String(v ?? ""));
+const isCompetent = (v: unknown): boolean => /compet/i.test(String(v ?? ""));
+const firstInt = (v: unknown): number | null => {
+  const m = /-?\d+/.exec(String(v ?? ""));
+  return m ? Number(m[0]) : null;
+};
+
+const CONSUMED_KEYS = new Set([
+  "schemaVersion",
+  "meta",
+  "identity",
+  "build",
+  "combat",
+  "spellSections",
+  "reminders",
+  "features",
+  "inventory",
+  "origin",
+  "narrative",
+  "session",
+]);
 
 function migrateV1toV2(v1: Json): Json {
   const out: Json = { schemaVersion: SCHEMA_VERSION };
+  const custom: Json[] = [];
 
-  // meta
-  out.meta = {
-    name: v1.meta?.name ?? "Personaggio",
-    player: v1.meta?.player ?? "",
-    summary: v1.meta?.summary ?? "",
-    portrait: v1.meta?.portrait ?? {},
-  };
+  // Unknown top-level keys (platform, assets, corrections, …) survive verbatim.
+  for (const [key, value] of Object.entries(v1)) {
+    if (!CONSUMED_KEYS.has(key)) out[key] = value;
+  }
 
-  // identity[] (label/value) → identity object + classes[]
+  // meta — spread to keep portrait/player/summary and any extras.
+  out.meta = { ...(v1.meta ?? {}), name: v1.meta?.name ?? "Personaggio" };
+
+  // identity[] (freeform label/value) → best-effort typed fields + lossless copy.
   const idArr: Json[] = Array.isArray(v1.identity) ? v1.identity : [];
-  const byLabel = (label: string): string | undefined =>
-    idArr.find((i) => String(i?.label ?? "").toLowerCase() === label)?.value;
-  out.identity = { race: byLabel("razza") ?? "", background: byLabel("background") ?? "" };
-  const className = byLabel("classe");
-  out.classes = className ? [{ name: className, level: Number(byLabel("livello")) || 1 }] : [];
+  const find = (re: RegExp) => idArr.find((i) => re.test(String(i?.label ?? "")));
+  const valueOf = (entry: Json): string =>
+    entry?.value ?? (Array.isArray(entry?.parts) ? entry.parts.map((p: Json) => p?.value).filter(Boolean).join(" / ") : "");
 
-  // abilities
+  const classEntry = find(/class/i);
+  const classText = valueOf(classEntry);
+  const classMatch = /^(.*?)[\s,]+(\d+)\s*$/.exec(classText);
+  // Level may be embedded in the class text ("Warlock 4") or a separate entry ("Livello": "5").
+  const level = (classMatch ? Number(classMatch[2]) : null) ?? firstInt(valueOf(find(/^livello$|^level$/i))) ?? 1;
+  out.classes = classText
+    ? [
+        {
+          name: classMatch ? classMatch[1].trim() : classText,
+          level,
+          subclass: valueOf(find(/patrono|sottoclasse|subclass/i)),
+          link: classEntry?.link ?? null,
+        },
+      ]
+    : [];
+
+  const raceEntry = find(/razza|race|lignaggio|lineage/i);
+  out.identity = {
+    race: valueOf(raceEntry),
+    background: valueOf(find(/background/i)),
+    alignment: valueOf(find(/allineament|alignment/i)),
+    link: raceEntry?.link ?? null,
+  };
+  if (idArr.length > 0) {
+    custom.push({ id: "identita-migrato", title: "Identità (migrato)", layout: "list", items: idArr });
+  }
+
+  // abilities + saving-throw proficiency
   const abilities: Json = {};
   for (const a of v1.build?.abilities ?? []) {
     const id = ABILITY_BY_IT[String(a?.name ?? "").toLowerCase().trim()];
     if (id) abilities[id] = { score: Number(a.score) || 10 };
   }
   for (const st of v1.build?.savingThrows ?? []) {
-    const name = String(st?.name ?? "").toLowerCase();
-    for (const [it, id] of Object.entries(ABILITY_BY_IT)) {
-      if (name.includes(it)) abilities[id] = { ...(abilities[id] ?? {}), saveProficient: true };
-    }
+    const key = String(st?.name ?? "").toLowerCase().trim().slice(0, 3);
+    const id = ABILITY_BY_ABBR[key] ?? ABILITY_BY_IT[String(st?.name ?? "").toLowerCase().trim()];
+    if (id && isCompetent(st?.note)) abilities[id] = { ...(abilities[id] ?? { score: 10 }), saveProficient: true };
   }
   out.abilities = abilities;
 
-  // combat: attacks pass through; hp from session
+  // skills → proficiencies.skills (proficient where flagged "competente")
+  const skills: Json[] = [];
+  for (const s of v1.build?.skills ?? []) {
+    const id = SKILL_BY_IT[String(s?.name ?? "").toLowerCase().trim()];
+    if (id && isCompetent(s?.note)) skills.push({ id, proficient: true });
+  }
+  out.proficiencies = { skills };
+  if (Array.isArray(v1.build?.proficiencies) && v1.build.proficiencies.length > 0) {
+    custom.push({ id: "competenze-migrato", title: "Competenze (migrato)", layout: "list", items: v1.build.proficiencies });
+  }
+
+  // combat: AC/speed from baseStats (where unambiguous), HP from session, attacks verbatim
+  const baseStats: Json[] = v1.build?.baseStats ?? [];
+  const stat = (re: RegExp) => baseStats.find((s) => re.test(String(s?.label ?? "")));
   const r = v1.session?.resources ?? {};
   out.combat = {
-    attacks: Array.isArray(v1.combat?.attacks) ? v1.combat.attacks : [],
+    armorClass: firstInt(stat(/^ca\b|classe armatura|armor class/i)?.value) ?? 10,
+    speed: { walk: firstInt(stat(/velocit|speed/i)?.value) ?? 30 },
     hp: { max: Number(r.maxHp) || 0, current: Number(r.currentHp) || 0, temp: Number(r.tempHp) || 0 },
+    attacks: Array.isArray(v1.combat?.attacks) ? v1.combat.attacks : [],
   };
+  if (baseStats.length > 0) {
+    custom.push({
+      id: "numeri-base-migrato",
+      title: "Numeri base (migrato)",
+      layout: "table",
+      columns: ["Voce", "Valore", "Nota"],
+      items: baseStats.map((s) => ({ Voce: s?.label ?? "", Valore: s?.value ?? "", Nota: s?.note ?? "" })),
+    });
+  }
+  if (Array.isArray(v1.combat?.levelNotes) && v1.combat.levelNotes.length > 0) {
+    custom.push({ id: "note-livello-migrato", title: "Note di livello (migrato)", layout: "list", items: v1.combat.levelNotes });
+  }
 
   // resources: slots dict + arrows → generic resources[]
   const resources: Json[] = [];
@@ -96,10 +201,11 @@ function migrateV1toV2(v1: Json): Json {
     const total = Number((slot as Json)?.total) || 0;
     const used = Number((slot as Json)?.used) || 0;
     const lvlMatch = /lvl?(\d)/.exec(key);
+    const isSlot = key === "pact" || lvlMatch != null;
     resources.push({
       id: slugify(key),
-      label: `Slot ${key}`,
-      category: "spellSlot",
+      label: key === "pact" ? "Slot del Patto" : `Slot ${key}`,
+      category: isSlot ? "spellSlot" : "charges",
       max: total,
       current: Math.max(0, total - used),
       level: lvlMatch ? Number(lvlMatch[1]) : null,
@@ -166,27 +272,19 @@ function migrateV1toV2(v1: Json): Json {
     notes: v1.narrative?.unfilled ?? [],
   };
 
-  // Lossless catch-all: anything that didn't have a clean home is preserved as custom sections.
-  const custom: Json[] = [];
-  const listSection = (id: string, title: string, items: unknown) =>
-    Array.isArray(items) && items.length > 0 ? custom.push({ id, title, layout: "list", items }) : 0;
-  listSection("competenze-migrato", "Competenze (migrato)", v1.build?.proficiencies);
-  listSection("checklist-migrato", "Checklist livello (migrato)", v1.features?.levelChecklist);
-  listSection("note-migrato", "Note (migrato)", v1.reminders?.notes);
-  listSection("uso-tavolo-migrato", "Uso al tavolo (migrato)", v1.reminders?.tablePlay);
-  if (Array.isArray(v1.build?.skills) && v1.build.skills.length > 0) {
-    custom.push({
-      id: "abilita-migrato",
-      title: "Abilità (migrato)",
-      layout: "table",
-      columns: ["Abilità", "Bonus"],
-      items: v1.build.skills.map((s: Json) => ({ Abilità: s?.name ?? "", Bonus: s?.value ?? "" })),
-    });
-  }
+  // reminders + level checklist → custom sections (lossless)
+  const list = (id: string, title: string, items: unknown) => {
+    if (Array.isArray(items) && items.length > 0) custom.push({ id, title, layout: "list", items });
+  };
+  list("checklist-migrato", "Checklist livello (migrato)", v1.features?.levelChecklist);
+  list("note-migrato", "Note (migrato)", v1.reminders?.notes);
+  list("uso-tavolo-migrato", "Uso al tavolo (migrato)", v1.reminders?.tablePlay);
   out.customSections = custom;
 
-  // session: only ephemeral state survives here now
-  out.session = { conditions: [], notes: "" };
+  // session: keep only ephemeral state; preserve any extra session keys verbatim
+  const { resources: _consumed, ...sessionExtras } = v1.session ?? {};
+  void _consumed;
+  out.session = { conditions: [], notes: v1.session?.inventoryNotes ?? "", ...sessionExtras };
 
   return out;
 }

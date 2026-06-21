@@ -4,49 +4,66 @@ import { CharacterSchema } from "./character";
 import { loadCharacter } from "./validate";
 import { spellSaveDc } from "./derive";
 
+// A v1 fixture mirroring the tricky bits of a real hand-written sheet:
+// numeric schemaVersion, freeform identity (combined class+level, race `parts`),
+// abbreviated saving throws flagged "competente", baseStats, and unknown top-level keys.
 const v1Character = {
-  schemaVersion: "1.0.0",
-  meta: { name: "Old PG", player: "Saverio", summary: "vecchia scheda", portrait: { src: "images/01.svg" } },
+  schemaVersion: 1,
+  platform: { name: "old tool", mode: "dnd-5e" },
+  meta: { name: "Old PG", player: "Saverio", summary: "vecchia scheda", portrait: { src: "images/a.png" } },
   identity: [
-    { label: "Classe", value: "Warlock" },
-    { label: "Livello", value: "5" },
-    { label: "Razza", value: "Tiefling" },
+    { label: "Classe e livello", value: "Warlock 4", link: "http://warlock" },
+    { label: "Patrono", value: "Immondo (Fiend)" },
+    { label: "Razza", parts: [{ value: "Draconide", link: "http://drac" }, { value: "Tiefling" }] },
+    { label: "Background", value: "Forestiero" },
+    { label: "Allineamento", value: "Neutrale Buono" },
   ],
   build: {
-    abilities: [
-      { name: "Carisma", score: "17", modifier: "+3" },
-      { name: "Destrezza", score: "14", modifier: "+2" },
+    baseStats: [
+      { label: "CA", value: "13", note: "cuoio 11 + Des 2" },
+      { label: "Velocità", value: "9 m" },
     ],
-    savingThrows: [{ name: "Tiro Salvezza Carisma", value: "+6" }],
-    skills: [{ name: "Arcano", value: "+5" }],
-    proficiencies: ["Armi semplici", "Armature leggere"],
+    abilities: [
+      { name: "Carisma", score: 18, modifier: "+4" },
+      { name: "Costituzione", score: 15, modifier: "+2" },
+    ],
+    savingThrows: [
+      { name: "Car", value: "+6", note: "competente" },
+      { name: "Sag", value: "+2", note: "competente" },
+      { name: "For", value: "+0" },
+    ],
+    skills: [
+      { name: "Atletica", value: "+2", note: "competente" },
+      { name: "Arcano", value: "+1" },
+    ],
+    proficiencies: ["Warlock: armature leggere, armi semplici."],
   },
   combat: {
-    attacks: [{ name: "Eldritch Blast", link: "http://x", level: "Trucchetto" }],
-    spellcasting: { slots: "2 slot del patto di livello 3" },
+    spellcasting: { slots: "2 slot di 2 livello" },
+    attacks: [{ name: "Pugnale", link: "http://x", level: "Base" }],
+    levelNotes: ["Livello 4: +2 Carisma."],
   },
-  spellSections: [
-    { title: "Trucchetti", entries: [{ name: "EB", link: "http://x", level: "0", concentration: "No" }] },
-    { title: "Livello 1", entries: [{ name: "Hex", level: "1", concentration: "Sì" }] },
-  ],
-  features: { items: [{ label: "Patto del Tomo", text: "libro", link: "http://y" }], levelChecklist: ["Scegli invocazione"] },
-  inventory: { currencies: { gold: 120, silver: 5, copper: 1 }, items: [{ name: "Pozione", quantity: 3 }] },
-  origin: { languages: ["Comune", "Infernale"], raceNotes: ["Resistenza al fuoco"], backgroundFeature: ["Ricercatore"] },
-  narrative: { roleplay: ["Curioso"], appearance: ["Corna"], story: ["Patto"], unfilled: ["TODO"] },
-  reminders: { notes: ["Ricorda Hex"], tablePlay: ["Tira 1d20"] },
+  spellSections: [{ title: "Trucchetti", entries: [{ name: "EB", link: "http://x", level: "0", concentration: "No" }] }],
+  features: { items: [{ label: "Patto del Tomo", text: "libro", link: "http://y" }], levelChecklist: ["Scegli trucchetto"] },
+  inventory: { currencies: { gold: 838, silver: 5, copper: 5 }, items: [{ name: "Pozione", quantity: 3 }] },
+  origin: { languages: ["Comune", "Draconico"], raceNotes: ["Scurovisione 18 m"], backgroundFeature: ["Viandante"] },
+  narrative: { roleplay: ["Testardo"], appearance: ["Età 20"], story: ["Origini misteriose"], unfilled: ["Tesoro"] },
+  reminders: { notes: ["Slot del Patto restano 2"], tablePlay: ["Tira 1d20"] },
   session: {
     resources: {
-      currentHp: 30,
-      maxHp: 38,
+      currentHp: 31,
+      maxHp: 31,
       tempHp: 0,
-      slots: { pact: { total: 2, used: 1 }, lvl1: { total: 0, used: 0 } },
-      arrows: 12,
+      slots: { pact: { total: 2, used: 1 }, focus: { total: 2, used: 0 }, inspiration: { total: 1, used: 0 } },
+      arrows: 15,
     },
+    inventoryNotes: "nota",
+    lastSavedAt: "2026-06-13T22:48:10.433Z",
   },
 };
 
 describe("migration detection", () => {
-  it("flags v1 as needing migration", () => {
+  it("treats numeric schemaVersion 1 as v1", () => {
     expect(schemaMajor(v1Character)).toBe(1);
     expect(needsMigration(v1Character)).toBe(true);
     expect(needsMigration({ schemaVersion: "2.0.0" })).toBe(false);
@@ -60,46 +77,58 @@ describe("v1 → v2 migration", () => {
   it("produces a schema-valid v2 character", () => {
     expect(parsed.schemaVersion).toBe("2.0.0");
     expect(parsed.meta.name).toBe("Old PG");
+    expect(parsed.meta.portrait.src).toBe("images/a.png");
   });
 
-  it("maps identity[] into classes[] and identity object", () => {
-    expect(parsed.classes).toHaveLength(1);
-    expect(parsed.classes[0]).toMatchObject({ name: "Warlock", level: 5 });
-    expect(parsed.identity.race).toBe("Tiefling");
+  it("parses class + embedded level and race `parts`", () => {
+    expect(parsed.classes[0]).toMatchObject({ name: "Warlock", level: 4, subclass: "Immondo (Fiend)" });
+    expect(parsed.identity.race).toBe("Draconide / Tiefling");
+    expect(parsed.identity.background).toBe("Forestiero");
   });
 
-  it("maps Italian ability names and save proficiency", () => {
-    expect(parsed.abilities.cha.score).toBe(17);
+  it("maps abilities and detects save proficiency from the 'competente' note", () => {
+    expect(parsed.abilities.cha.score).toBe(18);
     expect(parsed.abilities.cha.saveProficient).toBe(true);
-    expect(parsed.abilities.dex.score).toBe(14);
-    expect(spellSaveDc(parsed, "cha")).toBe(14); // sanity: derived from migrated data
+    expect(parsed.abilities.wis.saveProficient).toBe(true);
+    expect(parsed.abilities.str.saveProficient).toBe(false);
+    expect(spellSaveDc(parsed, "cha")).toBe(14); // 8 + PB2 + CHA+4
   });
 
-  it("converts slots dict + arrows into generic resources", () => {
-    const pact = parsed.resources.find((r) => r.id === "pact");
-    expect(pact).toMatchObject({ category: "spellSlot", max: 2, current: 1, resetOn: "shortRest" });
-    const arrows = parsed.resources.find((r) => r.id === "arrows");
-    expect(arrows).toMatchObject({ category: "ammo", current: 12 });
+  it("maps competent skills to proficiencies.skills", () => {
+    expect(parsed.proficiencies.skills).toContainEqual(expect.objectContaining({ id: "athletics", proficient: true }));
+    expect(parsed.proficiencies.skills.find((s) => s.id === "arcana")).toBeUndefined();
   });
 
-  it("moves HP into combat.hp", () => {
-    expect(parsed.combat.hp).toMatchObject({ max: 38, current: 30, temp: 0 });
+  it("reads AC and speed from baseStats", () => {
+    expect(parsed.combat.armorClass).toBe(13);
+    expect(parsed.combat.speed.walk).toBe(9);
+    expect(parsed.combat.hp).toMatchObject({ max: 31, current: 31 });
   });
 
-  it("converts concentration strings to booleans", () => {
-    const hex = parsed.spellSections[1].entries[0];
-    expect(hex.concentration).toBe(true);
+  it("converts slots and arrows into generic resources with sensible categories", () => {
+    expect(parsed.resources.find((r) => r.id === "pact")).toMatchObject({ category: "spellSlot", max: 2, current: 1, resetOn: "shortRest" });
+    expect(parsed.resources.find((r) => r.id === "focus")).toMatchObject({ category: "charges", resetOn: "longRest" });
+    expect(parsed.resources.find((r) => r.id === "arrows")).toMatchObject({ category: "ammo", current: 15 });
   });
 
-  it("remaps currencies gold/silver/copper → gp/sp/cp", () => {
-    expect(parsed.inventory.currencies).toMatchObject({ gp: 120, sp: 5, cp: 1 });
+  it("remaps currencies and converts concentration strings", () => {
+    expect(parsed.inventory.currencies).toMatchObject({ gp: 838, sp: 5, cp: 5 });
+    expect(parsed.spellSections[0].entries[0].concentration).toBe(false);
   });
 
-  it("preserves orphan v1 data as custom sections (lossless)", () => {
+  it("is lossless: unknown top-level keys and orphan lists survive", () => {
+    expect((parsed as Record<string, unknown>).platform).toEqual({ name: "old tool", mode: "dnd-5e" });
     const titles = parsed.customSections.map((s) => s.title);
-    expect(titles).toContain("Competenze (migrato)");
-    expect(titles).toContain("Abilità (migrato)");
-    expect(titles).toContain("Note (migrato)");
+    expect(titles).toEqual(
+      expect.arrayContaining([
+        "Identità (migrato)",
+        "Numeri base (migrato)",
+        "Competenze (migrato)",
+        "Note di livello (migrato)",
+        "Note (migrato)",
+      ]),
+    );
+    expect((parsed.session as Record<string, unknown>).lastSavedAt).toBe("2026-06-13T22:48:10.433Z");
   });
 });
 
