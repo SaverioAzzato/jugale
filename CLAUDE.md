@@ -4,54 +4,61 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A general-purpose character sheet platform for tabletop characters (D&D 5e in practice), built as a JSON-source-of-truth renderer/editor. `index.html` + `js/` is a stateless ES6-module front end; `character.json` inside a character folder is the canonical data. The same front end runs both as a static page in a browser and packaged as an Electron desktop app.
+A general-purpose character sheet platform for tabletop characters (D&D 5e in practice), built so that **`character.json` is the single source of truth** and the app is a stateless, data-driven renderer/editor over it. The same web front end is designed to ship everywhere from one codebase: **web** (GitHub Pages), **desktop**, and **mobile** (via Tauri 2).
+
+The project is **mid-rewrite** from a vanilla-JS prototype to a generalized TypeScript app:
+- **Current app** (root): React + Vite + TypeScript. The engine (`src/schema/`) is in place; the data-driven sheet UI is being built milestone by milestone — see `docs/ROADMAP.md`.
+- **Legacy prototype** (`legacy/`): the original stateless ES6-module + Electron front end, frozen but still runnable (open `legacy/index.html` or run its Electron entry). Do not build new features here; it exists for reference and migration.
+
+Read the spec-first docs before non-trivial work: `docs/ARCHITECTURE.md`, `docs/SCHEMA.md`, `docs/ROADMAP.md`, `docs/AUTOMATION.md`.
 
 ## Commands
 
-- `npm start` / `npm run dev` — launch the Electron app (`electron .`)
-- `npm run build` — package the app via `electron-builder` (outputs mac dmg/zip per `package.json` `build` config)
-- No test suite, lint, or typecheck is configured in this repo.
-- There is no bundler/dev server for the plain-browser path: open `index.html` directly, or serve the directory statically. JS is loaded as native ES6 modules (`<script type="module">`), so opening via `file://` works in browsers that allow module fetches from disk, but the File System Access API path (live read/write sync) only works on `http(s)://`/Electron, not `file://`.
+- `npm run dev` — Vite dev server
+- `npm test` — Vitest unit tests (`npm run test:watch` for watch mode)
+- `npm run typecheck` — `tsc --noEmit`
+- `npm run build` — typecheck + production web build (`vite build`)
+
+Node 20+. Tauri (desktop/mobile) tooling and a Tailwind design system arrive in later milestones (M2/M4); they are not wired up yet.
 
 ## Architecture
 
-### Two runtime environments, one front end
+### One web front end, three hosts
+The React app is the single front end. It runs as a static site (web/Pages) and, later, wrapped by Tauri 2 for desktop and mobile. Host-specific filesystem access (live read/write sync of `character.json`) is abstracted behind a `StorageProvider` interface — a `FileSystemAccess` implementation for the browser and a Tauri `fs` implementation for native. See `docs/ARCHITECTURE.md` §5.
 
-The same `js/` modules run in two hosts that provide character data differently:
+### Engine — `src/schema/`
+The typed core; everything else builds on it. It stores **inputs, not outputs** (modifiers, proficiency bonus, save DCs, total level are *derived*, never required in the JSON).
+- `character.ts` — the Zod schema for `character.json` **v2.0.0** (the contract). `.passthrough()` everywhere so unknown keys are preserved, sensible defaults so a minimal `{ meta: { name } }` validates. Exports the `Character` type.
+- `derive.ts` — derived 5e values: ability modifiers, proficiency bonus, saving throws, spell save DC / attack, multiclass total level.
+- `migrate.ts` — in-memory `1.0.0 → 2.0.0` upgrade on load (persisted only on a real save); lossless (orphan v1 data is preserved as custom sections).
+- `validate.ts` — `loadCharacter(raw)`: migrate → validate → derive. **Never throws and always returns a renderable character**; schema failures become `error` issues, 5e inconsistencies become `warning` issues (a half-edited file is never locked out).
+- `jsonSchema.ts` — exports a JSON Schema (for external tools / GPTs).
+- Tests live next to source as `*.test.ts` (Vitest).
 
-- **Browser** (no Electron): uses the File System Access API (`showOpenFilePicker`/directory handles) and IndexedDB (`js/storage.js`) to remember and re-open the last `character.json` handle. Live sync writes happen via `FileSystemFileHandle.createWritable()`.
-- **Electron**: `electron-main.js` does all filesystem work in the main process (via `fs/promises`) and exposes it to the renderer through `preload.js`'s `contextBridge` API (`window.electronAPI`). It maintains its own "recent directories" list (`userData/recent-directories.json`) and an app menu with "Open Recent". `js/character-data.js` checks `window.electronAPI` to decide which path to use — see `loadCharacterFromDirectoryPath`, `connectJson`, `tryAutoLoad`.
+### Data flow
+`load file → migrate(schemaVersion) → validate (Zod) → state → render`. Session edits (the live fields) → debounced save via `StorageProvider`, only when live-sync is on.
 
-When adding a new persistence operation, it generally needs a counterpart in both `electron-main.js` (`ipcMain.handle(...)`) + `preload.js` (`contextBridge.exposeInMainWorld`) **and** a browser-only fallback using the File System Access API.
+## Character JSON contract (v2.0.0)
 
-### Data flow / module responsibilities (`js/`)
+Full spec: **`docs/SCHEMA.md`**. A character is a folder: `character.json` + `images/` (alphabetical filename order; `meta.portrait.src` picks the active one). The canonical v2 template is `characters/example-warlock/`.
 
-- `state.js` — single global `state` object (current character, handles, sync/UI flags) and the `elements` map of DOM node lookups. Nearly every other module imports from here; there's no other shared state.
-- `character-data.js` — load/save orchestration: `loadCharacterData()` sets `state.character` and triggers a render; `scheduleSave()` debounces writes (250ms) and only persists if `state.liveSync` is true; `openCharacterPayload`/`connectJson`/`tryAutoLoad` handle the Electron bundle vs. browser-handle flows.
-- `storage.js` — IndexedDB handle persistence + File System Access API helpers (browser-only path).
-- `image-handler.js` — builds the `imageManifest` (list of images for the character) either from the Electron-provided manifest or from `data.assets.images` in the JSON; images are always sorted alphabetically by filename.
-- `render.js` — `renderCharacter()` is the single function that re-renders the whole sheet from `state.character`; called after every load and after every data mutation.
-- `session.js` — reads/writes the "session" portion of the character (HP, slots, inventory qty, currencies) between the DOM form fields and `state.character.session` / `inventory`.
-- `events.js` — all `addEventListener` wiring lives here, plus `window.characterPlatform` (a small global API for programmatic load/get of character data, e.g. from devtools or external scripts).
-- `portrait.js`, `lightbox.js` — portrait carousel and full-screen image viewer, both driven by the `imageManifest`.
-- `ui-controls.js` — table-of-contents (TOC) collapse/expand/overlay behavior and responsive sync.
-- `theme.js` — cycles between `dark`/`night`/`light` themes (Mihon-style), persisted to `localStorage`, applied via `document.body[data-theme]`.
-- `main.js` — wires everything together at startup: initializes modules, binds events, attempts auto-load of the last character.
-
-There is no `utils.js`/`render.js` re-export layer beyond what's described — read the module directly rather than guessing at indirection.
-
-### Character JSON contract
-
-A character lives in its own folder: `character.json` + `images/` (read in alphabetical filename order; `meta.portrait.src` picks the active one). `pg.example/` is the canonical template to copy for new characters. Top-level JSON sections: `schemaVersion`, `platform`, `meta`, `identity`, `build`, `combat`, `spellSections`, `reminders`, `features`, `inventory`, `origin`, `narrative`, `session`.
+Top-level sections: `schemaVersion`, `meta`, `identity`, `classes` (array → multiclass-native), `abilities`, `proficiencies`, `combat`, `resources`, `spellcasting`, `spellSections`, `features`, `inventory`, `origin`, `narrative`, `customSections`, `session`.
 
 Rules that matter when editing character data (also encoded in `.github/agents/*.agent.md`):
 
-- **`character.json` is the single source of truth; `index.html`/JS is a stateless renderer.** Don't hardcode character-specific content into the HTML/JS — it must come from the JSON.
-- **Session vs. structural data**: `session.resources` and `inventory.currencies` are live play-state the UI updates continuously. Everything else (build, levels, spells, features, inventory structure) is persistent data that should only change on an explicit level-up/edit, never silently from a render.
-- Preserve all existing JSON fields when editing — don't drop fields that aren't part of the requested change.
+- **`character.json` is the single source of truth; the app is a stateless, data-driven renderer.** Never hardcode character- or class-specific content into the UI — it must come from the JSON.
+- **Structural vs. live state.** Almost everything is structural (changes only on an explicit level-up/edit). Only these fields are **live** play-state the UI mutates continuously: `combat.hp.current` / `combat.hp.temp`, `resources[].current`, `inventory.items[].quantity`, `inventory.currencies.*`, and `session.*`. Nothing else should change silently from a render.
+- **Generic resources, not hardcoded slots.** `resources[]` is the single model for anything spent/recovered (spell slots of any name, pact magic, ki, rage, sorcery points, arrows…). Don't reintroduce per-class hardcoded fields.
+- Preserve all existing JSON fields when editing — don't drop fields outside the requested change. Unknown keys are intentionally preserved.
 - Preserve clickable `link` properties on spells, feats, weapons, background, class features, etc.
-- Images stay in `images/` with alphabetically-sortable filenames; the UI scans the folder automatically and never expects a hardcoded image list outside the manifest.
+- Images stay in the character's `images/` folder with alphabetically-sortable filenames; the UI scans the folder, never a hardcoded list.
 
-### Custom agents
+## Testing & CI
 
-`.github/agents/` defines two specialized D&D 5e rules agents (`dnd-5e-character-expert`, `dnd-5e-warlock-tome-draconide`) for character-building/optimization questions. They encode the same `character.json`-is-canonical workflow described above.
+Tests are first-class — the schema/model layer is exhaustively unit-tested. CI (`.github/workflows/ci.yml`) runs typecheck + tests + build on every PR; keep it green. Add/adjust tests with any schema, derivation, or migration change.
+
+## Custom agents
+
+`.github/agents/` defines two specialized D&D 5e rules agents (`dnd-5e-character-expert`, `dnd-5e-warlock-tome-draconide`) for character-building/optimization questions. They encode the same v2 `character.json`-is-canonical workflow described above.
+
+`.github/workflows/claude.yml` enables the `@claude` ticket→PR automation (setup in `docs/AUTOMATION.md`); it relies on this file for project standards.

@@ -11,13 +11,19 @@
 
 ## One-time setup for `@claude` (ticket → PR)
 
-You drive this from GitHub's UI/CLI; it can't be fully scripted from here because it needs your account.
+You drive this from GitHub's UI/CLI; it can't be fully scripted from here because it installs a GitHub App and adds a secret on your account. You must be a repo admin.
 
-1. **Install the Claude GitHub App** on this repo: <https://github.com/apps/claude> → *Configure* → select `dnd-manager`.
+The workflow uses the GA action `anthropics/claude-code-action@v1`.
+
+### Quick path (recommended)
+From a terminal with Claude Code, run **`/install-github-app`**. It walks you through installing the GitHub App and adding the `ANTHROPIC_API_KEY` secret. Then skip to "Daily use".
+
+### Manual path
+1. **Install the Claude GitHub App** on this repo: <https://github.com/apps/claude> → *Configure* → select the repo. It requests Contents, Issues, and Pull requests (Read & write).
 2. **Add the API key secret.** Repo → *Settings → Secrets and variables → Actions → New repository secret*:
    - Name: `ANTHROPIC_API_KEY`
    - Value: a key from <https://console.anthropic.com/>.
-   - CLI alternative: `gh secret set ANTHROPIC_API_KEY`.
+   - CLI alternative (you run it, so the key never passes through Claude): `gh secret set ANTHROPIC_API_KEY`.
 3. **Allow Actions to open PRs.** *Settings → Actions → General → Workflow permissions* → enable **Read and write permissions** and **Allow GitHub Actions to create and approve pull requests**.
 
 ### Daily use
