@@ -1,0 +1,92 @@
+/*
+ * Design tokens — THE single source of truth for theming.
+ * Every color/radius/shadow in the app references one of these variables; no
+ * component hardcodes a color. Add or tweak a theme by editing only this file:
+ * duplicate a [data-theme] block and change the values.
+ *
+ * Token contract (each theme must define all of these):
+ *   --bg, --bg-glow            page background + accent glow
+ *   --surface, --surface-2     panels / nested panels
+ *   --border, --border-strong  hairlines
+ *   --text, --muted, --dim     foreground text ramp
+ *   --accent, --accent-weak    brand accent (links, active state)
+ *   --gold                     secondary accent (numbers, "D&D" flavor)
+ *   --ok, --warn, --error      status colors
+ *   --on-accent                text on an accent-filled surface
+ * Shared (theme-independent) tokens live in :root below.
+ */
+
+:root {
+  /* shape & motion — shared across themes */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-sans); /* swap for a display face later */
+  --speed: 0.15s;
+}
+
+/* ---- Arcane (default dark, the "D&D Digital" flagship) ---- */
+:root,
+[data-theme="arcane"] {
+  color-scheme: dark;
+  --bg: #0c0c16;
+  --bg-glow: rgba(122, 122, 240, 0.18);
+  --surface: #16161f;
+  --surface-2: #1e1e2b;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --text: #e9e9f2;
+  --muted: #a6a6bd;
+  --dim: #6f6f86;
+  --accent: #8a7bf0;
+  --accent-weak: rgba(138, 123, 240, 0.16);
+  --gold: #e0a44c;
+  --ok: #5fbf7f;
+  --warn: #e0a44c;
+  --error: #e06c6c;
+  --on-accent: #0c0c16;
+}
+
+/* ---- Night (near-black, low-light table use) ---- */
+[data-theme="night"] {
+  color-scheme: dark;
+  --bg: #050507;
+  --bg-glow: rgba(90, 120, 200, 0.1);
+  --surface: #0d0d12;
+  --surface-2: #14141c;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text: #d7d7e2;
+  --muted: #8a8a9e;
+  --dim: #565667;
+  --accent: #6f8fd8;
+  --accent-weak: rgba(111, 143, 216, 0.14);
+  --gold: #c9923f;
+  --ok: #4fae6f;
+  --warn: #c9923f;
+  --error: #cf5f5f;
+  --on-accent: #050507;
+}
+
+/* ---- Parchment (warm light, scroll/spellbook feel) ---- */
+[data-theme="parchment"] {
+  color-scheme: light;
+  --bg: #efe6d2;
+  --bg-glow: rgba(107, 79, 187, 0.1);
+  --surface: #f7f0e0;
+  --surface-2: #fbf6ea;
+  --border: rgba(60, 45, 25, 0.18);
+  --border-strong: rgba(60, 45, 25, 0.32);
+  --text: #2c2218;
+  --muted: #6a5b46;
+  --dim: #9a8b73;
+  --accent: #6b4fbb;
+  --accent-weak: rgba(107, 79, 187, 0.14);
+  --gold: #9a6a1e;
+  --ok: #3f8a52;
+  --warn: #9a6a1e;
+  --error: #b03a3a;
+  --on-accent: #fbf6ea;
+}
