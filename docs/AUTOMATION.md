@@ -5,36 +5,29 @@
 | File | Trigger | What it does |
 |---|---|---|
 | `.github/workflows/ci.yml` | every PR + push to `main` | typecheck → unit tests → web build. The required gate before merge. |
-| `.github/workflows/claude.yml` | `@claude` in an issue/PR comment | runs the Claude Code agent: implements on a branch, pushes, opens/updates a PR. |
 | `release.yml` *(added in M4)* | tag `v*` | builds desktop + Android artifacts, attaches them to a GitHub Release. |
 | `pages.yml` *(added in M4)* | push to `main` | deploys the web build to GitHub Pages. |
 
-## One-time setup for `@claude` (ticket → PR)
+There is intentionally **no `claude.yml`** — see "ticket → PR" below for why.
 
-You drive this from GitHub's UI/CLI; it can't be fully scripted from here because it installs a GitHub App and adds a secret on your account. You must be a repo admin.
+## "ticket → PR", three ways
 
-The workflow uses the GA action `anthropics/claude-code-action@v1`.
+We deliberately use the paths where **Anthropic runs the compute** (covered by a Claude subscription), not the GitHub-Actions-runner path (which bills the Claude API per token).
 
-### Quick path (recommended)
-From a terminal with Claude Code, run **`/install-github-app`**. It walks you through installing the GitHub App and adding the `ANTHROPIC_API_KEY` secret. Then skip to "Daily use".
+### 1. Claude Code on the web (recommended, hands-off, no repo setup)
+Runs in an Anthropic-managed cloud sandbox at <https://claude.ai/code>. No workflow file, no `ANTHROPIC_API_KEY` secret. Available on Pro/Max/Team (research preview).
 
-### Manual path
-1. **Install the Claude GitHub App** on this repo: <https://github.com/apps/claude> → *Configure* → select the repo. It requests Contents, Issues, and Pull requests (Read & write).
-2. **Add the API key secret.** Repo → *Settings → Secrets and variables → Actions → New repository secret*:
-   - Name: `ANTHROPIC_API_KEY`
-   - Value: a key from <https://console.anthropic.com/>.
-   - CLI alternative (you run it, so the key never passes through Claude): `gh secret set ANTHROPIC_API_KEY`.
-3. **Allow Actions to open PRs.** *Settings → Actions → General → Workflow permissions* → enable **Read and write permissions** and **Allow GitHub Actions to create and approve pull requests**.
+- **Connect GitHub once:** authorize the **Claude GitHub App** during web onboarding at claude.ai/code, *or* run `/web-setup` in a terminal to sync your `gh` token to your Claude account.
+- **Trigger a task:** on claude.ai/code, pick this repo and describe the ticket. The session clones the repo, reads its `CLAUDE.md` and `.claude/`, implements on a branch, and opens a PR. `ci.yml` then validates it.
+- **Auto-fix PRs:** with the GitHub App installed, Claude can automatically respond to CI failures and PR review comments (the App receives the webhooks) — still on Anthropic's cloud.
 
-### Daily use
-- Open an issue describing the ticket (e.g. *"Add a Cleric sample character and a prepared-caster fixture"*), then comment `@claude implementa questo`.
-- The agent branches, commits, pushes, and opens a PR; `ci.yml` validates it; you review and merge.
-- You can also `@claude` on an existing PR to request changes.
+### 2. Local Claude Code (zero setup, free)
+Give the ticket in a Claude Code terminal session here. It implements on a branch and opens the PR with the authenticated `gh` CLI. Same result, driven from your machine.
+
+### 3. (Not used) The GitHub Actions version
+`anthropics/claude-code-action@v1` would let you type `@claude` *inside* a GitHub issue/PR, but it runs on **GitHub-hosted runners** and needs an `ANTHROPIC_API_KEY` secret (API tokens billed per use). We deliberately don't use it — it's documented at <https://code.claude.com/docs/en/github-actions> if priorities ever change.
 
 ## Branch & PR conventions
 - Branches: `feat/…`, `fix/…`, `docs/…`, `chore/…`.
 - PRs must pass `ci.yml` (typecheck + tests + build) before merge.
 - Conventional-commit style messages keep history readable and enable future automated changelogs.
-
-## Local equivalent
-You can run the same loop locally with Claude Code: open a ticket, let it implement on a branch, and it pushes + opens the PR with `gh`. The GitHub Action is just the hands-off, in-cloud version of that.
