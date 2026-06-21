@@ -1,8 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import type { Character } from "../schema";
 import { abilityModifierFor } from "../schema";
 import { Panel, fmtMod, DataTable, WikiLink } from "./primitives";
-import { Stepper } from "./controls";
+import { Stepper, useHoldRepeat } from "./controls";
 import { useCharacter } from "../state/store";
 
 function Stat({ label, value }: { label: string; value: ReactNode }) {
@@ -20,7 +20,36 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
   const setCurrentHp = useCharacter((s) => s.setCurrentHp);
   const setTempHp = useCharacter((s) => s.setTempHp);
   const [amount, setAmount] = useState(1);
+  const damagePressed = useRef(false);
+  const healPressed = useRef(false);
   const pct = hp.max > 0 ? Math.round((hp.current / hp.max) * 100) : 0;
+
+  const holdDamage = useHoldRepeat(() => damage(amount));
+  const holdHeal = useHoldRepeat(() => heal(amount));
+
+  const clearPressedSoon = (ref: { current: boolean }) => {
+    setTimeout(() => {
+      ref.current = false;
+    }, 0);
+  };
+
+  const startDamage = () => {
+    damagePressed.current = true;
+    holdDamage.start();
+  };
+  const stopDamage = () => {
+    holdDamage.stop();
+    clearPressedSoon(damagePressed);
+  };
+
+  const startHeal = () => {
+    healPressed.current = true;
+    holdHeal.start();
+  };
+  const stopHeal = () => {
+    holdHeal.stop();
+    clearPressedSoon(healPressed);
+  };
 
   return (
     <div className="hp-control">
@@ -41,19 +70,62 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
           onChange={(e) => setAmount(Math.max(0, Number(e.target.value)))}
           aria-label="quantità"
         />
-        <button type="button" className="btn btn-danger" onClick={() => damage(amount)}>
+        <button
+          type="button"
+          className="btn btn-danger"
+          onClick={() => {
+            if (damagePressed.current) {
+              damagePressed.current = false;
+              return;
+            }
+            damage(amount);
+          }}
+          onMouseDown={startDamage}
+          onMouseUp={stopDamage}
+          onMouseLeave={stopDamage}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            startDamage();
+          }}
+          onTouchEnd={stopDamage}
+        >
           Danno
         </button>
-        <button type="button" className="btn btn-heal" onClick={() => heal(amount)}>
+        <button
+          type="button"
+          className="btn btn-heal"
+          onClick={() => {
+            if (healPressed.current) {
+              healPressed.current = false;
+              return;
+            }
+            heal(amount);
+          }}
+          onMouseDown={startHeal}
+          onMouseUp={stopHeal}
+          onMouseLeave={stopHeal}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            startHeal();
+          }}
+          onTouchEnd={stopHeal}
+        >
           Cura
         </button>
       </div>
       <div className="hp-fine">
         <label>
-          PF <Stepper value={hp.current} max={hp.max || undefined} onChange={setCurrentHp} label="PF correnti" />
+          PF{" "}
+          <Stepper
+            value={hp.current}
+            max={hp.max || undefined}
+            onChange={setCurrentHp}
+            label="PF correnti"
+          />
         </label>
         <label>
-          Temp <Stepper value={hp.temp} onChange={setTempHp} label="PF temporanei" />
+          Temp{" "}
+          <Stepper value={hp.temp} onChange={setTempHp} label="PF temporanei" />
         </label>
       </div>
     </div>
@@ -63,7 +135,8 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
 export function CombatSection({ c }: { c: Character }) {
   const shortRest = useCharacter((s) => s.shortRest);
   const longRest = useCharacter((s) => s.longRest);
-  const initiative = c.combat.initiativeOverride ?? abilityModifierFor(c, "dex");
+  const initiative =
+    c.combat.initiativeOverride ?? abilityModifierFor(c, "dex");
 
   return (
     <Panel title="Combattimento" id="combat">
@@ -86,7 +159,15 @@ export function CombatSection({ c }: { c: Character }) {
 
       {c.combat.attacks.length > 0 && (
         <DataTable
-          headers={["Opzione", "Livello", "Gittata", "Tiro che fai tu", "Tiro avversario", "Danno/Effetto", "Note"]}
+          headers={[
+            "Opzione",
+            "Livello",
+            "Gittata",
+            "Tiro che fai tu",
+            "Tiro avversario",
+            "Danno/Effetto",
+            "Note",
+          ]}
           rows={c.combat.attacks.map((a) => [
             <WikiLink link={a.link}>{a.name}</WikiLink>,
             a.level,

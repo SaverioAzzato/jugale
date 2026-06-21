@@ -3,8 +3,11 @@ import { useShallow } from "zustand/react/shallow";
 import { useCharacter } from "./state/store";
 import { Sheet } from "./render/Sheet";
 import { getVisibleTabs } from "./render/tabs";
-import type { Issue } from "./schema";
-import { isFileAccessSupported, openCharacterFile, importJsonFile } from "./storage/provider";
+import {
+  isFileAccessSupported,
+  openCharacterFile,
+  importJsonFile,
+} from "./storage/provider";
 import { ThemeSwitcher } from "./theme/ThemeSwitcher";
 import warlock from "../characters/example-warlock/character.json";
 import fighter from "../characters/example-fighter/character.json";
@@ -21,12 +24,9 @@ const SAMPLES = [
 ];
 
 export function App() {
-  const { character, issues, migrated, ok, sourceName, liveSync, dirty, saveError } = useCharacter(
+  const { character, sourceName, liveSync, dirty, saveError } = useCharacter(
     useShallow((s) => ({
       character: s.character,
-      issues: s.issues,
-      migrated: s.migrated,
-      ok: s.ok,
       sourceName: s.sourceName,
       liveSync: s.liveSync,
       dirty: s.dirty,
@@ -36,11 +36,15 @@ export function App() {
   const loadRaw = useCharacter((s) => s.loadRaw);
   const connect = useCharacter((s) => s.connect);
   const exportCharacter = useCharacter((s) => s.exportCharacter);
+  const clear = useCharacter((s) => s.clear);
   const fileInput = useRef<HTMLInputElement>(null);
+  const fileAccessSupported = isFileAccessSupported();
 
   const [activeTab, setActiveTab] = useState("gioco");
   const tabs = character ? getVisibleTabs(character) : [];
-  const tab = tabs.some((t) => t.id === activeTab) ? activeTab : (tabs[0]?.id ?? "gioco");
+  const tab = tabs.some((t) => t.id === activeTab)
+    ? activeTab
+    : (tabs[0]?.id ?? "gioco");
 
   // Warn before leaving with unsaved in-memory edits (live-synced files save themselves).
   useEffect(() => {
@@ -59,6 +63,24 @@ export function App() {
     if (result) connect(result.provider, result.raw, "file");
   }
 
+  function handleBackToHome() {
+    if (
+      dirty &&
+      !liveSync &&
+      !window.confirm("Ci sono modifiche non esportate. Tornare alla home?")
+    )
+      return;
+    clear();
+  }
+
+  function handleOpenJson() {
+    if (fileAccessSupported) {
+      void handleOpen();
+      return;
+    }
+    fileInput.current?.click();
+  }
+
   async function handleImportFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -73,31 +95,54 @@ export function App() {
   return (
     <div className="app">
       <header className="appbar">
-      <nav className="toolbar">
-        <span className="brand">D&amp;D Manager</span>
+        <nav className="toolbar">
+          <div className="toolbar-left">
+            {character && (
+              <button
+                className="btn btn-back"
+                onClick={handleBackToHome}
+                title="Torna alla schermata iniziale"
+                aria-label="Torna indietro"
+              >
+                <svg
+                  className="back-icon"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path
+                    d="M15.5 4.5 8 12l7.5 7.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+          <div className="toolbar-right">
+            {character && (
+              <button
+                className="btn"
+                onClick={exportCharacter}
+                title="Scarica una copia JSON del character corrente"
+              >
+                Esporta JSON
+              </button>
+            )}
+            <ThemeSwitcher />
+          </div>
+        </nav>
 
-        <div className="toolbar-file">
-          {isFileAccessSupported() && (
-            <button className="btn" onClick={handleOpen} title="Apri un character.json con sincronizzazione dal vivo">
-              Apri file
-            </button>
-          )}
-          <button className="btn" onClick={() => fileInput.current?.click()}>
-            Importa
-          </button>
-          <button className="btn" onClick={exportCharacter} disabled={!character}>
-            Esporta
-          </button>
-          <input ref={fileInput} type="file" accept="application/json,.json" hidden onChange={handleImportFile} />
-        </div>
-
-        <div className="toolbar-right">
-          {character && <span className="toolbar-name">{sourceName || character.meta.name}</span>}
-          {character && <SyncStatus liveSync={liveSync} dirty={dirty} saveError={saveError} />}
-          {character && <ValidationBadge issues={issues} migrated={migrated} ok={ok} />}
-          <ThemeSwitcher />
-        </div>
-      </nav>
+        <input
+          ref={fileInput}
+          type="file"
+          accept="application/json,.json"
+          hidden
+          onChange={handleImportFile}
+        />
 
         {character && tabs.length > 0 && (
           <nav className="tabbar" role="tablist" aria-label="Sezioni">
@@ -119,19 +164,48 @@ export function App() {
       {character ? (
         <Sheet c={character} tab={tab} />
       ) : (
-        <EmptyState onOpen={handleOpen} onImport={() => fileInput.current?.click()} onSample={(d, l) => loadRaw(d, l)} />
+        <EmptyState
+          onOpenJson={handleOpenJson}
+          onSample={(d, l) => loadRaw(d, l)}
+        />
+      )}
+
+      {character && (
+        <footer className="statusbar" role="status" aria-live="polite">
+          <span className="statusbar-file">
+            File: {sourceName || "(senza nome)"}
+          </span>
+          <span className="statusbar-sep" aria-hidden>
+            •
+          </span>
+          <span className="statusbar-sync">
+            {liveSync
+              ? "Sync live"
+              : dirty
+                ? "Modifiche non esportate"
+                : "In memoria"}
+          </span>
+          {saveError && (
+            <>
+              <span className="statusbar-sep" aria-hidden>
+                •
+              </span>
+              <span className="statusbar-error">
+                Errore salvataggio: {saveError}
+              </span>
+            </>
+          )}
+        </footer>
       )}
     </div>
   );
 }
 
 function EmptyState({
-  onOpen,
-  onImport,
+  onOpenJson,
   onSample,
 }: {
-  onOpen: () => void;
-  onImport: () => void;
+  onOpenJson: () => void;
   onSample: (data: unknown, label: string) => void;
 }) {
   return (
@@ -139,47 +213,28 @@ function EmptyState({
       <div className="empty-card">
         <h1>Il tuo personaggio, sempre tuo.</h1>
         <p className="muted">
-          Apri il tuo <code>character.json</code> per giocarci con salvataggio dal vivo, oppure importane una copia.
+          Apri il tuo <code>character.json</code> per iniziare subito.
         </p>
         <div className="empty-actions">
-          {isFileAccessSupported() && (
-            <button className="btn btn-primary" onClick={onOpen}>
-              Apri file
-            </button>
-          )}
-          <button className="btn" onClick={onImport}>
-            Importa JSON
+          <button className="btn btn-primary" onClick={onOpenJson}>
+            Apri JSON
           </button>
         </div>
         <div className="empty-samples">
-          <span className="muted">oppure prova un esempio:</span>
+          <span className="muted empty-samples-label">
+            Oppure prova un esempio
+          </span>
           {SAMPLES.map((s) => (
-            <button key={s.key} className="sample" onClick={() => onSample(s.data, s.label)}>
+            <button
+              key={s.key}
+              className="sample sample-grid-item"
+              onClick={() => onSample(s.data, s.label)}
+            >
               {s.label}
             </button>
           ))}
         </div>
       </div>
     </div>
-  );
-}
-
-function SyncStatus({ liveSync, dirty, saveError }: { liveSync: boolean; dirty: boolean; saveError: string | null }) {
-  if (saveError) return <span className="sync is-error" title={saveError}>⚠ errore salvataggio</span>;
-  if (liveSync) return <span className="sync is-live">● file in sync{dirty ? "…" : ""}</span>;
-  if (dirty) return <span className="sync is-dirty" title="Esporta per non perdere le modifiche">● non salvato</span>;
-  return <span className="sync is-mem">in memoria</span>;
-}
-
-function ValidationBadge({ issues, migrated, ok }: { issues: Issue[]; migrated: boolean; ok: boolean }) {
-  const errors = issues.filter((i) => i.severity === "error").length;
-  const warnings = issues.filter((i) => i.severity === "warning").length;
-  const label = !ok ? `✗ ${errors} errori` : warnings ? `⚠ ${warnings}` : "✓ valido";
-  const tone = !ok ? "is-error" : warnings ? "is-warn" : "is-ok";
-  return (
-    <span className={`validation ${tone}`} title={issues.map((i) => `${i.path}: ${i.message}`).join("\n")}>
-      {label}
-      {migrated && <span className="migrated"> · migrato v1</span>}
-    </span>
   );
 }
