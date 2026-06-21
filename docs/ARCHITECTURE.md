@@ -13,6 +13,7 @@ A character-sheet platform where **the JSON is the character** and the app is a 
 4. **Freedom within structure.** The schema is structured enough to validate rules and generate UI, free enough for any class/homebrew, and simple enough for an LLM to manipulate by hand. (See `SCHEMA.md`.)
 5. **Free & open distribution.** No app stores required, no hosting bills. GitHub Releases + GitHub Pages.
 6. **Spec-first, tested, automated.** Architecture and schema specs precede code; everything is covered by tests; CI/CD does the building and shipping.
+7. **Low legal & licensing risk, on purpose.** Ship only freely-licensed example content (the 5e SRD) as defaults — never a commercial sourcebook hardcoded into schema defaults, prompts, or seed material. No in-app chat/LLM that ingests arbitrary user-supplied content; external chatbots via the published JSON Schema are the supported integration point instead. See `ROADMAP.md` ("Explicitly out of scope") and the M3 prompts section.
 
 ## 2. Stack decision (resolved)
 
@@ -42,7 +43,7 @@ src/
   storage/        # StorageProvider interface + TauriFsProvider + FileSystemAccessProvider + handle persistence
   render/         # Data-driven section renderers (one component per layout kind)
   components/     # Reusable UI primitives (cards, tables, resource trackers, lightbox, portrait, TOC)
-  features/       # Feature areas: character-sheet, session-play, prompts, byok-chat (later)
+  features/       # Feature areas: character-sheet, session-play, prompts
   theme/          # Design tokens + theme switching
   app/            # App shell, routing, bootstrap, auto-load
 docs/             # ARCHITECTURE.md, SCHEMA.md, ROADMAP.md, PROMPTS.md
@@ -88,7 +89,7 @@ Both implement the same interface; the rest of the app never knows which host it
 
 - **PR checks** (`.github/workflows/ci.yml`): typecheck + lint + unit/component + Playwright + web build, on every PR.
 - **Release** (`release.yml`): on tag `v*`, build per-platform artifacts (dmg/zip, exe/msi, AppImage, apk) and attach to a GitHub Release. Web deploy to Pages on push to `main`.
-- **Ticket → PR** (`claude.yml`): the Claude Code GitHub Action. Open an issue, mention `@claude`, it implements on a branch, pushes, and opens a PR that the CI then validates. Setup (install the GitHub App, add the API key secret) is documented in `docs/AUTOMATION.md` when M0 lands.
+- **Ticket → PR**: no GitHub-Actions-runner `claude.yml` — by design, so nothing bills the Anthropic API per token. Instead, Claude Code on the web (claude.ai/code, runs on Anthropic's cloud via the GitHub App) or a local Claude Code session implements on a branch and opens a PR via `gh`, which `ci.yml` then validates. Full detail in `docs/AUTOMATION.md`.
 - **Distribution is free.** Releases host the binaries; the only optional cost is code-signing/notarization to remove "unidentified developer" warnings (Apple Dev $99/yr, Windows cert) — deferred. Android APK self-signs and sideloads for free; iOS without a paid account is covered by the installable PWA.
 
 ## 8. Open decisions (revisit during build)
