@@ -219,6 +219,23 @@ Anything the schema didn't anticipate, rendered by a layout hint.
 ```
 `layout`: `text | list | checklist | keyValue | cards | table`. The renderer has one component per layout kind — so custom sections need **zero** code to appear.
 
+### `actions[]` — rests & custom buttons (formula-driven)
+```jsonc
+[
+  { "id": "spend-hit-die", "label": "Spendi Dado Vita", "kind": "custom",
+    "info": "Recupera 1d8 + mod. Costituzione, consuma un Dado Vita.",
+    "formulas": [
+      "combat.hp.current = combat.hp.current + 1d8 + abilities.con.mod",
+      "combat.hp.hitDiceRemaining = combat.hp.hitDiceRemaining - 1"
+    ] }
+]
+```
+`kind`: `shortRest | longRest | custom`. A `shortRest`/`longRest` action fires (after the built-in reset) when that rest button is pressed; a `custom` action gets its own button. Each **formula** is `path = expression`:
+- **left side** = a writable field path (`combat.hp.current`, `combat.hp.temp`, `combat.hp.hitDiceRemaining`, `resources.<id>.current`, …; array entries are addressed by their `id`).
+- **right side** = a `+`/`-` sum of: numbers, dice (`NdM` / `dM`, rolled with a timestamp-seeded RNG), and readable paths — including the read-only virtuals `level`, `pb` / `proficiency`, `maxHitDice`, and `abilities.<id>.mod`.
+
+The UI shows each action's formulae in a consultable "Formulas" info panel next to the rest/custom buttons. Engine: `src/model/formula.ts` (no `eval`, fixed `+`/`-` grammar only). Live fields are clamped to valid ranges on apply.
+
 ### `session` — purely ephemeral
 ```jsonc
 { "conditions": ["avvelenato"], "inspiration": false,

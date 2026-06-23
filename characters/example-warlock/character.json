@@ -179,6 +179,25 @@
     "notes": []
   },
   "customSections": [],
+  "actions": [
+    {
+      "id": "spend-hit-die",
+      "label": "Spendi Dado Vita",
+      "kind": "custom",
+      "info": "Recupera 1d8 + mod. Costituzione, consumando un Dado Vita.",
+      "formulas": [
+        "combat.hp.current = combat.hp.current + 1d8 + abilities.con.mod",
+        "combat.hp.hitDiceRemaining = combat.hp.hitDiceRemaining - 1"
+      ]
+    },
+    {
+      "id": "dark-blessing-temp",
+      "label": "Benedizione dell'Oscuro",
+      "kind": "custom",
+      "info": "PF temporanei = CAR + livello da warlock (quando abbatti un nemico).",
+      "formulas": ["combat.hp.temp = abilities.cha.mod + level"]
+    }
+  ],
   "session": {
     "conditions": [],
     "inspiration": false,

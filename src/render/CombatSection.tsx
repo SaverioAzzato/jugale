@@ -158,8 +158,6 @@ function HitDiceControl({ c }: { c: Character }) {
 
 export function CombatSection({ c }: { c: Character }) {
   const t = useT();
-  const shortRest = useCharacter((s) => s.shortRest);
-  const longRest = useCharacter((s) => s.longRest);
   const initiative = c.combat.initiativeOverride ?? abilityModifierFor(c, "dex");
   const ac = derivedArmorClass(c);
 
@@ -173,15 +171,6 @@ export function CombatSection({ c }: { c: Character }) {
 
       <HpControl hp={c.combat.hp} />
       <HitDiceControl c={c} />
-
-      <div className="rest-actions">
-        <button type="button" className="btn" onClick={shortRest}>
-          {t("vitals.shortRest")}
-        </button>
-        <button type="button" className="btn" onClick={longRest}>
-          {t("vitals.longRest")}
-        </button>
-      </div>
     </Panel>
   );
 }

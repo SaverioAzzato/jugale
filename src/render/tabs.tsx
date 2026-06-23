@@ -3,6 +3,7 @@ import type { Character } from "../schema";
 import { AbilitiesSection } from "./AbilitiesSection";
 import { SkillsSection } from "./SkillsSection";
 import { CombatSection } from "./CombatSection";
+import { ActionsSection } from "./ActionsSection";
 import { StatusSection } from "./StatusSection";
 import { AttacksSection } from "./AttacksSection";
 import { ConsumablesSection } from "./ConsumablesSection";
@@ -79,6 +80,7 @@ export function TabContent({ c, tab }: { c: Character; tab: string }) {
         <Cols
           left={[
             <CombatSection key="vitals" c={c} />,
+            <ActionsSection key="actions" c={c} />,
             <StatusSection key="status" c={c} />,
             c.resources.length > 0 && <ResourcesSection key="resources" c={c} />,
           ]}

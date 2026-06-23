@@ -55,6 +55,8 @@ const en = {
   "vitals.shortRest": "Short rest",
   "vitals.longRest": "Long rest",
   "ac.manual": "manual",
+  "actions.title": "Actions",
+  "actions.formulas": "Formulas",
   // status
   "status.title": "Status",
   "status.addCondition": "+ condition",
@@ -224,6 +226,8 @@ const it: Record<StringKey, string> = {
   "vitals.shortRest": "Riposo breve",
   "vitals.longRest": "Riposo lungo",
   "ac.manual": "manuale",
+  "actions.title": "Azioni",
+  "actions.formulas": "Formule",
   "status.title": "Stato",
   "status.addCondition": "+ condizione",
   "status.conditionPlaceholder": "condizione…",

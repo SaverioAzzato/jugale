@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { loadCharacter, maxHitDice, type Character, type Issue } from "../schema";
+import { applyFormulas, makeRng } from "../model/formula";
 import { exportJson, type StorageProvider } from "../storage/provider";
 
 const clamp = (n: number, lo: number, hi: number) =>
@@ -45,6 +46,7 @@ interface CharacterState {
   heal: (n: number) => void;
   adjustResource: (id: string, delta: number) => void;
   adjustHitDice: (delta: number) => void;
+  runAction: (id: string) => void;
   shortRest: () => void;
   longRest: () => void;
   setItemQuantity: (index: number, qty: number) => void;
@@ -183,20 +185,35 @@ export const useCharacter = create<CharacterState>((set, get) => {
         }),
       ),
 
+    runAction: (id) =>
+      mutate((c) => {
+        const action = c.actions.find((a) => a.id === id);
+        if (!action) return c;
+        return applyFormulas(c, action.formulas, makeRng(Date.now()));
+      }),
+
     shortRest: () =>
-      mutate((c) => ({
-        ...c,
-        resources: c.resources.map((r) =>
-          r.resetOn === "shortRest" ? { ...r, current: r.max } : r,
-        ),
-      })),
+      mutate((c) => {
+        const rng = makeRng(Date.now());
+        const rested: Character = {
+          ...c,
+          resources: c.resources.map((r) =>
+            r.resetOn === "shortRest" ? { ...r, current: r.max } : r,
+          ),
+        };
+        // Built-in reset, then any registered short-rest actions (formulae).
+        return c.actions
+          .filter((a) => a.kind === "shortRest")
+          .reduce((acc, a) => applyFormulas(acc, a.formulas, rng), rested);
+      }),
 
     longRest: () =>
       mutate((c) => {
+        const rng = makeRng(Date.now());
         const resets = new Set(["shortRest", "longRest", "dawn"]);
         // RAW: a long rest recovers up to half your total Hit Dice (min 1).
         const regained = Math.max(1, Math.floor(maxHitDice(c) / 2));
-        return {
+        const rested: Character = {
           ...patchHp(c, {
             current: c.combat.hp.max || c.combat.hp.current,
             temp: 0,
@@ -206,6 +223,9 @@ export const useCharacter = create<CharacterState>((set, get) => {
             resets.has(r.resetOn) ? { ...r, current: r.max } : r,
           ),
         };
+        return c.actions
+          .filter((a) => a.kind === "longRest")
+          .reduce((acc, a) => applyFormulas(acc, a.formulas, rng), rested);
       }),
 
     setItemQuantity: (index, qty) =>

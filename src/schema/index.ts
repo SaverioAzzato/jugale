@@ -9,6 +9,7 @@ export {
   type Item,
   type AttackProfile,
   type AttackEntry,
+  type Action,
 } from "./character";
 export {
   abilityModifier,

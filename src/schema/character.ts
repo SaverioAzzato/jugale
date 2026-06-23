@@ -300,6 +300,21 @@ const CustomSection = z
   })
   .passthrough();
 
+/**
+ * A registered action: rest perks or custom buttons. `formulas` are `path = expr`
+ * strings evaluated by src/model/formula.ts (field paths + numbers + NdM dice).
+ * `kind` shortRest/longRest actions also fire when that rest button is pressed.
+ */
+const Action = z
+  .object({
+    id: z.string().default(""),
+    label: z.string().default(""),
+    kind: z.enum(["shortRest", "longRest", "custom"]).default("custom"),
+    formulas: z.array(z.string()).default([]),
+    info: z.string().default(""),
+  })
+  .passthrough();
+
 const Session = z
   .object({
     conditions: strings,
@@ -333,6 +348,7 @@ export const CharacterSchema = z
     origin: Origin,
     narrative: Narrative,
     customSections: z.array(CustomSection).default([]),
+    actions: z.array(Action).default([]),
     session: Session,
   })
   .passthrough();
@@ -344,3 +360,4 @@ export type ClassEntry = z.infer<typeof ClassEntry>;
 export type Item = z.infer<typeof Item>;
 export type AttackProfile = z.infer<typeof AttackProfile>;
 export type AttackEntry = z.infer<typeof Attack>;
+export type Action = z.infer<typeof Action>;
