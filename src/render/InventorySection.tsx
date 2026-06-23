@@ -137,7 +137,7 @@ export function InventorySection({ c }: { c: Character }) {
       )}
 
       {equipped.length > 0 && (
-        <div className="inv-group">
+        <div className="inv-group inv-group-equipped">
           <h3 className="inv-group-title">{t("inv.equipped")}</h3>
           <ul className="inv-list">
             {equipped.map((e) => (

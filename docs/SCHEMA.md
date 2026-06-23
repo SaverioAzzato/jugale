@@ -114,9 +114,10 @@ Modifiers and save bonuses are derived. `modifierOverride` is the homebrew escap
   "initiativeOverride": null, "speed": { "walk": 30, "fly": 0 },
   "hp": { "max": 38, "current": 38, "temp": 0, "hitDiceRemaining": 5 },
   "attacks": [
-    // INNATE / item-less attacks only (breath weapon, unarmed strike, natural weapons).
-    // Weapon attacks live on the inventory item (see `inventory.items[].attacks`); the
-    // combat view merges both. Reuses the same columns as spells so the table reads consistently.
+    // PHYSICAL / innate attacks only (breath weapon, unarmed strike, natural weapons).
+    // NEVER spells — those live only in spellSections (putting a spell here too makes it
+    // show up twice). Weapon attacks live on the inventory item (`inventory.items[].attacks`);
+    // the combat view merges item weapons + these. Same columns as spells for consistency.
     { "name": "Arma a soffio", "link": "https://...", "level": "Razza",
       "range": "Cono 4,5 m", "attack": "Nessun tiro",                // "tiro che fai tu"
       "defense": "TS Des CD 12",                                     // "tiro avversario"
@@ -167,6 +168,8 @@ CD incantesimi and bonus d'attacco are **derived** from `classes[].spellcasting.
 ]
 ```
 `source`: `class | subclass | race | background | feat | item | custom`. `uses` optionally binds a feature to a `resources[]` entry so the UI can show/spend its charges inline.
+
+**Anything that is a character feature goes here — Warlock invocations, Sorcerer metamagic options, Fighter maneuvers, fighting styles, etc.** They render in the **Attributi** tab grouped by `source`. Don't stash features in `customSections[]` (that renders in the Story tab and is only for genuinely freeform content — reminders, table notes, homebrew tables).
 
 ### `inventory`
 ```jsonc

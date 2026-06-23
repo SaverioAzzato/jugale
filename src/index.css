@@ -157,22 +157,18 @@ a {
   padding: 24px 20px 64px;
 }
 .sheet-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 20px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 .sheet-header h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 26px;
   font-family: var(--font-display);
 }
 .subtitle {
   margin: 4px 0 0;
   color: var(--accent);
   font-weight: 600;
+  font-size: 14px;
 }
 .header-stats {
   display: flex;
@@ -603,6 +599,16 @@ a {
 .inv-group {
   margin-bottom: 14px;
 }
+.inv-group-equipped {
+  padding-bottom: 16px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--border-strong);
+}
+.story-summary {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
 .inv-group-title {
   font-size: 12px;
   text-transform: uppercase;
@@ -905,6 +911,7 @@ a {
 .rest-actions {
   display: flex;
   gap: 8px;
+  margin-top: 16px;
   margin-bottom: 12px;
 }
 

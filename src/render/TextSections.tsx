@@ -2,6 +2,17 @@ import type { Character } from "../schema";
 import { Panel } from "./primitives";
 import { useT, type StringKey } from "../i18n/useI18n";
 
+/** The character's free-text summary/description — lives in the Story tab. */
+export function DescriptionSection({ c }: { c: Character }) {
+  const t = useT();
+  if (!c.meta.summary || !c.meta.summary.trim()) return null;
+  return (
+    <Panel title={t("description.title")} id="description">
+      <p className="story-summary">{c.meta.summary}</p>
+    </Panel>
+  );
+}
+
 /** Bio / vital statistics from the identity block (only the fields that are set). */
 export function BioSection({ c }: { c: Character }) {
   const t = useT();

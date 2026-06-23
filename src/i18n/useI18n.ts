@@ -40,6 +40,8 @@ const en = {
   // header
   "header.level": "Level",
   "header.proficiency": "Proficiency",
+  "header.profShort": "Prof.",
+  "description.title": "Description",
   // vitals
   "vitals.title": "Vitals",
   "vitals.ac": "AC",
@@ -208,6 +210,8 @@ const it: Record<StringKey, string> = {
   "tab.storia": "Storia",
   "header.level": "Livello",
   "header.proficiency": "Competenza",
+  "header.profShort": "Comp.",
+  "description.title": "Descrizione",
   "vitals.title": "Vitali",
   "vitals.ac": "CA",
   "vitals.initiative": "Iniziativa",

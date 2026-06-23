@@ -35,7 +35,6 @@
     "speed": { "walk": 30 },
     "hp": { "max": 33, "current": 33, "temp": 0, "hitDiceRemaining": 5 },
     "attacks": [
-      { "name": "Fire Bolt", "link": "https://www.dndbeyond.com/spells/fire-bolt", "level": "Trucchetto", "range": "120 ft", "attack": "Attacco con incantesimo a distanza", "defense": "CA", "effect": "2d10 fuoco" },
       { "name": "Daga", "level": "Arma", "range": "Mischia / 6 m", "attack": "+5 colpire", "defense": "CA", "effect": "1d4+2 perforanti" }
     ]
   },
@@ -66,6 +65,8 @@
   "features": [
     { "id": "font-of-magic", "name": "Font of Magic", "source": "class", "level": 2, "description": "Converti slot in punti stregoneria e viceversa.", "uses": { "resourceId": "sorcery-points", "amount": 1 } },
     { "id": "metamagic", "name": "Metamagia", "source": "class", "level": 3, "description": "Due opzioni note: Quickened Spell e Twinned Spell." },
+    { "id": "metamagic-quickened", "name": "Quickened Spell", "source": "class", "description": "2 punti stregoneria: lancia un incantesimo da 1 azione come azione bonus." },
+    { "id": "metamagic-twinned", "name": "Twinned Spell", "source": "class", "description": "Punti = livello slot: bersaglia una seconda creatura con un incantesimo a bersaglio singolo." },
     { "id": "draconic-resilience", "name": "Resilienza Draconica", "source": "subclass", "level": 1, "description": "+1 PF per livello; CA base 13 + DES senza armatura." },
     { "id": "elemental-affinity", "name": "Affinità Elementale", "source": "subclass", "level": 6, "description": "Aggiungi il mod. CAR ai danni del tipo affine (in arrivo al liv. 6)." }
   ],
@@ -77,15 +78,7 @@
     ],
     "currencies": { "gp": 60, "sp": 8, "cp": 0 }
   },
-  "customSections": [
-    {
-      "id": "metamagia", "title": "Opzioni di Metamagia", "layout": "cards",
-      "items": [
-        { "title": "Quickened Spell", "text": "2 punti: lancia un incantesimo da 1 azione come azione bonus." },
-        { "title": "Twinned Spell", "text": "Punti = livello slot: bersaglia una seconda creatura con un incantesimo a bersaglio singolo." }
-      ]
-    }
-  ],
+  "customSections": [],
   "narrative": {
     "personality": ["Sicuro di sé, ama l'effetto scenico."],
     "flaws": ["Non resisto a esibirmi col fuoco."]

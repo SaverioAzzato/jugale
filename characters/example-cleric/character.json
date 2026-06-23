@@ -36,8 +36,7 @@
     "speed": { "walk": 25 },
     "hp": { "max": 38, "current": 38, "temp": 0, "hitDiceRemaining": 5 },
     "attacks": [
-      { "name": "Mazza", "link": "https://www.dndbeyond.com/equipment/mace", "level": "Arma", "range": "Mischia", "attack": "+5 colpire", "defense": "CA", "effect": "1d6+2 contundenti" },
-      { "name": "Sacred Flame", "link": "https://www.dndbeyond.com/spells/sacred-flame", "level": "Trucchetto", "range": "60 ft", "attack": "—", "defense": "TS Destrezza CD 14", "effect": "1d8 radianti (no copertura)" }
+      { "name": "Mazza", "link": "https://www.dndbeyond.com/equipment/mace", "level": "Arma", "range": "Mischia", "attack": "+5 colpire", "defense": "CA", "effect": "1d6+2 contundenti" }
     ]
   },
   "resources": [
