@@ -135,9 +135,14 @@ const Attack = z
 const Combat = z
   .object({
     armorClass: z.number().int().default(10),
+    // Manual AC that wins over any armor-derived value (see derive.ts → derivedArmorClass).
+    armorClassOverride: z.number().int().nullable().default(null),
     initiativeOverride: z.number().int().nullable().default(null),
     speed: z.object({ walk: z.number().default(30) }).passthrough().default({}),
     hp: Hp,
+    // Innate / item-less attacks only (breath weapon, unarmed strike, natural weapons).
+    // Weapon attacks live on the inventory item (Item.attacks) and are merged into the
+    // attacks view at render time. See docs/UI.md.
     attacks: z.array(Attack).default([]),
   })
   .passthrough()
@@ -201,6 +206,34 @@ const Feature = z
   })
   .passthrough();
 
+/** One way to attack with a weapon item: a mode (one-hand / two-hand / thrown…). */
+const AttackProfile = z
+  .object({
+    label: z.string().default(""),
+    range: z.string().default(""),
+    attack: z.string().default(""),
+    defense: z.string().default(""),
+    effect: z.string().default(""),
+    notes: z.string().default(""),
+  })
+  .passthrough();
+
+/**
+ * The AC an armor/shield item contributes while equipped. The renderer never knows 5e
+ * armor rules — each item declares its own contribution and the app sums equipped ones
+ * (see derive.ts → derivedArmorClass). `base` set ⇒ this is body armor (or an unarmored
+ * formula like Monk/Barbarian); `base` null + `bonus` ⇒ an additive piece (shield, ring).
+ */
+const ArmorAc = z
+  .object({
+    base: z.number().int().nullable().default(null),
+    addDex: z.boolean().default(false),
+    dexCap: z.number().int().nullable().default(null),
+    bonus: z.number().int().default(0),
+    label: z.string().default(""),
+  })
+  .passthrough();
+
 const Item = z
   .object({
     id: z.string().default(""),
@@ -208,10 +241,15 @@ const Item = z
     link,
     quantity: z.number().int().min(0).default(1),
     weight: z.number().min(0).default(0),
+    value: z.number().min(0).nullable().default(null),
     equipped: z.boolean().default(false),
     attuned: z.boolean().default(false),
     category: z.string().default(""),
     notes: z.string().default(""),
+    // A weapon item carries 1+ attack profiles; they surface in the combat attacks view.
+    attacks: z.array(AttackProfile).default([]),
+    // An armor/shield item carries its AC contribution; summed when equipped.
+    ac: ArmorAc.nullable().default(null),
   })
   .passthrough();
 
@@ -303,3 +341,6 @@ export type Character = z.infer<typeof CharacterSchema>;
 export type Resource = z.infer<typeof Resource>;
 export type SpellEntry = z.infer<typeof Spell>;
 export type ClassEntry = z.infer<typeof ClassEntry>;
+export type Item = z.infer<typeof Item>;
+export type AttackProfile = z.infer<typeof AttackProfile>;
+export type AttackEntry = z.infer<typeof Attack>;

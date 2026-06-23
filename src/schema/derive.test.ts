@@ -7,6 +7,8 @@ import {
   spellSaveDc,
   spellAttackBonus,
   savingThrowBonus,
+  maxHitDice,
+  derivedArmorClass,
 } from "./derive";
 
 const make = (over: Record<string, unknown> = {}) => CharacterSchema.parse({ meta: { name: "T" }, ...over });
@@ -55,5 +57,56 @@ describe("savingThrowBonus", () => {
     const c = make({ classes: [{ name: "X", level: 5 }], abilities: { cha: { score: 17, saveProficient: true }, str: { score: 8 } } });
     expect(savingThrowBonus(c, "cha")).toBe(6); // +3 mod +3 PB
     expect(savingThrowBonus(c, "str")).toBe(-1); // not proficient
+  });
+});
+
+describe("maxHitDice", () => {
+  it("equals total level across multiclass", () => {
+    expect(maxHitDice(make({ classes: [{ name: "A", level: 3 }, { name: "B", level: 2 }] }))).toBe(5);
+  });
+});
+
+describe("derivedArmorClass", () => {
+  it("falls back to the stored armorClass when nothing is equipped with ac data", () => {
+    const c = make({ combat: { armorClass: 15 } });
+    expect(derivedArmorClass(c)).toEqual({ value: 15, breakdown: "" });
+  });
+
+  it("an explicit override always wins", () => {
+    const c = make({
+      combat: { armorClass: 10, armorClassOverride: 18 },
+      inventory: { items: [{ name: "Cuoio", equipped: true, ac: { base: 11, addDex: true, label: "cuoio" } }] },
+    });
+    expect(derivedArmorClass(c)).toEqual({ value: 18, breakdown: "manuale" });
+  });
+
+  it("sums equipped light armor base + uncapped Dex, with a provenance breakdown", () => {
+    const c = make({
+      abilities: { dex: { score: 16 } }, // +3
+      inventory: { items: [{ name: "Cuoio borchiato", equipped: true, ac: { base: 12, addDex: true, label: "cuoio" } }] },
+    });
+    expect(derivedArmorClass(c)).toEqual({ value: 15, breakdown: "cuoio 12 + des 3" });
+  });
+
+  it("caps Dex for medium armor and adds a shield bonus", () => {
+    const c = make({
+      abilities: { dex: { score: 18 } }, // +4, capped to +2
+      inventory: {
+        items: [
+          { name: "Cotta", equipped: true, ac: { base: 14, addDex: true, dexCap: 2, label: "cotta" } },
+          { name: "Scudo", equipped: true, ac: { bonus: 2, label: "scudo" } },
+        ],
+      },
+    });
+    expect(derivedArmorClass(c)).toEqual({ value: 18, breakdown: "cotta 14 + des 2 + scudo +2" });
+  });
+
+  it("ignores unequipped armor", () => {
+    const c = make({
+      combat: { armorClass: 10 },
+      abilities: { dex: { score: 14 } },
+      inventory: { items: [{ name: "Piastre", equipped: false, ac: { base: 18, label: "piastre" } }] },
+    });
+    expect(derivedArmorClass(c)).toEqual({ value: 10, breakdown: "" });
   });
 });

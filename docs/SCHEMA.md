@@ -109,17 +109,22 @@ Modifiers and save bonuses are derived. `modifierOverride` is the homebrew escap
 ### `combat`
 ```jsonc
 {
-  "armorClass": 13, "initiativeOverride": null, "speed": { "walk": 30, "fly": 0 },
+  "armorClass": 13,             // legacy / hand-set AC; used only when no equipped item declares an `ac`
+  "armorClassOverride": null,   // when set, this wins over any armor-derived value (note: "manuale")
+  "initiativeOverride": null, "speed": { "walk": 30, "fly": 0 },
   "hp": { "max": 38, "current": 38, "temp": 0, "hitDiceRemaining": 5 },
   "attacks": [
-    { "name": "Eldritch Blast", "link": "https://...", "level": "Trucchetto",
-      "range": "120 ft", "attack": "Attacco a distanza CA",          // "tiro che fai tu"
-      "defense": "—",                                                // "tiro avversario"
-      "effect": "1d10 forza × raggi", "notes": "Agonizing Blast: +CHA" }
+    // INNATE / item-less attacks only (breath weapon, unarmed strike, natural weapons).
+    // Weapon attacks live on the inventory item (see `inventory.items[].attacks`); the
+    // combat view merges both. Reuses the same columns as spells so the table reads consistently.
+    { "name": "Arma a soffio", "link": "https://...", "level": "Razza",
+      "range": "Cono 4,5 m", "attack": "Nessun tiro",                // "tiro che fai tu"
+      "defense": "TS Des CD 12",                                     // "tiro avversario"
+      "effect": "2d6 fuoco, metà con successo", "notes": "Recupero: riposo breve/lungo" }
   ]
 }
 ```
-`hp.current`/`hp.temp` are live. `attacks[]` reuses the same columns as spells so the table reads consistently.
+`hp.current`/`hp.temp`/`hp.hitDiceRemaining` are live (max Hit Dice = total level, derived). **AC** is derived without hardcoding 5e rules: each equipped armor/shield item declares its own contribution (`items[].ac`) and the app sums them, showing a provenance note (e.g. `cuoio 11 + des 3`); `armorClassOverride` wins if set, else the stored `armorClass` is the fallback. See `derive.ts → derivedArmorClass` and `docs/UI.md`.
 
 ### `resources[]` — the generic tracker (generalizes "warlock slots")
 The single model for **anything you spend and recover**: spell slots (any name/level), pact magic, ki, rage, sorcery points, channel divinity, superiority dice, bardic inspiration, arrows, potions-as-resource, etc.
@@ -166,14 +171,27 @@ CD incantesimi and bonus d'attacco are **derived** from `classes[].spellcasting.
 ### `inventory`
 ```jsonc
 {
-  "items": [ { "id": "potion-healing", "name": "Pozione di guarigione", "link": "https://...",
-               "quantity": 3, "weight": 0.5, "equipped": false, "attuned": false,
-               "category": "consumable", "notes": "2d4+2" } ],
+  "items": [
+    { "id": "potion-healing", "name": "Pozione di guarigione", "link": "https://...",
+      "quantity": 3, "weight": 0.5, "value": 50, "equipped": false, "attuned": false,
+      "category": "consumable", "notes": "2d4+2" },
+    // A WEAPON item carries its attack profiles (modes); they surface in the combat attacks view.
+    { "id": "dagger", "name": "Pugnale", "category": "weapon", "quantity": 2, "equipped": true,
+      "attacks": [
+        { "label": "Mischia", "range": "Mischia", "attack": "+5", "effect": "1d4+3 perforanti" },
+        { "label": "Lancio",  "range": "6/18 m",  "attack": "+5", "effect": "1d4+3 perforanti" }
+      ] },
+    // An ARMOR/SHIELD item carries its AC contribution; summed by the app when equipped.
+    { "id": "studded", "name": "Cuoio borchiato", "category": "armor", "equipped": true,
+      "ac": { "base": 12, "addDex": true, "dexCap": null, "bonus": 0, "label": "cuoio" } },
+    { "id": "shield", "name": "Scudo", "category": "armor", "equipped": true,
+      "ac": { "base": null, "bonus": 2, "label": "scudo" } }
+  ],
   "currencies": { "pp": 0, "gp": 120, "ep": 0, "sp": 5, "cp": 0 },
   "notes": ["..."]
 }
 ```
-`quantity` and `currencies` are live. `currencies` keys are open (add `ep`, homebrew coins…).
+`quantity`, `equipped`, and `currencies` are live. `currencies` keys are open (add `ep`, homebrew coins…). `category` (open string: `weapon | armor | consumable | ammo | component | alchemy | treasure | gear`…) drives grouping in the Inventario tab and surfaces combat-relevant items (ammo/consumable) in the Gioco tab. A weapon's `attacks[]` and an armor/shield's `ac` are how those items feed the combat view and the derived AC.
 
 ### `origin`, `narrative`
 ```jsonc

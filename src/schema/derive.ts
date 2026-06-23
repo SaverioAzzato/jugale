@@ -35,3 +35,51 @@ export function spellSaveDc(character: Character, ability: AbilityId): number {
 export function spellAttackBonus(character: Character, ability: AbilityId): number {
   return proficiencyBonus(character) + abilityModifierFor(character, ability);
 }
+
+/** Total Hit Dice a character has = total level (one per level). */
+export function maxHitDice(character: Character): number {
+  return totalLevel(character);
+}
+
+/**
+ * Armor Class, derived without hardcoding 5e armor rules: each equipped armor/shield item
+ * declares its own contribution (see character.ts → ArmorAc) and we sum them, exposing a
+ * provenance breakdown (e.g. "cuoio 11 + des 3 + scudo 2"). Precedence:
+ *   1. an explicit `combat.armorClassOverride` always wins ("manuale");
+ *   2. else, if any equipped item declares an `ac`, derive from those;
+ *   3. else, fall back to the stored `combat.armorClass` (legacy / hand-set value).
+ */
+export function derivedArmorClass(character: Character): { value: number; breakdown: string } {
+  const override = character.combat.armorClassOverride;
+  if (override != null) return { value: override, breakdown: "manuale" };
+
+  const dex = abilityModifierFor(character, "dex");
+  const equipped = character.inventory.items.filter((it) => it.equipped && it.ac != null);
+
+  if (equipped.length === 0) {
+    return { value: character.combat.armorClass, breakdown: "" };
+  }
+
+  let total = 0;
+  const parts: string[] = [];
+
+  for (const it of equipped) {
+    const ac = it.ac!;
+    const label = ac.label || it.name || "armatura";
+    if (ac.base != null) {
+      total += ac.base;
+      parts.push(`${label} ${ac.base}`);
+      if (ac.addDex) {
+        const applied = ac.dexCap != null ? Math.min(dex, ac.dexCap) : dex;
+        total += applied;
+        parts.push(`des ${applied}`);
+      }
+    }
+    if (ac.bonus) {
+      total += ac.bonus;
+      parts.push(`${label} ${ac.bonus >= 0 ? "+" : ""}${ac.bonus}`);
+    }
+  }
+
+  return { value: total, breakdown: parts.join(" + ") };
+}
