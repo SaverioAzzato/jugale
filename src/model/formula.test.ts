@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { CharacterSchema } from "../schema";
-import { makeRng, getByPath, setByPath, evalExpression, applyFormula, applyFormulas } from "./formula";
+import { makeRng, getByPath, setByPath, evalExpression, applyFormula, applyFormulas, evaluateFormula, applyAction } from "./formula";
 
 const c = CharacterSchema.parse({
   meta: { name: "T" },
@@ -84,5 +84,39 @@ describe("applyFormulas", () => {
   it("applies formulae in sequence", () => {
     const next = applyFormulas(c, ["combat.hp.current = 20", "combat.hp.current = combat.hp.current + 5"], lo);
     expect(next.combat.hp.current).toBe(25);
+  });
+});
+
+describe("evaluateFormula (strict, reports changes/errors)", () => {
+  it("reports the change for a valid formula", () => {
+    const r = evaluateFormula(c, "combat.hp.temp = 4 + 4", lo);
+    expect(r.error).toBeUndefined();
+    expect(r.change).toEqual({ path: "combat.hp.temp", before: 0, after: 8 });
+  });
+  it("errors on a malformed formula", () => {
+    expect(evaluateFormula(c, "no equals", lo).error).toMatch(/malformed/);
+  });
+  it("errors when writing to an unknown field", () => {
+    expect(evaluateFormula(c, "combat.hp.nope = 5", lo).error).toMatch(/cannot write/);
+  });
+  it("errors when writing to a derived value", () => {
+    expect(evaluateFormula(c, "level = 9", lo).error).toMatch(/derived/);
+  });
+  it("errors on an unknown reference on the right side", () => {
+    expect(evaluateFormula(c, "combat.hp.temp = foo.bar", lo).error).toMatch(/unknown reference/);
+  });
+});
+
+describe("applyAction", () => {
+  it("collects changes and errors across formulae", () => {
+    const { character, changes, errors } = applyAction(
+      c,
+      ["combat.hp.temp = 5", "broken formula", "combat.hp.hitDiceRemaining = combat.hp.hitDiceRemaining - 1"],
+      lo,
+    );
+    expect(character.combat.hp.temp).toBe(5);
+    expect(character.combat.hp.hitDiceRemaining).toBe(4);
+    expect(changes).toHaveLength(2);
+    expect(errors).toHaveLength(1);
   });
 });

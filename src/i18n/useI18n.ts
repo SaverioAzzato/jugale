@@ -57,6 +57,7 @@ const en = {
   "ac.manual": "manual",
   "actions.title": "Actions",
   "actions.formulas": "Formulas",
+  "toast.formulaError": "Formula error",
   // status
   "status.title": "Status",
   "status.addCondition": "+ condition",
@@ -228,6 +229,7 @@ const it: Record<StringKey, string> = {
   "ac.manual": "manuale",
   "actions.title": "Azioni",
   "actions.formulas": "Formule",
+  "toast.formulaError": "Errore formula",
   "status.title": "Stato",
   "status.addCondition": "+ condizione",
   "status.conditionPlaceholder": "condizione…",
@@ -369,8 +371,13 @@ export const useI18n = create<I18nState>((set) => ({
 
 export type TFn = (key: StringKey) => string;
 
+/** Non-hook translator — for use outside React (e.g. the store building a toast). */
+export function translate(locale: Locale, key: StringKey): string {
+  return dict[locale][key] ?? en[key] ?? key;
+}
+
 /** Hook returning the translator bound to the current locale. */
 export function useT(): TFn {
   const locale = useI18n((s) => s.locale);
-  return (key) => dict[locale][key] ?? en[key] ?? key;
+  return (key) => translate(locale, key);
 }

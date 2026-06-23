@@ -11,6 +11,8 @@ import {
 import { ThemeSwitcher } from "./theme/ThemeSwitcher";
 import { LanguageSwitcher } from "./i18n/LanguageSwitcher";
 import { useT, type TFn } from "./i18n/useI18n";
+import { Toasts } from "./ui/Toasts";
+import { useToast } from "./ui/useToast";
 import warlock from "../characters/example-warlock/character.json";
 import fighter from "../characters/example-fighter/character.json";
 import cleric from "../characters/example-cleric/character.json";
@@ -86,7 +88,7 @@ export function App() {
     try {
       loadRaw(await importJsonFile(file), file.name);
     } catch {
-      alert(t("app.invalidJson"));
+      useToast.getState().push("error", t("app.invalidJson"));
     }
   }
 
@@ -185,6 +187,8 @@ export function App() {
           )}
         </footer>
       )}
+
+      <Toasts />
     </div>
   );
 }

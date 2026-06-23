@@ -28,6 +28,11 @@ export function makeRng(seed: number): Rng {
 
 const ABILITY_MOD = /^abilities\.(str|dex|con|int|wis|cha)\.mod$/;
 
+/** Read-only derived paths — valid on the right side, never a write target. */
+function isVirtual(path: string): boolean {
+  return path === "level" || path === "pb" || path === "proficiency" || path === "maxHitDice" || ABILITY_MOD.test(path);
+}
+
 /** Read a numeric value from the character by path (incl. virtual/derived paths). */
 export function getByPath(c: Character, path: string): number | undefined {
   if (path === "level") return totalLevel(c);
@@ -69,15 +74,21 @@ function rollDice(n: number, sides: number, rng: Rng): number {
   return sum;
 }
 
-function evalTerm(c: Character, term: string, rng: Rng): number {
+function evalTerm(c: Character, term: string, rng: Rng, errors?: string[]): number {
   if (/^\d+$/.test(term)) return Number(term);
   const dice = term.match(/^(\d*)d(\d+)$/i);
   if (dice) return rollDice(Number(dice[1] || "1"), Number(dice[2]), rng);
-  return getByPath(c, term) ?? 0;
+  const v = getByPath(c, term);
+  if (v === undefined) {
+    errors?.push(`unknown reference "${term}"`);
+    return 0;
+  }
+  return v;
 }
 
-/** Evaluate the right-hand side: a +/- sum of numbers, dice, and paths. */
-export function evalExpression(c: Character, expr: string, rng: Rng): number {
+/** Evaluate the right-hand side: a +/- sum of numbers, dice, and paths.
+ *  Pass `errors` to collect unresolved references (strict mode). */
+export function evalExpression(c: Character, expr: string, rng: Rng, errors?: string[]): number {
   const tokens = expr.match(/[+-]?\s*[^+-]+/g) ?? [];
   let total = 0;
   for (const raw of tokens) {
@@ -88,7 +99,7 @@ export function evalExpression(c: Character, expr: string, rng: Rng): number {
       sign = -1;
       tk = tk.slice(1).trim();
     }
-    if (tk) total += sign * evalTerm(c, tk, rng);
+    if (tk) total += sign * evalTerm(c, tk, rng, errors);
   }
   return total;
 }
@@ -120,4 +131,55 @@ export function applyFormula(c: Character, formula: string, rng: Rng): Character
 /** Apply every formula of an action in sequence. */
 export function applyFormulas(c: Character, formulas: string[], rng: Rng): Character {
   return formulas.reduce((acc, f) => applyFormula(acc, f, rng), c);
+}
+
+export interface FormulaChange {
+  path: string;
+  before: number;
+  after: number;
+}
+
+export interface FormulaResult {
+  character: Character;
+  change?: FormulaChange;
+  error?: string;
+}
+
+/** Strict single-formula apply: reports what changed, or why it couldn't. */
+export function evaluateFormula(c: Character, formula: string, rng: Rng): FormulaResult {
+  const eq = formula.indexOf("=");
+  if (eq < 0) return { character: c, error: `malformed formula "${formula}"` };
+  const lhs = formula.slice(0, eq).trim();
+  const rhs = formula.slice(eq + 1).trim();
+  if (!lhs || !rhs) return { character: c, error: `incomplete formula "${formula}"` };
+
+  if (isVirtual(lhs)) return { character: c, error: `cannot write to derived value "${lhs}"` };
+  const before = getByPath(c, lhs);
+  if (typeof before !== "number") return { character: c, error: `cannot write to "${lhs}"` };
+
+  const errors: string[] = [];
+  const value = clampForPath(c, lhs, Math.round(evalExpression(c, rhs, rng, errors)));
+  if (errors.length > 0) return { character: c, error: errors[0] };
+
+  return { character: setByPath(c, lhs, value), change: { path: lhs, before, after: value } };
+}
+
+/** Run an action's formulae, collecting the changes made and any errors. */
+export function applyAction(
+  c: Character,
+  formulas: string[],
+  rng: Rng,
+): { character: Character; changes: FormulaChange[]; errors: string[] } {
+  let cur = c;
+  const changes: FormulaChange[] = [];
+  const errors: string[] = [];
+  for (const f of formulas) {
+    const r = evaluateFormula(cur, f, rng);
+    if (r.error) errors.push(r.error);
+    if (r.change) {
+      cur = r.character;
+      changes.push(r.change);
+    }
+  }
+  return { character: cur, changes, errors };
 }

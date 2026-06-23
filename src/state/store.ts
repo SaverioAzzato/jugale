@@ -1,7 +1,39 @@
 import { create } from "zustand";
 import { loadCharacter, maxHitDice, type Character, type Issue } from "../schema";
-import { applyFormulas, makeRng } from "../model/formula";
+import { applyAction, makeRng, type FormulaChange } from "../model/formula";
+import { translate, useI18n, type StringKey } from "../i18n/useI18n";
+import { useToast } from "../ui/useToast";
 import { exportJson, type StorageProvider } from "../storage/provider";
+
+const FIELD_LABEL: Record<string, StringKey> = {
+  "combat.hp.current": "vitals.hp",
+  "combat.hp.temp": "vitals.temp",
+  "combat.hp.hitDiceRemaining": "vitals.hitDice",
+};
+
+/** "PF +5, Dadi Vita −1" — non-zero changes only, with localized field labels. */
+function describeChanges(changes: FormulaChange[], c: Character): string {
+  const locale = useI18n.getState().locale;
+  return changes
+    .map((ch) => {
+      const delta = ch.after - ch.before;
+      if (delta === 0) return null;
+      let label = FIELD_LABEL[ch.path] ? translate(locale, FIELD_LABEL[ch.path]) : "";
+      if (!label) {
+        const res = ch.path.match(/^resources\.([^.]+)\.current$/);
+        label = (res && c.resources.find((r) => r.id === res[1])?.label) || ch.path;
+      }
+      return `${label} ${delta > 0 ? "+" : "−"}${Math.abs(delta)}`;
+    })
+    .filter(Boolean)
+    .join(", ");
+}
+
+function reportErrors(errors: string[]): void {
+  if (errors.length === 0) return;
+  const prefix = translate(useI18n.getState().locale, "toast.formulaError");
+  errors.forEach((e) => useToast.getState().push("error", `${prefix}: ${e}`));
+}
 
 const clamp = (n: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, n));
@@ -185,12 +217,20 @@ export const useCharacter = create<CharacterState>((set, get) => {
         }),
       ),
 
-    runAction: (id) =>
-      mutate((c) => {
-        const action = c.actions.find((a) => a.id === id);
-        if (!action) return c;
-        return applyFormulas(c, action.formulas, makeRng(Date.now()));
-      }),
+    runAction: (id) => {
+      const c = get().character;
+      if (!c) return;
+      const action = c.actions.find((a) => a.id === id);
+      if (!action) return;
+      const { character, changes, errors } = applyAction(c, action.formulas, makeRng(Date.now()));
+      reportErrors(errors);
+      const summary = describeChanges(changes, c);
+      if (summary) useToast.getState().push("success", `${action.label || action.id} — ${summary}`);
+      if (changes.length > 0) {
+        set({ character, dirty: true });
+        scheduleSave();
+      }
+    },
 
     shortRest: () =>
       mutate((c) => {
@@ -202,9 +242,17 @@ export const useCharacter = create<CharacterState>((set, get) => {
           ),
         };
         // Built-in reset, then any registered short-rest actions (formulae).
-        return c.actions
+        const { character, errors } = c.actions
           .filter((a) => a.kind === "shortRest")
-          .reduce((acc, a) => applyFormulas(acc, a.formulas, rng), rested);
+          .reduce(
+            (acc, a) => {
+              const r = applyAction(acc.character, a.formulas, rng);
+              return { character: r.character, errors: [...acc.errors, ...r.errors] };
+            },
+            { character: rested, errors: [] as string[] },
+          );
+        reportErrors(errors);
+        return character;
       }),
 
     longRest: () =>
@@ -223,9 +271,17 @@ export const useCharacter = create<CharacterState>((set, get) => {
             resets.has(r.resetOn) ? { ...r, current: r.max } : r,
           ),
         };
-        return c.actions
+        const { character, errors } = c.actions
           .filter((a) => a.kind === "longRest")
-          .reduce((acc, a) => applyFormulas(acc, a.formulas, rng), rested);
+          .reduce(
+            (acc, a) => {
+              const r = applyAction(acc.character, a.formulas, rng);
+              return { character: r.character, errors: [...acc.errors, ...r.errors] };
+            },
+            { character: rested, errors: [] as string[] },
+          );
+        reportErrors(errors);
+        return character;
       }),
 
     setItemQuantity: (index, qty) =>
