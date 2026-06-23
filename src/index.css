@@ -317,6 +317,11 @@ a {
   font-variant-numeric: tabular-nums;
   color: var(--gold);
 }
+.passive-perception {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
 
 /* stats row (combat) */
 .stat-row {

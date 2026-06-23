@@ -10,7 +10,7 @@ import { ResourcesSection } from "./ResourcesSection";
 import { SpellsSection } from "./SpellsSection";
 import { FeaturesSection } from "./FeaturesSection";
 import { InventorySection } from "./InventorySection";
-import { ProficienciesSection, OriginSection, NarrativeSection } from "./TextSections";
+import { BioSection, ProficienciesSection, OriginSection, NarrativeSection } from "./TextSections";
 import { CustomSections } from "./CustomSection";
 
 import type { StringKey } from "../i18n/useI18n";
@@ -27,6 +27,7 @@ const hasStory = (c: Character): boolean =>
   c.origin.raceTraits.length > 0 ||
   c.origin.backgroundFeature != null ||
   c.customSections.length > 0 ||
+  [c.identity.alignment, c.identity.size, c.identity.age].some((v) => v && v.trim().length > 0) ||
   [
     c.narrative.personality,
     c.narrative.ideals,
@@ -100,8 +101,8 @@ export function TabContent({ c, tab }: { c: Character; tab: string }) {
     case "storia":
       return (
         <Cols
-          left={[<OriginSection key="origin" c={c} />, <NarrativeSection key="narrative" c={c} />]}
-          right={[<CustomSections key="custom" c={c} />]}
+          left={[<BioSection key="bio" c={c} />, <NarrativeSection key="narrative" c={c} />]}
+          right={[<OriginSection key="origin" c={c} />, <CustomSections key="custom" c={c} />]}
         />
       );
     default:

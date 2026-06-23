@@ -1,14 +1,16 @@
 import type { Character } from "../schema";
 import { Panel, DataTable } from "./primitives";
+import { useT } from "../i18n/useI18n";
 
 type Custom = Character["customSections"][number];
 
 export function CustomSections({ c }: { c: Character }) {
+  const t = useT();
   if (c.customSections.length === 0) return null;
   return (
     <>
       {c.customSections.map((s) => (
-        <Panel key={s.id || s.title} title={s.title || "Sezione"} id={`custom-${s.id}`}>
+        <Panel key={s.id || s.title} title={s.title || t("custom.fallback")} id={`custom-${s.id}`}>
           <Layout section={s} />
         </Panel>
       ))}
