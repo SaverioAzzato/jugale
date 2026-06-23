@@ -9,6 +9,7 @@
 2. **Generated entirely from `character.json`.** No hardcoded class/character content. The renderer never computes rules — it sums/derives only from inputs the data declares.
 3. **Auto-hide on empty.** Every block/section renders only if the JSON has data for it. Missing fields fall back gracefully (empty or not rendered, whichever is cleaner) — the UI "demands the right amount" and no more.
 4. **Tokens only.** All colors/spacing/radii/fonts come from theme tokens, so the visual pass later is pure token work.
+   - **i18n, centralized.** All UI chrome strings go through `t()` (`src/i18n/useI18n.ts`): English is the default locale, Italian the second, switchable from the toolbar and persisted. Character *data* is never translated (it's the user's content). New UI strings must be added as keys, not hardcoded.
 5. **Works well on every device.** Phone, tablet, desktop — the layout prioritizes simplicity and one-handed reachability of the things touched most in play.
 
 ## Two modes

@@ -129,7 +129,8 @@ a {
 .theme-switcher-icon {
   color: var(--gold);
 }
-.theme-switcher select {
+.theme-switcher select,
+.lang-switcher select {
   background: var(--surface-2);
   color: var(--text);
   border: 1px solid var(--border);
@@ -138,6 +139,15 @@ a {
   font: inherit;
   font-size: 13px;
   cursor: pointer;
+}
+.lang-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+.lang-switcher-icon {
+  color: var(--gold);
 }
 
 /* ---- sheet ---- */

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { type AbilityId, type Character, type SpellEntry } from "../schema";
 import { spellSaveDc, spellAttackBonus } from "../schema";
 import { Panel, WikiLink, fmtMod } from "./primitives";
+import { useT } from "../i18n/useI18n";
 
 /** The one-liner you read at the table when the spell is collapsed. */
 function spellLine(s: SpellEntry): string {
@@ -14,6 +15,7 @@ function mergedText(s: SpellEntry): string {
 }
 
 function SpellRow({ s }: { s: SpellEntry }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const text = mergedText(s);
   return (
@@ -25,7 +27,7 @@ function SpellRow({ s }: { s: SpellEntry }) {
         <span className="attack-main">
           <span className="attack-name">
             {s.name}
-            {s.concentration && <span className="attack-tag">conc.</span>}
+            {s.concentration && <span className="attack-tag">{t("spells.concentration")}</span>}
           </span>
           <span className="attack-summary">{spellLine(s)}</span>
         </span>
@@ -34,24 +36,24 @@ function SpellRow({ s }: { s: SpellEntry }) {
         <div className="attack-body">
           {s.link && (
             <p className="attack-link">
-              <WikiLink link={s.link}>Apri sul wiki ↗</WikiLink>
+              <WikiLink link={s.link}>{t("detail.openWiki")}</WikiLink>
             </p>
           )}
           <dl className="attack-profile">
-            {s.school && <div className="detail-row"><dt>Scuola</dt><dd>{s.school}</dd></div>}
-            {s.castingTime && <div className="detail-row"><dt>Tempo di lancio</dt><dd>{s.castingTime}</dd></div>}
-            {s.range && <div className="detail-row"><dt>Gittata</dt><dd>{s.range}</dd></div>}
-            {s.area && <div className="detail-row"><dt>Area</dt><dd>{s.area}</dd></div>}
+            {s.school && <div className="detail-row"><dt>{t("spells.school")}</dt><dd>{s.school}</dd></div>}
+            {s.castingTime && <div className="detail-row"><dt>{t("spells.castingTime")}</dt><dd>{s.castingTime}</dd></div>}
+            {s.range && <div className="detail-row"><dt>{t("detail.range")}</dt><dd>{s.range}</dd></div>}
+            {s.area && <div className="detail-row"><dt>{t("spells.area")}</dt><dd>{s.area}</dd></div>}
             {s.duration && (
               <div className="detail-row">
-                <dt>Durata</dt>
-                <dd>{s.duration}{s.concentration ? " · concentrazione" : ""}</dd>
+                <dt>{t("spells.duration")}</dt>
+                <dd>{s.duration}{s.concentration ? ` · ${t("spells.concentrationFull")}` : ""}</dd>
               </div>
             )}
-            {s.components && <div className="detail-row"><dt>Componenti</dt><dd>{s.components}</dd></div>}
-            {s.attack && <div className="detail-row"><dt>Tiro che fai tu</dt><dd>{s.attack}</dd></div>}
-            {s.defense && <div className="detail-row"><dt>Tiro avversario</dt><dd>{s.defense}</dd></div>}
-            {s.effect && <div className="detail-row"><dt>Danno/Effetto</dt><dd>{s.effect}</dd></div>}
+            {s.components && <div className="detail-row"><dt>{t("spells.components")}</dt><dd>{s.components}</dd></div>}
+            {s.attack && <div className="detail-row"><dt>{t("detail.yourRoll")}</dt><dd>{s.attack}</dd></div>}
+            {s.defense && <div className="detail-row"><dt>{t("detail.enemyRoll")}</dt><dd>{s.defense}</dd></div>}
+            {s.effect && <div className="detail-row"><dt>{t("detail.damageEffect")}</dt><dd>{s.effect}</dd></div>}
           </dl>
           {text && <p className="spell-desc">{text}</p>}
         </div>
@@ -61,11 +63,12 @@ function SpellRow({ s }: { s: SpellEntry }) {
 }
 
 export function SpellsSection({ c }: { c: Character }) {
+  const t = useT();
   if (c.spellSections.length === 0) return null;
   const casters = c.classes.filter((cl) => cl.spellcasting.ability);
 
   return (
-    <Panel title="Incantesimi" id="spells">
+    <Panel title={t("spells.title")} id="spells">
       {casters.length > 0 && (
         <p className="caster-summary">
           {casters.map((cl, i) => {
@@ -73,7 +76,8 @@ export function SpellsSection({ c }: { c: Character }) {
             return (
               <span key={i}>
                 {i > 0 ? " · " : ""}
-                <strong>{cl.name}</strong>: CD {spellSaveDc(c, ability)}, attacco {fmtMod(spellAttackBonus(c, ability))}
+                <strong>{cl.name}</strong>: {t("spells.dc")} {spellSaveDc(c, ability)}, {t("spells.attack")}{" "}
+                {fmtMod(spellAttackBonus(c, ability))}
               </span>
             );
           })}

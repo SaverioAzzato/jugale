@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Character, AttackProfile } from "../schema";
 import { Panel, WikiLink } from "./primitives";
+import { useT } from "../i18n/useI18n";
 
 interface AttackView {
   key: string;
@@ -19,10 +20,13 @@ function profileLine(p: AttackProfile): string {
 }
 
 function AttackRow({ a }: { a: AttackView }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const dimmed = a.source === "weapon" && !a.available;
   const summary =
-    a.profiles.length > 1 ? `${a.profiles.length} modi d'attacco` : profileLine(a.profiles[0] ?? ({} as AttackProfile));
+    a.profiles.length > 1
+      ? `${a.profiles.length} ${t("attacks.modes")}`
+      : profileLine(a.profiles[0] ?? ({} as AttackProfile));
 
   return (
     <li className={dimmed ? "attack is-dimmed" : "attack"}>
@@ -33,10 +37,10 @@ function AttackRow({ a }: { a: AttackView }) {
         <span className="attack-main">
           <span className="attack-name">
             {a.name}
-            {a.source === "innate" && <span className="attack-tag">innato</span>}
+            {a.source === "innate" && <span className="attack-tag">{t("attacks.innate")}</span>}
           </span>
           <span className="attack-summary">
-            {dimmed ? "non in mano · cambio = 1 azione" : summary}
+            {dimmed ? t("attacks.notInHand") : summary}
           </span>
         </span>
       </button>
@@ -44,17 +48,17 @@ function AttackRow({ a }: { a: AttackView }) {
         <div className="attack-body">
           {a.link && (
             <p className="attack-link">
-              <WikiLink link={a.link}>Apri sul wiki ↗</WikiLink>
+              <WikiLink link={a.link}>{t("detail.openWiki")}</WikiLink>
             </p>
           )}
           {a.profiles.map((p, i) => (
             <dl key={i} className="attack-profile">
               {p.label && <dt className="attack-profile-label">{p.label}</dt>}
-              {p.range && <div className="detail-row"><dt>Gittata</dt><dd>{p.range}</dd></div>}
-              {p.attack && <div className="detail-row"><dt>Tiro che fai tu</dt><dd>{p.attack}</dd></div>}
-              {p.defense && <div className="detail-row"><dt>Tiro avversario</dt><dd>{p.defense}</dd></div>}
-              {p.effect && <div className="detail-row"><dt>Danno/Effetto</dt><dd>{p.effect}</dd></div>}
-              {p.notes && <div className="detail-row"><dt>Note</dt><dd>{p.notes}</dd></div>}
+              {p.range && <div className="detail-row"><dt>{t("detail.range")}</dt><dd>{p.range}</dd></div>}
+              {p.attack && <div className="detail-row"><dt>{t("detail.yourRoll")}</dt><dd>{p.attack}</dd></div>}
+              {p.defense && <div className="detail-row"><dt>{t("detail.enemyRoll")}</dt><dd>{p.defense}</dd></div>}
+              {p.effect && <div className="detail-row"><dt>{t("detail.damageEffect")}</dt><dd>{p.effect}</dd></div>}
+              {p.notes && <div className="detail-row"><dt>{t("detail.notes")}</dt><dd>{p.notes}</dd></div>}
             </dl>
           ))}
         </div>
@@ -65,6 +69,7 @@ function AttackRow({ a }: { a: AttackView }) {
 
 /** Weapon attacks (derived from inventory items) + innate attacks, in one list. */
 export function AttacksSection({ c }: { c: Character }) {
+  const t = useT();
   const weapons: AttackView[] = c.inventory.items
     .filter((it) => it.attacks.length > 0)
     .map((it, i) => ({
@@ -90,7 +95,7 @@ export function AttacksSection({ c }: { c: Character }) {
   if (all.length === 0) return null;
 
   return (
-    <Panel title="Attacchi" id="attacks">
+    <Panel title={t("attacks.title")} id="attacks">
       <ul className="attack-list">
         {all.map((a) => (
           <AttackRow key={a.key} a={a} />

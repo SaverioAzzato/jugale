@@ -22,7 +22,7 @@ describe("Sheet — header (always visible)", () => {
 describe("Sheet — Gioco tab", () => {
   it("renders the derived spell save DC and reveals the wiki link when a spell is expanded", () => {
     sheet(warlock, "gioco");
-    expect(screen.getByText(/CD 14, attacco \+6/)).toBeInTheDocument(); // CHA 17 (+3), PB +3
+    expect(screen.getByText(/DC 14, attack \+6/)).toBeInTheDocument(); // CHA 17 (+3), PB +3 (default locale: en)
     // Spells are collapsed rows: the wiki link lives in the expanded body.
     fireEvent.click(screen.getByRole("button", { name: /Hex/ }));
     const link = screen.getByRole("link", { name: /wiki/i });

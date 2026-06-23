@@ -2,21 +2,23 @@ import type { Character } from "../schema";
 import { Panel, WikiLink } from "./primitives";
 import { Stepper } from "./controls";
 import { useCharacter } from "../state/store";
+import { useT, type StringKey } from "../i18n/useI18n";
 
-const RESET: Record<string, string> = {
-  shortRest: "riposo breve",
-  longRest: "riposo lungo",
-  dawn: "alba",
-  manual: "manuale",
-  none: "—",
+const RESET_KEY: Record<string, StringKey> = {
+  shortRest: "reset.shortRest",
+  longRest: "reset.longRest",
+  dawn: "reset.dawn",
+  manual: "reset.manual",
+  none: "reset.none",
 };
 
 export function ResourcesSection({ c }: { c: Character }) {
+  const t = useT();
   const adjustResource = useCharacter((s) => s.adjustResource);
   if (c.resources.length === 0) return null;
 
   return (
-    <Panel title="Risorse" id="resources">
+    <Panel title={t("resources.title")} id="resources">
       <ul className="resource-list">
         {c.resources.map((r) => {
           const pips = Math.min(r.max, 24);
@@ -42,8 +44,8 @@ export function ResourcesSection({ c }: { c: Character }) {
                 </div>
               )}
               <span className="resource-meta">
-                {r.current}/{r.max} · reset: {RESET[r.resetOn]}
-                {r.level ? ` · liv. ${r.level}` : ""}
+                {r.current}/{r.max} · {t("resources.reset")}: {t(RESET_KEY[r.resetOn] ?? "reset.none")}
+                {r.level ? ` · ${t("resources.level")} ${r.level}` : ""}
               </span>
             </li>
           );

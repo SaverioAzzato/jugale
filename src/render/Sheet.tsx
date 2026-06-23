@@ -3,6 +3,7 @@ import type { Character } from "../schema";
 import { totalLevel, proficiencyBonus } from "../schema";
 import { fmtMod } from "./primitives";
 import { TabContent } from "./tabs";
+import { useT } from "../i18n/useI18n";
 
 function HeaderStat({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -18,6 +19,7 @@ function HeaderStat({ label, value }: { label: string; value: ReactNode }) {
  * The tab bar itself lives in the app's sticky header (App.tsx).
  */
 export function Sheet({ c, tab }: { c: Character; tab: string }) {
+  const t = useT();
   const classLine = c.classes
     .map((cl) => `${cl.name}${cl.subclass ? ` (${cl.subclass})` : ""} ${cl.level}`)
     .join(" / ");
@@ -32,8 +34,8 @@ export function Sheet({ c, tab }: { c: Character; tab: string }) {
           {c.meta.summary && <p className="muted">{c.meta.summary}</p>}
         </div>
         <div className="header-stats">
-          <HeaderStat label="Livello" value={totalLevel(c) || "—"} />
-          <HeaderStat label="Competenza" value={fmtMod(proficiencyBonus(c))} />
+          <HeaderStat label={t("header.level")} value={totalLevel(c) || "—"} />
+          <HeaderStat label={t("header.proficiency")} value={fmtMod(proficiencyBonus(c))} />
         </div>
       </header>
 

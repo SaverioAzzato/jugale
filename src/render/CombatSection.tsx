@@ -4,6 +4,7 @@ import { abilityModifierFor, derivedArmorClass, maxHitDice } from "../schema";
 import { Panel, fmtMod } from "./primitives";
 import { Stepper, useHoldRepeat } from "./controls";
 import { useCharacter } from "../state/store";
+import { useT } from "../i18n/useI18n";
 
 function Stat({ label, value, note }: { label: string; value: ReactNode; note?: string }) {
   return (
@@ -16,6 +17,7 @@ function Stat({ label, value, note }: { label: string; value: ReactNode; note?: 
 }
 
 function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
+  const t = useT();
   const damage = useCharacter((s) => s.damage);
   const heal = useCharacter((s) => s.heal);
   const setCurrentHp = useCharacter((s) => s.setCurrentHp);
@@ -90,7 +92,7 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
           }}
           onTouchEnd={stopDamage}
         >
-          Danno
+          {t("vitals.damage")}
         </button>
         <button
           type="button"
@@ -111,22 +113,22 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
           }}
           onTouchEnd={stopHeal}
         >
-          Cura
+          {t("vitals.heal")}
         </button>
       </div>
       <div className="hp-fine">
         <label>
-          PF{" "}
+          {t("vitals.hp")}{" "}
           <Stepper
             value={hp.current}
             max={hp.max || undefined}
             onChange={setCurrentHp}
-            label="PF correnti"
+            label={t("vitals.hp")}
           />
         </label>
         <label>
-          Temp{" "}
-          <Stepper value={hp.temp} onChange={setTempHp} label="PF temporanei" />
+          {t("vitals.temp")}{" "}
+          <Stepper value={hp.temp} onChange={setTempHp} label={t("vitals.temp")} />
         </label>
       </div>
     </div>
@@ -134,18 +136,19 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
 }
 
 function HitDiceControl({ c }: { c: Character }) {
+  const t = useT();
   const adjustHitDice = useCharacter((s) => s.adjustHitDice);
   const max = maxHitDice(c);
   if (max <= 0) return null;
   return (
     <div className="hp-fine">
       <label>
-        Dadi Vita{" "}
+        {t("vitals.hitDice")}{" "}
         <Stepper
           value={c.combat.hp.hitDiceRemaining}
           max={max}
           onChange={(next) => adjustHitDice(next - c.combat.hp.hitDiceRemaining)}
-          label="Dadi Vita rimasti"
+          label={t("vitals.hitDice")}
         />
         <span className="muted"> / {max}</span>
       </label>
@@ -154,17 +157,18 @@ function HitDiceControl({ c }: { c: Character }) {
 }
 
 export function CombatSection({ c }: { c: Character }) {
+  const t = useT();
   const shortRest = useCharacter((s) => s.shortRest);
   const longRest = useCharacter((s) => s.longRest);
   const initiative = c.combat.initiativeOverride ?? abilityModifierFor(c, "dex");
   const ac = derivedArmorClass(c);
 
   return (
-    <Panel title="Vitali" id="combat">
+    <Panel title={t("vitals.title")} id="combat">
       <div className="stat-row">
-        <Stat label="CA" value={ac.value} note={ac.breakdown || undefined} />
-        <Stat label="Iniziativa" value={fmtMod(initiative)} />
-        <Stat label="Velocità" value={`${c.combat.speed.walk} ft`} />
+        <Stat label={t("vitals.ac")} value={ac.value} note={ac.breakdown || undefined} />
+        <Stat label={t("vitals.initiative")} value={fmtMod(initiative)} />
+        <Stat label={t("vitals.speed")} value={`${c.combat.speed.walk} ft`} />
       </div>
 
       <HpControl hp={c.combat.hp} />
@@ -172,10 +176,10 @@ export function CombatSection({ c }: { c: Character }) {
 
       <div className="rest-actions">
         <button type="button" className="btn" onClick={shortRest}>
-          Riposo breve
+          {t("vitals.shortRest")}
         </button>
         <button type="button" className="btn" onClick={longRest}>
-          Riposo lungo
+          {t("vitals.longRest")}
         </button>
       </div>
     </Panel>

@@ -13,9 +13,11 @@ import { InventorySection } from "./InventorySection";
 import { ProficienciesSection, OriginSection, NarrativeSection } from "./TextSections";
 import { CustomSections } from "./CustomSection";
 
+import type { StringKey } from "../i18n/useI18n";
+
 export interface TabDef {
   id: string;
-  label: string;
+  labelKey: StringKey;
 }
 
 const hasInventory = (c: Character): boolean =>
@@ -38,11 +40,11 @@ const hasStory = (c: Character): boolean =>
 /** Tabs are data-driven: Inventario/Storia appear only when they'd have content. */
 export function getVisibleTabs(c: Character): TabDef[] {
   const tabs: TabDef[] = [
-    { id: "gioco", label: "Gioco" },
-    { id: "scheda", label: "Scheda" },
+    { id: "gioco", labelKey: "tab.gioco" },
+    { id: "scheda", labelKey: "tab.scheda" },
   ];
-  if (hasInventory(c)) tabs.push({ id: "inventario", label: "Inventario" });
-  if (hasStory(c)) tabs.push({ id: "storia", label: "Storia" });
+  if (hasInventory(c)) tabs.push({ id: "inventario", labelKey: "tab.inventario" });
+  if (hasStory(c)) tabs.push({ id: "storia", labelKey: "tab.storia" });
   return tabs;
 }
 

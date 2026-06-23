@@ -2,14 +2,16 @@ import { useState } from "react";
 import type { Character } from "../schema";
 import { Panel } from "./primitives";
 import { useCharacter } from "../state/store";
+import { useT } from "../i18n/useI18n";
 
 function DeathSaves({ saves }: { saves: Character["session"]["deathSaves"] }) {
+  const t = useT();
   const setDeathSave = useCharacter((s) => s.setDeathSave);
   const Pips = ({ kind, tone }: { kind: "successes" | "failures"; tone: string }) => {
     const value = saves[kind];
     return (
       <div className="death-row">
-        <span className="death-label">{kind === "successes" ? "Successi" : "Fallimenti"}</span>
+        <span className="death-label">{kind === "successes" ? t("status.successes") : t("status.failures")}</span>
         <span className="death-pips">
           {[1, 2, 3].map((n) => (
             <button
@@ -27,7 +29,7 @@ function DeathSaves({ saves }: { saves: Character["session"]["deathSaves"] }) {
   };
   return (
     <div className="death-saves">
-      <p className="status-sub">Tiri salvezza contro la morte</p>
+      <p className="status-sub">{t("status.deathSaves")}</p>
       <Pips kind="successes" tone="is-ok" />
       <Pips kind="failures" tone="is-bad" />
     </div>
@@ -37,6 +39,7 @@ function DeathSaves({ saves }: { saves: Character["session"]["deathSaves"] }) {
 /** Secondary play-state: conditions (addable on the spot), inspiration, and death
  *  saves shown only when relevant (HP at 0). Deliberately not front-and-center. */
 export function StatusSection({ c }: { c: Character }) {
+  const t = useT();
   const addCondition = useCharacter((s) => s.addCondition);
   const removeCondition = useCharacter((s) => s.removeCondition);
   const toggleInspiration = useCharacter((s) => s.toggleInspiration);
@@ -52,12 +55,12 @@ export function StatusSection({ c }: { c: Character }) {
   };
 
   return (
-    <Panel title="Stato" id="status">
+    <Panel title={t("status.title")} id="status">
       <div className="conditions">
         {c.session.conditions.map((name) => (
           <span key={name} className="condition-chip">
             {name}
-            <button type="button" aria-label={`rimuovi ${name}`} onClick={() => removeCondition(name)}>
+            <button type="button" aria-label={`× ${name}`} onClick={() => removeCondition(name)}>
               ×
             </button>
           </span>
@@ -67,7 +70,7 @@ export function StatusSection({ c }: { c: Character }) {
             className="condition-input"
             autoFocus
             value={draft}
-            placeholder="condizione…"
+            placeholder={t("status.conditionPlaceholder")}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") submit();
@@ -77,7 +80,7 @@ export function StatusSection({ c }: { c: Character }) {
           />
         ) : (
           <button type="button" className="condition-add" onClick={() => setAdding(true)}>
-            + condizione
+            {t("status.addCondition")}
           </button>
         )}
       </div>
@@ -88,7 +91,7 @@ export function StatusSection({ c }: { c: Character }) {
         aria-pressed={c.session.inspiration}
         onClick={toggleInspiration}
       >
-        ★ Ispirazione
+        ★ {t("status.inspiration")}
       </button>
 
       {dying && <DeathSaves saves={c.session.deathSaves} />}
