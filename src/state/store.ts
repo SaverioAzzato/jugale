@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { loadCharacter, maxHitDice, type Character, type Issue } from "../schema";
-import { applyAction, makeRng, type FormulaChange } from "../model/formula";
+import { applyAction, getByPath, makeRng, type FormulaChange } from "../model/formula";
 import { translate, useI18n, type StringKey } from "../i18n/useI18n";
 import { useToast } from "../ui/useToast";
 import { exportJson, type StorageProvider } from "../storage/provider";
@@ -29,10 +29,31 @@ function describeChanges(changes: FormulaChange[], c: Character): string {
     .join(", ");
 }
 
-function reportErrors(errors: string[]): void {
-  if (errors.length === 0) return;
-  const prefix = translate(useI18n.getState().locale, "toast.formulaError");
-  errors.forEach((e) => useToast.getState().push("error", `${prefix}: ${e}`));
+/** Diff the standard live numeric fields (HP, hit dice, resource pools) between two states. */
+function diffLiveFields(before: Character, after: Character): FormulaChange[] {
+  const paths = [
+    "combat.hp.current",
+    "combat.hp.temp",
+    "combat.hp.hitDiceRemaining",
+    ...before.resources.map((r) => `resources.${r.id}.current`),
+  ];
+  const out: FormulaChange[] = [];
+  for (const p of paths) {
+    const b = getByPath(before, p);
+    const a = getByPath(after, p);
+    if (typeof b === "number" && typeof a === "number" && a !== b) out.push({ path: p, before: b, after: a });
+  }
+  return out;
+}
+
+/** Emit error toasts, then a success toast summarizing changes (+ dice rolls subtitle). */
+function notify(label: string, c: Character, changes: FormulaChange[], rolls: string[], errors: string[]): void {
+  if (errors.length > 0) {
+    const prefix = translate(useI18n.getState().locale, "toast.formulaError");
+    errors.forEach((e) => useToast.getState().push("error", `${prefix}: ${e}`));
+  }
+  const summary = describeChanges(changes, c);
+  if (summary) useToast.getState().push("success", `${label} — ${summary}`, rolls.length ? rolls.join(" · ") : undefined);
 }
 
 const clamp = (n: number, lo: number, hi: number) =>
@@ -122,6 +143,48 @@ export const useCharacter = create<CharacterState>((set, get) => {
     ...c,
     combat: { ...c.combat, hp: { ...c.combat.hp, ...hp } },
   });
+
+  /** Built-in rest reset + any registered actions of that kind, with a summary toast. */
+  const doRest = (kind: "shortRest" | "longRest") => {
+    const c = get().character;
+    if (!c) return;
+    const rng = makeRng(Date.now());
+
+    let rested: Character;
+    if (kind === "shortRest") {
+      rested = {
+        ...c,
+        resources: c.resources.map((r) => (r.resetOn === "shortRest" ? { ...r, current: r.max } : r)),
+      };
+    } else {
+      const resets = new Set(["shortRest", "longRest", "dawn"]);
+      // RAW: a long rest recovers up to half your total Hit Dice (min 1).
+      const regained = Math.max(1, Math.floor(maxHitDice(c) / 2));
+      rested = {
+        ...patchHp(c, {
+          current: c.combat.hp.max || c.combat.hp.current,
+          temp: 0,
+          hitDiceRemaining: clamp(c.combat.hp.hitDiceRemaining + regained, 0, maxHitDice(c)),
+        }),
+        resources: c.resources.map((r) => (resets.has(r.resetOn) ? { ...r, current: r.max } : r)),
+      };
+    }
+
+    let cur = rested;
+    const errors: string[] = [];
+    const rolls: string[] = [];
+    for (const a of c.actions.filter((x) => x.kind === kind)) {
+      const r = applyAction(cur, a.formulas, rng);
+      cur = r.character;
+      errors.push(...r.errors);
+      rolls.push(...r.rolls);
+    }
+
+    const label = translate(useI18n.getState().locale, kind === "shortRest" ? "vitals.shortRest" : "vitals.longRest");
+    notify(label, c, diffLiveFields(c, cur), rolls, errors);
+    set({ character: cur, dirty: true });
+    scheduleSave();
+  };
 
   return {
     character: null,
@@ -222,67 +285,16 @@ export const useCharacter = create<CharacterState>((set, get) => {
       if (!c) return;
       const action = c.actions.find((a) => a.id === id);
       if (!action) return;
-      const { character, changes, errors } = applyAction(c, action.formulas, makeRng(Date.now()));
-      reportErrors(errors);
-      const summary = describeChanges(changes, c);
-      if (summary) useToast.getState().push("success", `${action.label || action.id} — ${summary}`);
+      const { character, changes, errors, rolls } = applyAction(c, action.formulas, makeRng(Date.now()));
+      notify(action.label || action.id, c, changes, rolls, errors);
       if (changes.length > 0) {
         set({ character, dirty: true });
         scheduleSave();
       }
     },
 
-    shortRest: () =>
-      mutate((c) => {
-        const rng = makeRng(Date.now());
-        const rested: Character = {
-          ...c,
-          resources: c.resources.map((r) =>
-            r.resetOn === "shortRest" ? { ...r, current: r.max } : r,
-          ),
-        };
-        // Built-in reset, then any registered short-rest actions (formulae).
-        const { character, errors } = c.actions
-          .filter((a) => a.kind === "shortRest")
-          .reduce(
-            (acc, a) => {
-              const r = applyAction(acc.character, a.formulas, rng);
-              return { character: r.character, errors: [...acc.errors, ...r.errors] };
-            },
-            { character: rested, errors: [] as string[] },
-          );
-        reportErrors(errors);
-        return character;
-      }),
-
-    longRest: () =>
-      mutate((c) => {
-        const rng = makeRng(Date.now());
-        const resets = new Set(["shortRest", "longRest", "dawn"]);
-        // RAW: a long rest recovers up to half your total Hit Dice (min 1).
-        const regained = Math.max(1, Math.floor(maxHitDice(c) / 2));
-        const rested: Character = {
-          ...patchHp(c, {
-            current: c.combat.hp.max || c.combat.hp.current,
-            temp: 0,
-            hitDiceRemaining: clamp(c.combat.hp.hitDiceRemaining + regained, 0, maxHitDice(c)),
-          }),
-          resources: c.resources.map((r) =>
-            resets.has(r.resetOn) ? { ...r, current: r.max } : r,
-          ),
-        };
-        const { character, errors } = c.actions
-          .filter((a) => a.kind === "longRest")
-          .reduce(
-            (acc, a) => {
-              const r = applyAction(acc.character, a.formulas, rng);
-              return { character: r.character, errors: [...acc.errors, ...r.errors] };
-            },
-            { character: rested, errors: [] as string[] },
-          );
-        reportErrors(errors);
-        return character;
-      }),
+    shortRest: () => doRest("shortRest"),
+    longRest: () => doRest("longRest"),
 
     setItemQuantity: (index, qty) =>
       mutate((c) => ({

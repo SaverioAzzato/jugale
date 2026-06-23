@@ -119,4 +119,8 @@ describe("applyAction", () => {
     expect(changes).toHaveLength(2);
     expect(errors).toHaveLength(1);
   });
+  it("reports dice rolls", () => {
+    const { rolls } = applyAction(c, ["combat.hp.temp = 2d6"], hi);
+    expect(rolls).toEqual(["2d6 → 6+6 = 12"]);
+  });
 });

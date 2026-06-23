@@ -9,7 +9,8 @@ export function Toasts() {
     <div className="toasts" role="status" aria-live="polite">
       {toasts.map((t) => (
         <button key={t.id} type="button" className={`toast toast-${t.kind}`} onClick={() => dismiss(t.id)}>
-          {t.message}
+          <span className="toast-message">{t.message}</span>
+          {t.detail && <span className="toast-detail">{t.detail}</span>}
         </button>
       ))}
     </div>

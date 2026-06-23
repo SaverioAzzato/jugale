@@ -8,9 +8,8 @@ import {
   openCharacterFile,
   importJsonFile,
 } from "./storage/provider";
-import { ThemeSwitcher } from "./theme/ThemeSwitcher";
-import { LanguageSwitcher } from "./i18n/LanguageSwitcher";
 import { useT, type TFn } from "./i18n/useI18n";
+import { SettingsMenu } from "./ui/SettingsMenu";
 import { Toasts } from "./ui/Toasts";
 import { useToast } from "./ui/useToast";
 import warlock from "../characters/example-warlock/character.json";
@@ -128,8 +127,7 @@ export function App() {
                 {t("app.export")}
               </button>
             )}
-            <LanguageSwitcher />
-            <ThemeSwitcher />
+            <SettingsMenu />
           </div>
         </nav>
 

@@ -68,16 +68,18 @@ export function setByPath(c: Character, path: string, value: number): Character 
   return walk(c, 0) as Character;
 }
 
-function rollDice(n: number, sides: number, rng: Rng): number {
-  let sum = 0;
-  for (let i = 0; i < n; i++) sum += 1 + Math.floor(rng() * sides);
-  return sum;
-}
-
-function evalTerm(c: Character, term: string, rng: Rng, errors?: string[]): number {
+function evalTerm(c: Character, term: string, rng: Rng, errors?: string[], rolls?: string[]): number {
   if (/^\d+$/.test(term)) return Number(term);
   const dice = term.match(/^(\d*)d(\d+)$/i);
-  if (dice) return rollDice(Number(dice[1] || "1"), Number(dice[2]), rng);
+  if (dice) {
+    const n = Number(dice[1] || "1");
+    const sides = Number(dice[2]);
+    const faces: number[] = [];
+    for (let i = 0; i < n; i++) faces.push(1 + Math.floor(rng() * sides));
+    const sum = faces.reduce((a, b) => a + b, 0);
+    rolls?.push(`${n > 1 ? n : ""}d${sides} → ${faces.join("+")}${n > 1 ? ` = ${sum}` : ""}`);
+    return sum;
+  }
   const v = getByPath(c, term);
   if (v === undefined) {
     errors?.push(`unknown reference "${term}"`);
@@ -87,8 +89,14 @@ function evalTerm(c: Character, term: string, rng: Rng, errors?: string[]): numb
 }
 
 /** Evaluate the right-hand side: a +/- sum of numbers, dice, and paths.
- *  Pass `errors` to collect unresolved references (strict mode). */
-export function evalExpression(c: Character, expr: string, rng: Rng, errors?: string[]): number {
+ *  Pass `errors` to collect unresolved references and `rolls` to log dice. */
+export function evalExpression(
+  c: Character,
+  expr: string,
+  rng: Rng,
+  errors?: string[],
+  rolls?: string[],
+): number {
   const tokens = expr.match(/[+-]?\s*[^+-]+/g) ?? [];
   let total = 0;
   for (const raw of tokens) {
@@ -99,7 +107,7 @@ export function evalExpression(c: Character, expr: string, rng: Rng, errors?: st
       sign = -1;
       tk = tk.slice(1).trim();
     }
-    if (tk) total += sign * evalTerm(c, tk, rng, errors);
+    if (tk) total += sign * evalTerm(c, tk, rng, errors, rolls);
   }
   return total;
 }
@@ -143,36 +151,39 @@ export interface FormulaResult {
   character: Character;
   change?: FormulaChange;
   error?: string;
+  rolls: string[];
 }
 
-/** Strict single-formula apply: reports what changed, or why it couldn't. */
+/** Strict single-formula apply: reports what changed, the dice rolled, or why it couldn't. */
 export function evaluateFormula(c: Character, formula: string, rng: Rng): FormulaResult {
   const eq = formula.indexOf("=");
-  if (eq < 0) return { character: c, error: `malformed formula "${formula}"` };
+  if (eq < 0) return { character: c, error: `malformed formula "${formula}"`, rolls: [] };
   const lhs = formula.slice(0, eq).trim();
   const rhs = formula.slice(eq + 1).trim();
-  if (!lhs || !rhs) return { character: c, error: `incomplete formula "${formula}"` };
+  if (!lhs || !rhs) return { character: c, error: `incomplete formula "${formula}"`, rolls: [] };
 
-  if (isVirtual(lhs)) return { character: c, error: `cannot write to derived value "${lhs}"` };
+  if (isVirtual(lhs)) return { character: c, error: `cannot write to derived value "${lhs}"`, rolls: [] };
   const before = getByPath(c, lhs);
-  if (typeof before !== "number") return { character: c, error: `cannot write to "${lhs}"` };
+  if (typeof before !== "number") return { character: c, error: `cannot write to "${lhs}"`, rolls: [] };
 
   const errors: string[] = [];
-  const value = clampForPath(c, lhs, Math.round(evalExpression(c, rhs, rng, errors)));
-  if (errors.length > 0) return { character: c, error: errors[0] };
+  const rolls: string[] = [];
+  const value = clampForPath(c, lhs, Math.round(evalExpression(c, rhs, rng, errors, rolls)));
+  if (errors.length > 0) return { character: c, error: errors[0], rolls };
 
-  return { character: setByPath(c, lhs, value), change: { path: lhs, before, after: value } };
+  return { character: setByPath(c, lhs, value), change: { path: lhs, before, after: value }, rolls };
 }
 
-/** Run an action's formulae, collecting the changes made and any errors. */
+/** Run an action's formulae, collecting the changes, the dice rolled, and any errors. */
 export function applyAction(
   c: Character,
   formulas: string[],
   rng: Rng,
-): { character: Character; changes: FormulaChange[]; errors: string[] } {
+): { character: Character; changes: FormulaChange[]; errors: string[]; rolls: string[] } {
   let cur = c;
   const changes: FormulaChange[] = [];
   const errors: string[] = [];
+  const rolls: string[] = [];
   for (const f of formulas) {
     const r = evaluateFormula(cur, f, rng);
     if (r.error) errors.push(r.error);
@@ -180,6 +191,7 @@ export function applyAction(
       cur = r.character;
       changes.push(r.change);
     }
+    rolls.push(...r.rolls);
   }
-  return { character: cur, changes, errors };
+  return { character: cur, changes, errors, rolls };
 }

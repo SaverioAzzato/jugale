@@ -16,9 +16,8 @@ describe("Sheet — header (always visible)", () => {
     const { container } = sheet(multiclass, "gioco");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Esempio Multiclasse");
     // Paladino 3 + Stregone 2 = level 5 → PB +3; default locale en → "Prof. +3"
-    const subtitle = container.querySelector(".subtitle");
-    expect(subtitle).toHaveTextContent("Prof. +3");
-    expect(subtitle).toHaveTextContent("Paladino");
+    expect(container.querySelector(".pb-chip")).toHaveTextContent("Prof. +3");
+    expect(container.querySelector(".subtitle")).toHaveTextContent("Paladino");
   });
 });
 
