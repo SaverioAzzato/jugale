@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { loadCharacter, type Character, type Issue } from "../schema";
+import { loadCharacter, maxHitDice, type Character, type Issue } from "../schema";
 import { exportJson, type StorageProvider } from "../storage/provider";
 
 const clamp = (n: number, lo: number, hi: number) =>
@@ -44,10 +44,16 @@ interface CharacterState {
   damage: (n: number) => void;
   heal: (n: number) => void;
   adjustResource: (id: string, delta: number) => void;
+  adjustHitDice: (delta: number) => void;
   shortRest: () => void;
   longRest: () => void;
   setItemQuantity: (index: number, qty: number) => void;
+  toggleEquipped: (index: number) => void;
   setCurrency: (code: string, value: number) => void;
+  addCondition: (name: string) => void;
+  removeCondition: (name: string) => void;
+  toggleInspiration: () => void;
+  setDeathSave: (kind: "successes" | "failures", value: number) => void;
 }
 
 export const useCharacter = create<CharacterState>((set, get) => {
@@ -170,6 +176,13 @@ export const useCharacter = create<CharacterState>((set, get) => {
         ),
       })),
 
+    adjustHitDice: (delta) =>
+      mutate((c) =>
+        patchHp(c, {
+          hitDiceRemaining: clamp(c.combat.hp.hitDiceRemaining + delta, 0, maxHitDice(c)),
+        }),
+      ),
+
     shortRest: () =>
       mutate((c) => ({
         ...c,
@@ -181,10 +194,13 @@ export const useCharacter = create<CharacterState>((set, get) => {
     longRest: () =>
       mutate((c) => {
         const resets = new Set(["shortRest", "longRest", "dawn"]);
+        // RAW: a long rest recovers up to half your total Hit Dice (min 1).
+        const regained = Math.max(1, Math.floor(maxHitDice(c) / 2));
         return {
           ...patchHp(c, {
             current: c.combat.hp.max || c.combat.hp.current,
             temp: 0,
+            hitDiceRemaining: clamp(c.combat.hp.hitDiceRemaining + regained, 0, maxHitDice(c)),
           }),
           resources: c.resources.map((r) =>
             resets.has(r.resetOn) ? { ...r, current: r.max } : r,
@@ -203,12 +219,48 @@ export const useCharacter = create<CharacterState>((set, get) => {
         },
       })),
 
+    toggleEquipped: (index) =>
+      mutate((c) => ({
+        ...c,
+        inventory: {
+          ...c.inventory,
+          items: c.inventory.items.map((it, i) =>
+            i === index ? { ...it, equipped: !it.equipped } : it,
+          ),
+        },
+      })),
+
     setCurrency: (code, value) =>
       mutate((c) => ({
         ...c,
         inventory: {
           ...c.inventory,
           currencies: { ...c.inventory.currencies, [code]: Math.max(0, value) },
+        },
+      })),
+
+    addCondition: (name) =>
+      mutate((c) => {
+        const trimmed = name.trim();
+        if (!trimmed || c.session.conditions.includes(trimmed)) return c;
+        return { ...c, session: { ...c.session, conditions: [...c.session.conditions, trimmed] } };
+      }),
+
+    removeCondition: (name) =>
+      mutate((c) => ({
+        ...c,
+        session: { ...c.session, conditions: c.session.conditions.filter((x) => x !== name) },
+      })),
+
+    toggleInspiration: () =>
+      mutate((c) => ({ ...c, session: { ...c.session, inspiration: !c.session.inspiration } })),
+
+    setDeathSave: (kind, value) =>
+      mutate((c) => ({
+        ...c,
+        session: {
+          ...c.session,
+          deathSaves: { ...c.session.deathSaves, [kind]: clamp(value, 0, 3) },
         },
       })),
   };

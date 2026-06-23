@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, fireEvent } from "@testing-library/react";
 import { Sheet } from "./Sheet";
 import { loadCharacter } from "../schema";
 import warlock from "../../characters/example-warlock/character.json";
@@ -20,11 +20,13 @@ describe("Sheet — header (always visible)", () => {
 });
 
 describe("Sheet — Gioco tab", () => {
-  it("renders the derived spell save DC and keeps wiki links", () => {
+  it("renders the derived spell save DC and reveals the wiki link when a spell is expanded", () => {
     sheet(warlock, "gioco");
     expect(screen.getByText(/CD 14, attacco \+6/)).toBeInTheDocument(); // CHA 17 (+3), PB +3
-    const links = screen.getAllByRole("link", { name: "Eldritch Blast" });
-    expect(links[0]).toHaveAttribute("href", expect.stringContaining("dndbeyond.com"));
+    // Spells are collapsed rows: the wiki link lives in the expanded body.
+    fireEvent.click(screen.getByRole("button", { name: /Hex/ }));
+    const link = screen.getByRole("link", { name: /wiki/i });
+    expect(link).toHaveAttribute("href", expect.stringContaining("dndbeyond.com"));
   });
 
   it("hides spells for a non-caster but still shows martial resources", () => {

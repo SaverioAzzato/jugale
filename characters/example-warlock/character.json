@@ -139,6 +139,15 @@
   "inventory": {
     "items": [
       { "id": "potion-healing", "name": "Pozione di guarigione", "link": "https://www.dndbeyond.com/magic-items/potion-of-healing", "quantity": 3, "category": "consumable", "notes": "2d4+2 PF" },
+      { "id": "leather-armor", "name": "Armatura di cuoio", "category": "armor", "quantity": 1, "equipped": true,
+        "ac": { "base": 11, "addDex": true, "dexCap": null, "bonus": 0, "label": "cuoio" } },
+      { "id": "dagger", "name": "Pugnale", "link": "https://www.dndbeyond.com/equipment/dagger", "category": "weapon", "quantity": 2, "equipped": true,
+        "attacks": [
+          { "label": "Mischia", "range": "Mischia", "attack": "1d20 +5", "effect": "1d4+3 perforanti" },
+          { "label": "Lancio", "range": "6/18 m", "attack": "1d20 +5", "effect": "1d4+3 perforanti", "notes": "Arma da lancio (finezza)" }
+        ] },
+      { "id": "shortsword", "name": "Spada corta", "link": "https://www.dndbeyond.com/equipment/shortsword", "category": "weapon", "quantity": 1, "equipped": false,
+        "attacks": [ { "label": "Mischia", "range": "Mischia", "attack": "1d20 +5", "effect": "1d6+3 perforanti" } ] },
       { "id": "book-of-shadows", "name": "Libro delle Ombre", "quantity": 1, "equipped": true }
     ],
     "currencies": { "pp": 0, "gp": 120, "ep": 0, "sp": 5, "cp": 0 },

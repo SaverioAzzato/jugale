@@ -2,6 +2,9 @@ import type { Character } from "../schema";
 import { AbilitiesSection } from "./AbilitiesSection";
 import { SkillsSection } from "./SkillsSection";
 import { CombatSection } from "./CombatSection";
+import { StatusSection } from "./StatusSection";
+import { AttacksSection } from "./AttacksSection";
+import { ConsumablesSection } from "./ConsumablesSection";
 import { ResourcesSection } from "./ResourcesSection";
 import { SpellsSection } from "./SpellsSection";
 import { FeaturesSection } from "./FeaturesSection";
@@ -50,8 +53,11 @@ export function TabContent({ c, tab }: { c: Character; tab: string }) {
       return (
         <div className="tab-panels">
           <CombatSection c={c} />
+          <StatusSection c={c} />
           <ResourcesSection c={c} />
+          <AttacksSection c={c} />
           <SpellsSection c={c} />
+          <ConsumablesSection c={c} />
         </div>
       );
     case "scheda":

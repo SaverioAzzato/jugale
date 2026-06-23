@@ -1,15 +1,16 @@
 import { useRef, useState, type ReactNode } from "react";
 import type { Character } from "../schema";
-import { abilityModifierFor } from "../schema";
-import { Panel, fmtMod, DataTable, WikiLink } from "./primitives";
+import { abilityModifierFor, derivedArmorClass, maxHitDice } from "../schema";
+import { Panel, fmtMod } from "./primitives";
 import { Stepper, useHoldRepeat } from "./controls";
 import { useCharacter } from "../state/store";
 
-function Stat({ label, value }: { label: string; value: ReactNode }) {
+function Stat({ label, value, note }: { label: string; value: ReactNode; note?: string }) {
   return (
     <div className="stat">
       <span className="stat-label">{label}</span>
       <strong className="stat-value">{value}</strong>
+      {note && <span className="stat-note">{note}</span>}
     </div>
   );
 }
@@ -132,21 +133,42 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
   );
 }
 
+function HitDiceControl({ c }: { c: Character }) {
+  const adjustHitDice = useCharacter((s) => s.adjustHitDice);
+  const max = maxHitDice(c);
+  if (max <= 0) return null;
+  return (
+    <div className="hp-fine">
+      <label>
+        Dadi Vita{" "}
+        <Stepper
+          value={c.combat.hp.hitDiceRemaining}
+          max={max}
+          onChange={(next) => adjustHitDice(next - c.combat.hp.hitDiceRemaining)}
+          label="Dadi Vita rimasti"
+        />
+        <span className="muted"> / {max}</span>
+      </label>
+    </div>
+  );
+}
+
 export function CombatSection({ c }: { c: Character }) {
   const shortRest = useCharacter((s) => s.shortRest);
   const longRest = useCharacter((s) => s.longRest);
-  const initiative =
-    c.combat.initiativeOverride ?? abilityModifierFor(c, "dex");
+  const initiative = c.combat.initiativeOverride ?? abilityModifierFor(c, "dex");
+  const ac = derivedArmorClass(c);
 
   return (
-    <Panel title="Combattimento" id="combat">
+    <Panel title="Vitali" id="combat">
       <div className="stat-row">
-        <Stat label="CA" value={c.combat.armorClass} />
+        <Stat label="CA" value={ac.value} note={ac.breakdown || undefined} />
         <Stat label="Iniziativa" value={fmtMod(initiative)} />
         <Stat label="Velocità" value={`${c.combat.speed.walk} ft`} />
       </div>
 
       <HpControl hp={c.combat.hp} />
+      <HitDiceControl c={c} />
 
       <div className="rest-actions">
         <button type="button" className="btn" onClick={shortRest}>
@@ -156,29 +178,6 @@ export function CombatSection({ c }: { c: Character }) {
           Riposo lungo
         </button>
       </div>
-
-      {c.combat.attacks.length > 0 && (
-        <DataTable
-          headers={[
-            "Opzione",
-            "Livello",
-            "Gittata",
-            "Tiro che fai tu",
-            "Tiro avversario",
-            "Danno/Effetto",
-            "Note",
-          ]}
-          rows={c.combat.attacks.map((a) => [
-            <WikiLink link={a.link}>{a.name}</WikiLink>,
-            a.level,
-            a.range,
-            a.attack,
-            a.defense,
-            a.effect,
-            a.notes,
-          ])}
-        />
-      )}
     </Panel>
   );
 }
