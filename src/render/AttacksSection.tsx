@@ -50,11 +50,11 @@ function AttackRow({ a }: { a: AttackView }) {
           {a.profiles.map((p, i) => (
             <dl key={i} className="attack-profile">
               {p.label && <dt className="attack-profile-label">{p.label}</dt>}
-              {p.range && <div className="kv-row"><dt>Gittata</dt><dd>{p.range}</dd></div>}
-              {p.attack && <div className="kv-row"><dt>Tiro che fai tu</dt><dd>{p.attack}</dd></div>}
-              {p.defense && <div className="kv-row"><dt>Tiro avversario</dt><dd>{p.defense}</dd></div>}
-              {p.effect && <div className="kv-row"><dt>Danno/Effetto</dt><dd>{p.effect}</dd></div>}
-              {p.notes && <div className="kv-row"><dt>Note</dt><dd>{p.notes}</dd></div>}
+              {p.range && <div className="detail-row"><dt>Gittata</dt><dd>{p.range}</dd></div>}
+              {p.attack && <div className="detail-row"><dt>Tiro che fai tu</dt><dd>{p.attack}</dd></div>}
+              {p.defense && <div className="detail-row"><dt>Tiro avversario</dt><dd>{p.defense}</dd></div>}
+              {p.effect && <div className="detail-row"><dt>Danno/Effetto</dt><dd>{p.effect}</dd></div>}
+              {p.notes && <div className="detail-row"><dt>Note</dt><dd>{p.notes}</dd></div>}
             </dl>
           ))}
         </div>

@@ -38,20 +38,20 @@ function SpellRow({ s }: { s: SpellEntry }) {
             </p>
           )}
           <dl className="attack-profile">
-            {s.school && <div className="kv-row"><dt>Scuola</dt><dd>{s.school}</dd></div>}
-            {s.castingTime && <div className="kv-row"><dt>Tempo di lancio</dt><dd>{s.castingTime}</dd></div>}
-            {s.range && <div className="kv-row"><dt>Gittata</dt><dd>{s.range}</dd></div>}
-            {s.area && <div className="kv-row"><dt>Area</dt><dd>{s.area}</dd></div>}
+            {s.school && <div className="detail-row"><dt>Scuola</dt><dd>{s.school}</dd></div>}
+            {s.castingTime && <div className="detail-row"><dt>Tempo di lancio</dt><dd>{s.castingTime}</dd></div>}
+            {s.range && <div className="detail-row"><dt>Gittata</dt><dd>{s.range}</dd></div>}
+            {s.area && <div className="detail-row"><dt>Area</dt><dd>{s.area}</dd></div>}
             {s.duration && (
-              <div className="kv-row">
+              <div className="detail-row">
                 <dt>Durata</dt>
                 <dd>{s.duration}{s.concentration ? " · concentrazione" : ""}</dd>
               </div>
             )}
-            {s.components && <div className="kv-row"><dt>Componenti</dt><dd>{s.components}</dd></div>}
-            {s.attack && <div className="kv-row"><dt>Tiro che fai tu</dt><dd>{s.attack}</dd></div>}
-            {s.defense && <div className="kv-row"><dt>Tiro avversario</dt><dd>{s.defense}</dd></div>}
-            {s.effect && <div className="kv-row"><dt>Danno/Effetto</dt><dd>{s.effect}</dd></div>}
+            {s.components && <div className="detail-row"><dt>Componenti</dt><dd>{s.components}</dd></div>}
+            {s.attack && <div className="detail-row"><dt>Tiro che fai tu</dt><dd>{s.attack}</dd></div>}
+            {s.defense && <div className="detail-row"><dt>Tiro avversario</dt><dd>{s.defense}</dd></div>}
+            {s.effect && <div className="detail-row"><dt>Danno/Effetto</dt><dd>{s.effect}</dd></div>}
           </dl>
           {text && <p className="spell-desc">{text}</p>}
         </div>

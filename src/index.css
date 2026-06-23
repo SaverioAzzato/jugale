@@ -187,18 +187,29 @@ a {
   font-size: 22px;
 }
 
-/* Active tab content packed as masonry: no shared grid rows → no vertical gaps.
-   Falls to a single column when narrow (or for single-section tabs via .single). */
-.tab-panels {
-  columns: 360px 2;
-  column-gap: 16px;
+/* Two stable columns: a panel never moves between columns when its height changes
+   (e.g. expanding a row), so the layout doesn't reshuffle. Collapses to one
+   centered column when a side is empty or the viewport is narrow. */
+.tab-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
 }
-.tab-panels.single {
-  columns: 1;
+.tab-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
 }
-.tab-panels > * {
-  break-inside: avoid;
-  margin-bottom: 16px;
+.tab-col-solo {
+  max-width: 620px;
+  margin: 0 auto;
+}
+@media (max-width: 760px) {
+  .tab-cols {
+    grid-template-columns: 1fr;
+  }
 }
 
 .panel {
@@ -509,6 +520,22 @@ a {
   font-weight: 600;
   color: var(--accent);
   margin-bottom: 2px;
+}
+/* key/value detail rows: a real two-column grid so the label can't squish
+   against the value, and long values wrap cleanly under their own column. */
+.detail-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 34%) 1fr;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.detail-row dt {
+  color: var(--muted);
+}
+.detail-row dd {
+  margin: 0;
 }
 .spell-desc {
   font-size: 12.5px;
