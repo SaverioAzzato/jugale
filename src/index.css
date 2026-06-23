@@ -580,6 +580,77 @@ a {
   font-size: 13px;
 }
 
+/* ---- Inventario ---- */
+.inv-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.inv-summary-stat {
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.inv-group {
+  margin-bottom: 14px;
+}
+.inv-group-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  margin: 0 0 4px;
+}
+.inv-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+.inv-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 2px;
+  border-bottom: 1px solid var(--border);
+}
+.inv-item-main {
+  flex: 1;
+  min-width: 0;
+}
+.inv-item-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.inv-item-meta {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+.inv-tag {
+  font-size: 10px;
+  color: var(--gold);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 7px;
+}
+.inv-equip {
+  padding: 3px 10px;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.inv-equip.is-on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-weak);
+}
+
 /* tables */
 .table-wrap {
   overflow-x: auto;
