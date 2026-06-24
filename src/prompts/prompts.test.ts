@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { composePrompt, DEFAULT_GUIDES } from "./prompts";
+import { composePrompt, DEFAULT_GUIDES, DEFAULT_SEGMENTS } from "./prompts";
 
 describe("composePrompt", () => {
   it("base includes the disclaimer, interaction style, the sources, and the data contract", () => {
@@ -29,6 +29,23 @@ describe("composePrompt", () => {
   it("renders a guide's optional URL", () => {
     const text = composePrompt("base", { guides: [{ name: "MyWiki", url: "https://wiki.example" }] });
     expect(text).toContain("- MyWiki — https://wiki.example");
+  });
+
+  it("recomposes from customized segments, keeping the generated header", () => {
+    const custom = {
+      ...DEFAULT_SEGMENTS,
+      baseIntro: "MY CUSTOM INTRO",
+      tasks: { ...DEFAULT_SEGMENTS.tasks, create: "MY CUSTOM CREATE TASK" },
+    };
+    const base = composePrompt("base", { guides: [{ name: "SRD" }] }, custom);
+    expect(base).toContain("MY CUSTOM INTRO");
+    expect(base).toContain("Sources in scope"); // header still generated
+    expect(base).not.toContain("Content & licensing"); // default intro replaced
+
+    const create = composePrompt("create", { guides: [{ name: "SRD" }] }, custom);
+    expect(create).toContain("MY CUSTOM INTRO");
+    expect(create).toContain("MY CUSTOM CREATE TASK");
+    expect(create).not.toContain("guided, step by step"); // default task replaced
   });
 
   it("adds a Focus section only when class/race are provided", () => {

@@ -97,14 +97,31 @@ Review an existing \`character.json\` for problems and propose fixes for confirm
 4. **Report** grouped as **errors** (schema-invalid, breaks rendering) and **warnings** (rules-inconsistent but renders fine) — never call something broken if it's merely unusual homebrew the sources in scope allow.
 5. For each finding, propose the exact JSON change, but only apply it after the user confirms. If everything checks out, say so plainly rather than inventing issues.`;
 
-const TASK_BODIES: Record<Exclude<PromptTask, "base">, string> = {
-  create: CREATE_TASK,
-  "level-up": LEVEL_UP_TASK,
-  validate: VALIDATE_TASK,
+/**
+ * The editable building blocks of the prompts. The dynamic "Sources in scope" + "Focus"
+ * header is NEVER one of these — it's always generated from the parameters at compose time.
+ */
+export interface PromptSegments {
+  /** Disclaimer + role + interaction style — the part of base BEFORE the generated header. */
+  baseIntro: string;
+  /** The character.json data contract — the part of base AFTER the generated header. */
+  baseContract: string;
+  /** Each task's addition, appended after the full base. */
+  tasks: Record<Exclude<PromptTask, "base">, string>;
+}
+
+export const DEFAULT_SEGMENTS: PromptSegments = {
+  baseIntro: `${DISCLAIMER}\n\n${BASE_CORE}`,
+  baseContract: DATA_CONTRACT,
+  tasks: {
+    create: CREATE_TASK,
+    "level-up": LEVEL_UP_TASK,
+    validate: VALIDATE_TASK,
+  },
 };
 
 /** Renders the parametric "Sources in scope" + optional "Focus" section. */
-function composeHeader({ guides, className, race }: PromptParams): string {
+export function composeHeader({ guides, className, race }: PromptParams): string {
   const list = (guides.length ? guides : DEFAULT_GUIDES)
     .map((g) => (g.url?.trim() ? `- ${g.name} — ${g.url.trim()}` : `- ${g.name}`))
     .join("\n");
@@ -119,11 +136,15 @@ function composeHeader({ guides, className, race }: PromptParams): string {
   return header;
 }
 
-/** Builds the full prompt text for a task with the given parameters. */
-export function composePrompt(task: PromptTask, params: PromptParams): string {
-  const prefix = [DISCLAIMER, BASE_CORE, composeHeader(params), DATA_CONTRACT].join("\n\n");
+/** Builds the full prompt text for a task, from (optionally customized) segments + parameters. */
+export function composePrompt(
+  task: PromptTask,
+  params: PromptParams,
+  segments: PromptSegments = DEFAULT_SEGMENTS,
+): string {
+  const prefix = [segments.baseIntro, composeHeader(params), segments.baseContract].join("\n\n");
   if (task === "base") return prefix;
-  return `${prefix}\n\n${TASK_BODIES[task]}`;
+  return `${prefix}\n\n${segments.tasks[task]}`;
 }
 
 export interface PromptDef {

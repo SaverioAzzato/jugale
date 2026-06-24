@@ -18,6 +18,10 @@ Because every task prompt includes the base, the licensing disclaimer and the da
 - **Reference guides** — name + optional base wiki URL, one or more. Pre-filled from the loaded character's `meta.ruleset` (which now accepts either plain strings or `{ name, url }` objects). The prompt instructs the assistant to use **only** these sources. Adding a guide here is the same act as adding it to `meta.ruleset`.
 - **Focus (optional)** — a class and/or race. When set, the prompt gains a Focus section telling the assistant to tailor everything to that build; pre-filled from the loaded character. Leave empty for general-purpose prompts.
 
+## Editing the prompts in-app
+
+The Prompts page has **Edit** (pencil) and **Reset** (circular arrows) controls. Edit reveals the prompts' editable building blocks: the base's static text (disclaimer + role + interaction style, and the `character.json` data contract) in two fields, and each task's *addition on top of base* in its own field. The generated "Sources in scope" + "Focus" header is shown locked — it always comes from the parameter fields, never hand-edited. **Save** recomposes every prompt from the edited blocks and persists them locally (`localStorage`); **Reset** restores the shipped originals. Customizations are per-browser and don't touch any character file.
+
 ## Design rules these prompts follow
 
 - **Content & licensing, up front.** The base opens with a read-first disclaimer: use **only** SRD content or material whose terms of use permit free and automated/AI access; don't point a chatbot at sources that prohibit scraping; don't reproduce verbatim commercial text. The user is responsible for using their chosen guides responsibly, within their terms of use, and legally — neither the assistant nor this app is responsible for misuse. The app also shows this as a banner at the top of the Prompts page.

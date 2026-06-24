@@ -3,7 +3,16 @@ import { Panel } from "../render/primitives";
 import { useT } from "../i18n/useI18n";
 import { useCharacter } from "../state/store";
 import type { Character } from "../schema";
-import { PROMPTS, composePrompt, DEFAULT_GUIDES, type Guide } from "../prompts/prompts";
+import {
+  PROMPTS,
+  composePrompt,
+  composeHeader,
+  DEFAULT_GUIDES,
+  type Guide,
+  type PromptParams,
+  type PromptSegments,
+} from "../prompts/prompts";
+import { usePromptSegments } from "./usePromptSegments";
 import { characterJsonSchema } from "../schema/jsonSchema";
 import { exportJson } from "../storage/provider";
 import { useToast } from "./useToast";
@@ -20,6 +29,36 @@ export function PromptsButton({ onClick }: { onClick: () => void }) {
         />
       </svg>
     </button>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg className="inline-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M16.5 3.5l4 4M4 20l1-4L17 4l3 3L8 19l-4 1Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ResetIcon() {
+  return (
+    <svg className="inline-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M4 4v5h5M20 20v-5h-5M19.5 9a8 8 0 0 0-14.13-3M4.5 15a8 8 0 0 0 14.13 3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
@@ -85,15 +124,90 @@ function PromptBlock({ title, text }: { title: string; text: string }) {
   );
 }
 
+/** The editable building blocks (base intro/contract + each task body); the sources/focus header stays generated. */
+function SegmentEditors({
+  draft,
+  setDraft,
+  params,
+}: {
+  draft: PromptSegments;
+  setDraft: (updater: (d: PromptSegments) => PromptSegments) => void;
+  params: PromptParams;
+}) {
+  const t = useT();
+  const taskIds = ["create", "level-up", "validate"] as const;
+
+  return (
+    <>
+      <div className="prompt-block">
+        <h3 className="prompt-edit-label">{t("prompts.editBaseIntro")}</h3>
+        <textarea
+          className="prompt-edit-area"
+          value={draft.baseIntro}
+          onChange={(e) => setDraft((d) => ({ ...d, baseIntro: e.target.value }))}
+        />
+
+        <p className="prompt-locked-note">{t("prompts.lockedHeader")}</p>
+        <pre className="prompt-text prompt-locked">{composeHeader(params)}</pre>
+
+        <h3 className="prompt-edit-label">{t("prompts.editBaseContract")}</h3>
+        <textarea
+          className="prompt-edit-area"
+          value={draft.baseContract}
+          onChange={(e) => setDraft((d) => ({ ...d, baseContract: e.target.value }))}
+        />
+      </div>
+
+      {taskIds.map((id) => {
+        const def = PROMPTS.find((p) => p.id === id)!;
+        return (
+          <div className="prompt-block" key={id}>
+            <h3 className="prompt-edit-label">
+              {t(def.titleKey)} <span className="muted">— {t("prompts.editTaskHint")}</span>
+            </h3>
+            <textarea
+              className="prompt-edit-area"
+              value={draft.tasks[id]}
+              onChange={(e) => setDraft((d) => ({ ...d, tasks: { ...d.tasks, [id]: e.target.value } }))}
+            />
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 export function PromptsPage() {
   const t = useT();
   const character = useCharacter((s) => s.character);
+  const segments = usePromptSegments((s) => s.segments);
+  const customized = usePromptSegments((s) => s.customized);
+  const saveSegments = usePromptSegments((s) => s.save);
+  const resetSegments = usePromptSegments((s) => s.reset);
 
   const [guides, setGuides] = useState<Guide[]>(() => guidesFromCharacter(character));
   const [className, setClassName] = useState(() => character?.classes?.[0]?.name ?? "");
   const [race, setRace] = useState(() => character?.identity?.race ?? "");
 
-  const params = { guides, className, race };
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState<PromptSegments>(segments);
+
+  const params: PromptParams = { guides, className, race };
+
+  function startEdit() {
+    setDraft(segments);
+    setEditing(true);
+  }
+  function save() {
+    saveSegments(draft);
+    setEditing(false);
+  }
+  function reset() {
+    if (!customized) return;
+    if (!window.confirm(t("prompts.confirmReset"))) return;
+    resetSegments();
+    setEditing(false);
+  }
 
   function updateGuide(i: number, patch: Partial<Guide>) {
     setGuides((gs) => gs.map((g, idx) => (idx === i ? { ...g, ...patch } : g)));
@@ -158,17 +272,50 @@ export function PromptsPage() {
           <p className="prompts-focus-hint muted">{t("prompts.focusHint")}</p>
         </div>
 
-        <button
-          type="button"
-          className="btn"
-          onClick={() => exportJson(characterJsonSchema, "character.schema.json")}
-        >
-          {t("prompts.downloadSchema")}
-        </button>
+        <div className="prompts-actions">
+          {editing ? (
+            <>
+              <button type="button" className="btn btn-primary" onClick={save}>
+                {t("prompts.save")}
+              </button>
+              <button type="button" className="btn" onClick={() => setEditing(false)}>
+                {t("prompts.cancel")}
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="btn prompts-action-btn" onClick={startEdit}>
+                <PencilIcon />
+                {t("prompts.edit")}
+              </button>
+              <button
+                type="button"
+                className="btn prompts-action-btn"
+                onClick={reset}
+                disabled={!customized}
+                title={customized ? undefined : t("prompts.resetNone")}
+              >
+                <ResetIcon />
+                {t("prompts.reset")}
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            className="btn"
+            onClick={() => exportJson(characterJsonSchema, "character.schema.json")}
+          >
+            {t("prompts.downloadSchema")}
+          </button>
+        </div>
 
-        {PROMPTS.map((p) => (
-          <PromptBlock key={p.id} title={t(p.titleKey)} text={composePrompt(p.id, params)} />
-        ))}
+        {editing ? (
+          <SegmentEditors draft={draft} setDraft={setDraft} params={params} />
+        ) : (
+          PROMPTS.map((p) => (
+            <PromptBlock key={p.id} title={t(p.titleKey)} text={composePrompt(p.id, params, segments)} />
+          ))
+        )}
       </Panel>
     </div>
   );
