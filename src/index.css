@@ -429,6 +429,13 @@ a {
   padding: 16px 18px;
   box-shadow: var(--shadow);
 }
+/* Transparent variant: no visible card, but the same box (padding + transparent border)
+   so it groups and aligns exactly like one — used to make the primary section stand out. */
+.panel-plain {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
 .panel-title {
   margin: 0 0 12px;
   font-size: 13px;
@@ -786,6 +793,14 @@ a {
 }
 
 /* ---- Inventario ---- */
+.inv-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.inv-meta > * {
+  margin-bottom: 0;
+}
 .inv-summary {
   display: flex;
   flex-wrap: wrap;
@@ -944,25 +959,10 @@ a {
 .lightbox-next {
   right: 20px;
 }
-.inv-group {
-  margin-bottom: 14px;
-}
-.inv-group-equipped {
-  padding-bottom: 16px;
-  margin-bottom: 22px;
-  border-bottom: 1px solid var(--border-strong);
-}
 .story-summary {
   margin: 0;
   font-size: 14px;
   line-height: 1.6;
-}
-.inv-group-title {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--accent);
-  margin: 0 0 4px;
 }
 .inv-list {
   list-style: none;

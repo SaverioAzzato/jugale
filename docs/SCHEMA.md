@@ -27,7 +27,7 @@ The canonical, machine-readable schema is the Zod definition in `src/schema/` (i
 ```jsonc
 {
   "schemaVersion": "2.0.0",
-  "meta":         { ... },   // identity card of the *file*: name, player, portrait, ruleset
+  "meta":         { ... },   // identity card of the *file*: name, player, summary, ruleset
   "identity":     { ... },   // who the character is: race, background, alignment, age...
   "classes":      [ ... ],   // one entry per class → multiclass is native
   "abilities":    { ... },   // the six scores + save proficiency
@@ -55,7 +55,8 @@ Only `schemaVersion` and `meta.name` are strictly required; every section has a 
   "name": "Esempio Warlock",
   "player": "Saverio",
   "summary": "Tiefling Warlock, Patto del Tomo.",
-  "portrait": { "src": "images/01-portrait.png", "alt": "..." },
+  // No image fields. The app reads the folder's images/ in alphabetical order and uses the
+  // first as the portrait — the JSON never references an image path (the user just names files).
   "ruleset": ["SRD", { "name": "My Homebrew Wiki", "url": "https://wiki.example/srd" }],
                          // rules guides in scope; drives the prompts. Each entry is a bare name
                          // string or { name, url } (base wiki URL for niche guides). Default is the

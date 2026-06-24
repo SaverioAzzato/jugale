@@ -8,8 +8,8 @@ const basename = (p: string): string => p.split("/").pop() || p;
 
 /**
  * Portrait + image gallery for the Story tab. Images come from the loaded folder (runtime
- * `images`, filename order) — never from the JSON, which only names the active portrait via
- * `meta.portrait.src`. Renders nothing when no folder/images were loaded.
+ * `images`, filename order) — the JSON carries no image references at all; the first image
+ * alphabetically is the portrait. Renders nothing when no folder/images were loaded.
  */
 export function PortraitSection({ c }: { c: Character }) {
   const t = useT();
@@ -31,13 +31,11 @@ export function PortraitSection({ c }: { c: Character }) {
 
   if (images.length === 0) return null;
 
-  const src = c.meta.portrait?.src ?? "";
-  const found = images.findIndex((im) => im.name === src || basename(im.name) === basename(src));
-  const portraitIdx = found >= 0 ? found : 0; // fall back to the first image
-  const alt = c.meta.portrait?.alt?.trim() || c.meta.name || t("portrait.alt");
+  const portraitIdx = 0; // first image alphabetically is the portrait — no JSON reference
+  const alt = c.meta.name || t("portrait.alt");
 
   return (
-    <Panel title={t("portrait.title")}>
+    <Panel plain>
       <div className="portrait">
         <button type="button" className="portrait-main" onClick={() => setLightbox(portraitIdx)} aria-label={alt}>
           <img src={images[portraitIdx].url} alt={alt} />

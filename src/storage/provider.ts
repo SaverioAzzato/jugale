@@ -14,7 +14,8 @@ export interface StorageProvider {
 /**
  * A runtime image from a character's `images/` folder. The blob `url` is host-supplied
  * (object URL on the web, asset URL for bundled samples) and never persisted — the JSON
- * only names the active portrait via `meta.portrait.src`; ordering is filename order here.
+ * carries no image references at all; images are ordered by filename and the first is the
+ * portrait, so the user specifies nothing.
  */
 export interface GalleryImage {
   /** Path relative to the character folder, e.g. "images/01-portrait.svg". */

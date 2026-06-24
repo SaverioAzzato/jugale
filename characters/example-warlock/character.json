@@ -4,7 +4,6 @@
     "name": "Esempio Warlock",
     "player": "Da compilare",
     "summary": "Tiefling Warlock — Patto del Tomo. Template v2 di esempio.",
-    "portrait": { "src": "images/01-portrait.svg", "alt": "Ritratto di esempio" },
     "ruleset": ["SRD"],
     "tags": ["warlock", "example"]
   },

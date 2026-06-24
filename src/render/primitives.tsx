@@ -10,22 +10,29 @@ export function WikiLink({ link, children }: { link?: string | null; children: R
   );
 }
 
-/** A titled section card. Returns null when `hidden`, so empty sections disappear. */
+/**
+ * A section card. Returns null when `hidden`, so empty sections disappear.
+ * `plain` drops the visible card chrome (background/border/shadow) while keeping the
+ * box model, so the section reads as the prominent/primary one. `title` is optional —
+ * omit it for a chrome-less group with no heading.
+ */
 export function Panel({
   title,
   id,
   hidden,
+  plain,
   children,
 }: {
-  title: string;
+  title?: string;
   id?: string;
   hidden?: boolean;
+  plain?: boolean;
   children: ReactNode;
 }) {
   if (hidden) return null;
   return (
-    <section className="panel" id={id}>
-      <h2 className="panel-title">{title}</h2>
+    <section className={plain ? "panel panel-plain" : "panel"} id={id}>
+      {title && <h2 className="panel-title">{title}</h2>}
       {children}
     </section>
   );

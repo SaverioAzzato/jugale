@@ -126,67 +126,74 @@ export function InventorySection({ c }: { c: Character }) {
   const encumbered = hasWeights && totalWeight > capacity;
 
   return (
-    <Panel title={t("inv.title")} id="inventory">
-      {attunedCount > 0 && (
-        <div className="inv-summary">
-          <span className="inv-summary-stat">
-            {t("inv.attunement")} {attunedCount}/3
-          </span>
-        </div>
-      )}
-      {hasWeights && (
-        <div className={encumbered ? "inv-encumbrance is-over" : "inv-encumbrance"}>
-          <div className="inv-encumbrance-label">
-            <span>{t("inv.weight")}</span>
-            <span>
-              {formatWeight(Math.round(totalWeight * 10) / 10, units)} / {formatWeight(capacity, units)}
-            </span>
-          </div>
-          <div className="inv-encumbrance-bar">
-            <div
-              className="inv-encumbrance-fill"
-              style={{ width: `${Math.min(100, (totalWeight / capacity) * 100)}%` }}
-            />
-          </div>
+    <>
+      {/* Carry-state summary (attunement + optional encumbrance), no card chrome of its own. */}
+      {(attunedCount > 0 || hasWeights) && (
+        <div className="inv-meta">
+          {attunedCount > 0 && (
+            <div className="inv-summary">
+              <span className="inv-summary-stat">
+                {t("inv.attunement")} {attunedCount}/3
+              </span>
+            </div>
+          )}
+          {hasWeights && (
+            <div className={encumbered ? "inv-encumbrance is-over" : "inv-encumbrance"}>
+              <div className="inv-encumbrance-label">
+                <span>{t("inv.weight")}</span>
+                <span>
+                  {formatWeight(Math.round(totalWeight * 10) / 10, units)} / {formatWeight(capacity, units)}
+                </span>
+              </div>
+              <div className="inv-encumbrance-bar">
+                <div
+                  className="inv-encumbrance-fill"
+                  style={{ width: `${Math.min(100, (totalWeight / capacity) * 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
+      {/* Equipped is its own, chrome-less card so it reads as the primary inventory section. */}
       {equipped.length > 0 && (
-        <div className="inv-group inv-group-equipped">
-          <h3 className="inv-group-title">{t("inv.equipped")}</h3>
+        <Panel plain title={t("inv.equipped")} id="inventory">
           <ul className="inv-list">
             {equipped.map((e) => (
               <ItemRow key={e.it.id || e.index} entry={e} t={t} units={units} />
             ))}
           </ul>
-        </div>
+        </Panel>
       )}
 
+      {/* Each item category becomes its own titled card. */}
       {orderedCats.map((cat) => (
-        <div className="inv-group" key={cat}>
-          <h3 className="inv-group-title">{categoryLabel(cat, t)}</h3>
+        <Panel key={cat} title={categoryLabel(cat, t)}>
           <ul className="inv-list">
             {groups.get(cat)!.map((e) => (
               <ItemRow key={e.it.id || e.index} entry={e} t={t} units={units} />
             ))}
           </ul>
-        </div>
+        </Panel>
       ))}
 
       {currencyCodes.length > 0 && (
-        <div className="currencies">
-          {currencyCodes.map((code) => (
-            <div key={code} className="currency">
-              <span>{COIN_KEY[code] ? t(COIN_KEY[code]) : code}</span>
-              <Stepper
-                value={c.inventory.currencies[code]}
-                label={code}
-                onChange={(next) => setCurrency(code, next)}
-              />
-            </div>
-          ))}
-        </div>
+        <Panel title={t("inv.currency")}>
+          <div className="currencies">
+            {currencyCodes.map((code) => (
+              <div key={code} className="currency">
+                <span>{COIN_KEY[code] ? t(COIN_KEY[code]) : code}</span>
+                <Stepper
+                  value={c.inventory.currencies[code]}
+                  label={code}
+                  onChange={(next) => setCurrency(code, next)}
+                />
+              </div>
+            ))}
+          </div>
+        </Panel>
       )}
-    </Panel>
+    </>
   );
 }

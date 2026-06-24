@@ -6,7 +6,7 @@ import { useT, type StringKey } from "../i18n/useI18n";
 export function AbilitiesSection({ c }: { c: Character }) {
   const t = useT();
   return (
-    <Panel title={t("abilities.title")} id="abilities">
+    <Panel plain title={t("abilities.title")} id="abilities">
       <div className="ability-grid">
         {AbilityId.options.map((id) => (
           <div key={id} className="ability-card">

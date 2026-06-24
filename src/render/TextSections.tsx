@@ -7,7 +7,7 @@ export function DescriptionSection({ c }: { c: Character }) {
   const t = useT();
   if (!c.meta.summary || !c.meta.summary.trim()) return null;
   return (
-    <Panel title={t("description.title")} id="description">
+    <Panel plain title={t("description.title")} id="description">
       <p className="story-summary">{c.meta.summary}</p>
     </Panel>
   );

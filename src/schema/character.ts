@@ -37,11 +37,6 @@ const Abilities = z
   })
   .default({});
 
-const Portrait = z
-  .object({ src: z.string().default(""), alt: z.string().default("") })
-  .passthrough()
-  .default({});
-
 /**
  * A rules guide in scope for this character: a bare name (e.g. "SRD") or, for niche
  * guides, `{ name, url }` where `url` is the base wiki URL the assistant may reference.
@@ -58,7 +53,9 @@ const Meta = z
     name: z.string().min(1),
     player: z.string().default(""),
     summary: z.string().default(""),
-    portrait: Portrait,
+    // No image fields: the app derives the portrait from the folder's images/ (first
+    // alphabetically) — the JSON never references image paths. Legacy `portrait` keys are
+    // preserved by .passthrough() but ignored.
     ruleset: z
       .array(RulesetEntry)
       .default(["SRD"])

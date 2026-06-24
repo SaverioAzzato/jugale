@@ -40,7 +40,7 @@ The typed core; everything else builds on it. It stores **inputs, not outputs** 
 
 ## Character JSON contract (v2.0.0)
 
-Full spec: **`docs/SCHEMA.md`**. A character is a folder: `character.json` + `images/` (alphabetical filename order; `meta.portrait.src` picks the active one). The canonical v2 template is `characters/example-warlock/`.
+Full spec: **`docs/SCHEMA.md`**. A character is a folder: `character.json` + `images/`. Images are read in alphabetical filename order and the **first is the portrait** — the JSON carries **no image references at all** (the user names files; the app sorts). The canonical v2 template is `characters/example-warlock/`.
 
 Top-level sections: `schemaVersion`, `meta`, `identity`, `classes` (array → multiclass-native), `abilities`, `proficiencies`, `combat`, `resources`, `spellcasting`, `spellSections`, `features`, `inventory`, `origin`, `narrative`, `customSections`, `session`.
 

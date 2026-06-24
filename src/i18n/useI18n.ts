@@ -40,7 +40,6 @@ const en = {
   "tab.inventario": "Inventory",
   "tab.storia": "Story",
   // portrait & gallery
-  "portrait.title": "Portrait & gallery",
   "portrait.alt": "Character portrait",
   "portrait.close": "Close",
   "portrait.prev": "Previous image",
@@ -155,6 +154,7 @@ const en = {
   "inv.attunement": "Attunement",
   "inv.attuned": "attuned",
   "inv.weight": "Weight",
+  "inv.currency": "Currency",
   // item categories
   "cat.weapon": "Weapons",
   "cat.armor": "Armor",
@@ -261,7 +261,6 @@ const it: Record<StringKey, string> = {
   "tab.inventario": "Inventario",
   "tab.storia": "Storia",
   // portrait & gallery
-  "portrait.title": "Ritratto e galleria",
   "portrait.alt": "Ritratto del personaggio",
   "portrait.close": "Chiudi",
   "portrait.prev": "Immagine precedente",
@@ -366,6 +365,7 @@ const it: Record<StringKey, string> = {
   "inv.attunement": "Sintonia",
   "inv.attuned": "sintonizzato",
   "inv.weight": "Peso",
+  "inv.currency": "Valuta",
   "cat.weapon": "Armi",
   "cat.armor": "Armature",
   "cat.ammo": "Munizioni",

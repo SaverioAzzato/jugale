@@ -77,7 +77,9 @@ describe("v1 → v2 migration", () => {
   it("produces a schema-valid v2 character", () => {
     expect(parsed.schemaVersion).toBe("2.0.0");
     expect(parsed.meta.name).toBe("Old PG");
-    expect(parsed.meta.portrait.src).toBe("images/a.png");
+    // `portrait` is no longer a schema field (the app derives the portrait from the
+    // images/ folder), but unknown meta keys survive migration losslessly via passthrough.
+    expect((parsed.meta as Record<string, { src: string }>).portrait.src).toBe("images/a.png");
   });
 
   it("parses class + embedded level and race `parts`", () => {

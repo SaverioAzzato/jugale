@@ -165,7 +165,7 @@ export function CombatSection({ c }: { c: Character }) {
   const ac = derivedArmorClass(c);
 
   return (
-    <Panel title={t("vitals.title")} id="combat">
+    <Panel plain title={t("vitals.title")} id="combat">
       <div className="stat-row">
         <Stat label={t("vitals.ac")} value={ac.value} note={ac.breakdown || undefined} />
         <Stat label={t("vitals.initiative")} value={fmtMod(initiative)} />
