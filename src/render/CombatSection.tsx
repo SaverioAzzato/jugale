@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import type { Character } from "../schema";
 import { abilityModifierFor, derivedArmorClass, maxHitDice } from "../schema";
 import { Panel, fmtMod } from "./primitives";
@@ -24,13 +24,13 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
   const heal = useCharacter((s) => s.heal);
   const setCurrentHp = useCharacter((s) => s.setCurrentHp);
   const setTempHp = useCharacter((s) => s.setTempHp);
-  const [amount, setAmount] = useState(1);
   const damagePressed = useRef(false);
   const healPressed = useRef(false);
   const pct = hp.max > 0 ? Math.round((hp.current / hp.max) * 100) : 0;
 
-  const holdDamage = useHoldRepeat(() => damage(amount));
-  const holdHeal = useHoldRepeat(() => heal(amount));
+  // Damage/Heal apply 1 per activation, but hold-to-repeat ramps it up for bigger hits.
+  const holdDamage = useHoldRepeat(() => damage(1));
+  const holdHeal = useHoldRepeat(() => heal(1));
 
   const clearPressedSoon = (ref: { current: boolean }) => {
     setTimeout(() => {
@@ -63,19 +63,14 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
         <strong className="hp-current">{hp.current}</strong>
         <span className="hp-max">/ {hp.max}</span>
         {hp.temp > 0 && <span className="hp-temp">+{hp.temp} temp</span>}
+        <span className="hp-readout-stepper">
+          <Stepper value={hp.current} max={hp.max || undefined} onChange={setCurrentHp} label={t("vitals.hp")} />
+        </span>
       </div>
       <div className="hp-bar" aria-hidden>
         <div className="hp-fill" style={{ width: `${pct}%` }} />
       </div>
       <div className="hp-actions">
-        <input
-          type="number"
-          min={0}
-          className="hp-amount"
-          value={amount}
-          onChange={(e) => setAmount(Math.max(0, Number(e.target.value)))}
-          aria-label="quantità"
-        />
         <button
           type="button"
           className="btn btn-danger"
@@ -84,7 +79,7 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
               damagePressed.current = false;
               return;
             }
-            damage(amount);
+            damage(1);
           }}
           onMouseDown={startDamage}
           onMouseUp={stopDamage}
@@ -105,7 +100,7 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
               healPressed.current = false;
               return;
             }
-            heal(amount);
+            heal(1);
           }}
           onMouseDown={startHeal}
           onMouseUp={stopHeal}
@@ -120,15 +115,6 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
         </button>
       </div>
       <div className="hp-fine">
-        <label>
-          {t("vitals.hp")}{" "}
-          <Stepper
-            value={hp.current}
-            max={hp.max || undefined}
-            onChange={setCurrentHp}
-            label={t("vitals.hp")}
-          />
-        </label>
         <label>
           {t("vitals.temp")}{" "}
           <Stepper value={hp.temp} onChange={setTempHp} label={t("vitals.temp")} />

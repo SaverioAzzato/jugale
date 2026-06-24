@@ -65,11 +65,10 @@ function sections(list: (Section | false | null | undefined)[]): Section[] {
   return list.filter(Boolean) as Section[];
 }
 
+/** Contiguous prefix/suffix split (order-preserving): left = first half, right = rest. */
 function initialSplit(items: Section[]): [string[], string[]] {
-  const l: string[] = [];
-  const r: string[] = [];
-  items.forEach((it, i) => (i % 2 === 0 ? l : r).push(it.key));
-  return [l, r];
+  const k = Math.ceil(items.length / 2);
+  return [items.slice(0, k).map((i) => i.key), items.slice(k).map((i) => i.key)];
 }
 
 const eqSplit = (a: [string[], string[]], b: [string[], string[]]) =>
@@ -90,10 +89,11 @@ function useTwoColumn(): boolean {
 }
 
 /**
- * Two height-balanced columns: each section is greedily placed in the currently shorter
- * column (measured), so the two sides end up roughly even instead of curated by hand.
- * Rebalances only on mount, tab/character change, and when crossing into two-column width —
- * never on expand, so opening a card grows only its own column and nothing jumps around.
+ * Two height-balanced columns that PRESERVE the given section order: the list is split at the
+ * point that best evens the two measured heights, left column = the prefix, right = the suffix.
+ * So reading the left column top-to-bottom then the right reproduces the authored order, while
+ * the sides stay roughly even. Rebalances only on mount, tab/character change, and when crossing
+ * into two-column width — never on expand, so opening a card grows only its own column.
  */
 function BalancedCols({ items }: { items: Section[] }) {
   const refs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -103,21 +103,25 @@ function BalancedCols({ items }: { items: Section[] }) {
 
   useLayoutEffect(() => {
     if (!twoCol) return;
-    const h = (k: string) => refs.current.get(k)?.offsetHeight ?? 0;
-    let hl = 0;
-    let hr = 0;
-    const l: string[] = [];
-    const r: string[] = [];
-    for (const it of items) {
-      if (hl <= hr) {
-        l.push(it.key);
-        hl += h(it.key);
-      } else {
-        r.push(it.key);
-        hr += h(it.key);
+    const heights = items.map((it) => refs.current.get(it.key)?.offsetHeight ?? 0);
+    const total = heights.reduce((s, h) => s + h, 0);
+    // Pick the split point k (1..n-1) that minimizes |left − right|.
+    let prefix = 0;
+    let bestK = Math.ceil(items.length / 2);
+    let bestDiff = Infinity;
+    for (let k = 1; k < items.length; k++) {
+      prefix += heights[k - 1];
+      const diff = Math.abs(prefix - (total - prefix));
+      if (diff < bestDiff) {
+        bestDiff = diff;
+        bestK = k;
       }
     }
-    setSplit((prev) => (eqSplit(prev, [l, r]) ? prev : [l, r]));
+    const next: [string[], string[]] = [
+      items.slice(0, bestK).map((i) => i.key),
+      items.slice(bestK).map((i) => i.key),
+    ];
+    setSplit((prev) => (eqSplit(prev, next) ? prev : next));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sig, twoCol]);
 
@@ -169,12 +173,12 @@ export function TabContent({ c, tab }: { c: Character; tab: string }) {
         <BalancedCols
           items={sections([
             { key: "vitals", node: <CombatSection c={c} /> },
-            hasAttacks && { key: "attacks", node: <AttacksSection c={c} /> },
-            c.spellSections.length > 0 && { key: "spells", node: <SpellsSection c={c} /> },
-            c.resources.length > 0 && { key: "resources", node: <ResourcesSection c={c} /> },
             { key: "actions", node: <ActionsSection c={c} /> },
             { key: "status", node: <StatusSection c={c} /> },
+            c.resources.length > 0 && { key: "resources", node: <ResourcesSection c={c} /> },
             hasConsumables && { key: "consumables", node: <ConsumablesSection c={c} /> },
+            hasAttacks && { key: "attacks", node: <AttacksSection c={c} /> },
+            c.spellSections.length > 0 && { key: "spells", node: <SpellsSection c={c} /> },
           ])}
         />
       );
@@ -184,9 +188,9 @@ export function TabContent({ c, tab }: { c: Character; tab: string }) {
         <BalancedCols
           items={sections([
             { key: "abilities", node: <AbilitiesSection c={c} /> },
+            { key: "prof", node: <ProficienciesSection c={c} /> },
             { key: "skills", node: <SkillsSection c={c} /> },
             { key: "features", node: <FeaturesSection c={c} /> },
-            { key: "prof", node: <ProficienciesSection c={c} /> },
           ])}
         />
       );

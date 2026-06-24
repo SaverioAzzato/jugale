@@ -58,6 +58,10 @@ Free and open: the **web app is the GitHub Pages site**; desktop and mobile bina
 
 - [Architecture](docs/ARCHITECTURE.md) · [Schema](docs/SCHEMA.md) · [Prompts](docs/PROMPTS.md) · [Roadmap](docs/ROADMAP.md) · [Automation](docs/AUTOMATION.md)
 
+## Assets & Credits
+
+The example character images in [`characters/example-warlock/images/`](characters/example-warlock/images/) were generated with **ChatGPT (OpenAI)** and are included for demonstration purposes only. These generated assets are example content and are **not part of the software license** — they're separate from the code.
+
 ## License
 
-The **code** is released under the [MIT License](LICENSE). This covers the application only — D&D rules content is a separate matter; see [Content & licensing](#content--licensing) above.
+The **code** is released under the [MIT License](LICENSE). This covers the application only — D&D rules content is a separate matter (see [Content & licensing](#content--licensing) above), and the example images are credited under [Assets & Credits](#assets--credits).

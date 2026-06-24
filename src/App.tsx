@@ -31,11 +31,13 @@ const imageModules = import.meta.glob("../characters/*/images/*", {
   import: "default",
 }) as Record<string, string>;
 
+const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
+
 /** Images for a sample's folder, alphabetical by filename — same ordering the folder loaders use. */
 function sampleImages(folder: string): GalleryImage[] {
   const prefix = `../characters/${folder}/images/`;
   return Object.entries(imageModules)
-    .filter(([path]) => path.startsWith(prefix))
+    .filter(([path]) => path.startsWith(prefix) && IMAGE_RE.test(path))
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([path, url]) => ({ name: `images/${path.slice(prefix.length)}`, url }));
 }

@@ -1220,6 +1220,7 @@ a {
 .stepper-max {
   color: var(--muted);
   font-weight: 400;
+  font-size: 0.78em;
 }
 
 /* HP control */
@@ -1228,8 +1229,11 @@ a {
 }
 .hp-readout {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
+}
+.hp-readout-stepper {
+  margin-left: auto;
 }
 .hp-label {
   font-size: 11px;
@@ -1269,10 +1273,6 @@ a {
 }
 .hp-actions .btn {
   flex: 1;
-}
-.hp-amount {
-  width: 60px;
-  flex-shrink: 0;
 }
 .hp-fine {
   display: flex;
