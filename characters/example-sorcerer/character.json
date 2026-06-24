@@ -74,7 +74,7 @@
     "items": [
       { "id": "dagger", "name": "Daga", "quantity": 2, "equipped": true },
       { "id": "arcane-focus", "name": "Focus arcano (cristallo)", "quantity": 1, "equipped": true },
-      { "id": "potion-healing", "name": "Pozione di guarigione", "quantity": 2, "category": "consumable" }
+      { "id": "potion-healing", "name": "Pozione di guarigione", "quantity": 2, "category": "consumable", "equippable": false }
     ],
     "currencies": { "gp": 60, "sp": 8, "cp": 0 }
   },

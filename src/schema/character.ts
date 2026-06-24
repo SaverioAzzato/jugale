@@ -243,6 +243,8 @@ const Item = z
     weight: z.number().min(0).default(0),
     value: z.number().min(0).nullable().default(null),
     equipped: z.boolean().default(false),
+    // Whether this item can be worn/wielded at all (vs. a consumable, treasure, etc.).
+    equippable: z.boolean().default(true),
     attuned: z.boolean().default(false),
     category: z.string().default(""),
     notes: z.string().default(""),

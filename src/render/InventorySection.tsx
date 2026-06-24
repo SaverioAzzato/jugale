@@ -66,13 +66,15 @@ function ItemRow({ entry, t }: { entry: Indexed; t: TFn }) {
         label={`${it.name}`}
         onChange={(next) => setItemQuantity(index, next)}
       />
-      <button
-        type="button"
-        className={it.equipped ? "btn inv-equip is-on" : "btn inv-equip"}
-        onClick={() => toggleEquipped(index)}
-      >
-        {it.equipped ? t("inv.unequip") : t("inv.equip")}
-      </button>
+      {it.equippable && (
+        <button
+          type="button"
+          className={it.equipped ? "btn inv-equip is-on" : "btn inv-equip"}
+          onClick={() => toggleEquipped(index)}
+        >
+          {it.equipped ? t("inv.unequip") : t("inv.equip")}
+        </button>
+      )}
     </li>
   );
 }

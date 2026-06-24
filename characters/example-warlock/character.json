@@ -146,7 +146,7 @@
   ],
   "inventory": {
     "items": [
-      { "id": "potion-healing", "name": "Pozione di guarigione", "link": "https://www.dndbeyond.com/magic-items/potion-of-healing", "quantity": 3, "category": "consumable", "notes": "2d4+2 PF" },
+      { "id": "potion-healing", "name": "Pozione di guarigione", "link": "https://www.dndbeyond.com/magic-items/potion-of-healing", "quantity": 3, "category": "consumable", "equippable": false, "notes": "2d4+2 PF" },
       { "id": "leather-armor", "name": "Armatura di cuoio", "category": "armor", "quantity": 1, "equipped": true,
         "ac": { "base": 11, "addDex": true, "dexCap": null, "bonus": 0, "label": "cuoio" } },
       { "id": "dagger", "name": "Pugnale", "link": "https://www.dndbeyond.com/equipment/dagger", "category": "weapon", "quantity": 2, "equipped": true,

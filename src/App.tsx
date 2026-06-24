@@ -9,7 +9,7 @@ import {
   importJsonFile,
 } from "./storage/provider";
 import { useT, type TFn } from "./i18n/useI18n";
-import { SettingsMenu } from "./ui/SettingsMenu";
+import { SettingsButton, SettingsPage } from "./ui/SettingsMenu";
 import { Toasts } from "./ui/Toasts";
 import { useToast } from "./ui/useToast";
 import warlock from "../characters/example-warlock/character.json";
@@ -45,6 +45,7 @@ export function App() {
   const fileAccessSupported = isFileAccessSupported();
 
   const [activeTab, setActiveTab] = useState("gioco");
+  const [showSettings, setShowSettings] = useState(false);
   const tabs = character ? getVisibleTabs(character) : [];
   const tab = tabs.some((t) => t.id === activeTab)
     ? activeTab
@@ -96,19 +97,14 @@ export function App() {
       <header className="appbar">
         <nav className="toolbar">
           <div className="toolbar-left">
-            {character && (
+            {showSettings ? (
               <button
                 className="btn btn-back"
-                onClick={handleBackToHome}
-                title={t("app.backTitle")}
+                onClick={() => setShowSettings(false)}
+                title={t("app.back")}
                 aria-label={t("app.back")}
               >
-                <svg
-                  className="back-icon"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  focusable="false"
-                >
+                <svg className="back-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                   <path
                     d="M15.5 4.5 8 12l7.5 7.5"
                     fill="none"
@@ -119,15 +115,45 @@ export function App() {
                   />
                 </svg>
               </button>
+            ) : (
+              character && (
+                <button
+                  className="btn btn-back"
+                  onClick={handleBackToHome}
+                  title={t("app.backTitle")}
+                  aria-label={t("app.back")}
+                >
+                  <svg
+                    className="back-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path
+                      d="M15.5 4.5 8 12l7.5 7.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              )
             )}
+            {showSettings && <span className="toolbar-title">{t("settings.title")}</span>}
           </div>
           <div className="toolbar-right">
-            {character && (
-              <button className="btn" onClick={exportCharacter} title={t("app.export")}>
-                {t("app.export")}
-              </button>
+            {!showSettings && (
+              <>
+                {character && (
+                  <button className="btn" onClick={exportCharacter} title={t("app.export")}>
+                    {t("app.export")}
+                  </button>
+                )}
+                <SettingsButton onClick={() => setShowSettings(true)} />
+              </>
             )}
-            <SettingsMenu />
           </div>
         </nav>
 
@@ -139,7 +165,7 @@ export function App() {
           onChange={handleImportFile}
         />
 
-        {character && tabs.length > 0 && (
+        {!showSettings && character && tabs.length > 0 && (
           <nav className="tabbar" role="tablist" aria-label="Sections">
             {tabs.map((tabDef) => (
               <button
@@ -156,13 +182,15 @@ export function App() {
         )}
       </header>
 
-      {character ? (
+      {showSettings ? (
+        <SettingsPage />
+      ) : character ? (
         <Sheet c={character} tab={tab} />
       ) : (
         <EmptyState onOpenJson={handleOpenJson} onSample={(d, l) => loadRaw(d, l)} t={t} />
       )}
 
-      {character && (
+      {!showSettings && character && (
         <footer className="statusbar" role="status" aria-live="polite">
           <span className="statusbar-file">
             {t("status.file")}: {sourceName || t("status.unnamed")}

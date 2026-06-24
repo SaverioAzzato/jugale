@@ -120,52 +120,48 @@ a {
   color: var(--error);
 }
 
-/* ---- settings (gear button + popover) ---- */
-.settings {
-  position: relative;
-}
+/* ---- settings (gear button + full-page view) ---- */
 .btn-icon {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 .settings-icon {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
 }
-.settings-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 40;
-  min-width: 240px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.toolbar-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+.settings-page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
 }
 .settings-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 6px 8px;
-  font-size: 13px;
+  padding: 10px 0;
+  font-size: 14px;
   color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.settings-row:last-child {
+  border-bottom: none;
 }
 .settings-row select {
   background: var(--surface-2);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 4px 8px;
+  padding: 5px 10px;
   font: inherit;
   font-size: 13px;
   cursor: pointer;
@@ -1018,7 +1014,8 @@ input[type="number"] {
 .currencies {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  justify-content: center;
+  gap: 20px;
   margin-top: 12px;
 }
 .currency {

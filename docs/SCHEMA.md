@@ -176,7 +176,7 @@ CD incantesimi and bonus d'attacco are **derived** from `classes[].spellcasting.
 {
   "items": [
     { "id": "potion-healing", "name": "Pozione di guarigione", "link": "https://...",
-      "quantity": 3, "weight": 0.5, "value": 50, "equipped": false, "attuned": false,
+      "quantity": 3, "weight": 0.5, "value": 50, "equipped": false, "equippable": false, "attuned": false,
       "category": "consumable", "notes": "2d4+2" },
     // A WEAPON item carries its attack profiles (modes); they surface in the combat attacks view.
     { "id": "dagger", "name": "Pugnale", "category": "weapon", "quantity": 2, "equipped": true,
@@ -194,7 +194,7 @@ CD incantesimi and bonus d'attacco are **derived** from `classes[].spellcasting.
   "notes": ["..."]
 }
 ```
-`quantity`, `equipped`, and `currencies` are live. `currencies` keys are open (add `ep`, homebrew coins…). `category` (open string: `weapon | armor | consumable | ammo | component | alchemy | treasure | gear`…) drives grouping in the Inventario tab and surfaces combat-relevant items (ammo/consumable) in the Gioco tab. A weapon's `attacks[]` and an armor/shield's `ac` are how those items feed the combat view and the derived AC.
+`quantity`, `equipped`, and `currencies` are live. `currencies` keys are open (add `ep`, homebrew coins…). `category` (open string: `weapon | armor | consumable | ammo | component | alchemy | treasure | gear`…) drives grouping in the Inventario tab and surfaces combat-relevant items (ammo/consumable) in the Gioco tab. A weapon's `attacks[]` and an armor/shield's `ac` are how those items feed the combat view and the derived AC. `equippable` (default `true`) is structural — it says whether an item *can* ever be worn/wielded at all; set it `false` on consumables, treasure, and other items that should never show an Equip button.
 
 ### `origin`, `narrative`
 ```jsonc
