@@ -634,6 +634,34 @@ a {
   border-radius: 999px;
   padding: 3px 10px;
 }
+.inv-encumbrance {
+  margin-bottom: 12px;
+}
+.inv-encumbrance-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.inv-encumbrance-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.inv-encumbrance-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+.inv-encumbrance.is-over .inv-encumbrance-label {
+  color: var(--error);
+}
+.inv-encumbrance.is-over .inv-encumbrance-fill {
+  background: var(--error);
+}
 .inv-group {
   margin-bottom: 14px;
 }
