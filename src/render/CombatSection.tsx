@@ -5,6 +5,8 @@ import { Panel, fmtMod } from "./primitives";
 import { Stepper, useHoldRepeat } from "./controls";
 import { useCharacter } from "../state/store";
 import { useT } from "../i18n/useI18n";
+import { useSettings } from "../ui/useSettings";
+import { formatDistance } from "../model/units";
 
 function Stat({ label, value, note }: { label: string; value: ReactNode; note?: string }) {
   return (
@@ -158,6 +160,7 @@ function HitDiceControl({ c }: { c: Character }) {
 
 export function CombatSection({ c }: { c: Character }) {
   const t = useT();
+  const units = useSettings((s) => s.units);
   const initiative = c.combat.initiativeOverride ?? abilityModifierFor(c, "dex");
   const ac = derivedArmorClass(c);
 
@@ -166,7 +169,7 @@ export function CombatSection({ c }: { c: Character }) {
       <div className="stat-row">
         <Stat label={t("vitals.ac")} value={ac.value} note={ac.breakdown || undefined} />
         <Stat label={t("vitals.initiative")} value={fmtMod(initiative)} />
-        <Stat label={t("vitals.speed")} value={`${c.combat.speed.walk} ft`} />
+        <Stat label={t("vitals.speed")} value={formatDistance(c.combat.speed.walk, units)} />
       </div>
 
       <HpControl hp={c.combat.hp} />

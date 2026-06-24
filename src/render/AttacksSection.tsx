@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { Character, AttackProfile } from "../schema";
 import { Panel, WikiLink } from "./primitives";
 import { useT } from "../i18n/useI18n";
+import { useSettings, type UnitSystem } from "../ui/useSettings";
+import { convertDistanceText } from "../model/units";
 
 interface AttackView {
   key: string;
@@ -15,18 +17,22 @@ interface AttackView {
 }
 
 /** Summarise a profile as the one-liner you say at the table. */
-function profileLine(p: AttackProfile): string {
-  return [p.range, p.attack, p.defense, p.effect].map((x) => x?.trim()).filter(Boolean).join(" · ");
+function profileLine(p: AttackProfile, units: UnitSystem): string {
+  return [convertDistanceText(p.range, units), p.attack, p.defense, p.effect]
+    .map((x) => x?.trim())
+    .filter(Boolean)
+    .join(" · ");
 }
 
 function AttackRow({ a }: { a: AttackView }) {
   const t = useT();
+  const units = useSettings((s) => s.units);
   const [open, setOpen] = useState(false);
   const dimmed = a.source === "weapon" && !a.available;
   const summary =
     a.profiles.length > 1
       ? `${a.profiles.length} ${t("attacks.modes")}`
-      : profileLine(a.profiles[0] ?? ({} as AttackProfile));
+      : profileLine(a.profiles[0] ?? ({} as AttackProfile), units);
 
   return (
     <li className={dimmed ? "attack is-dimmed" : "attack"}>
@@ -54,7 +60,7 @@ function AttackRow({ a }: { a: AttackView }) {
           {a.profiles.map((p, i) => (
             <dl key={i} className="attack-profile">
               {p.label && <dt className="attack-profile-label">{p.label}</dt>}
-              {p.range && <div className="detail-row"><dt>{t("detail.range")}</dt><dd>{p.range}</dd></div>}
+              {p.range && <div className="detail-row"><dt>{t("detail.range")}</dt><dd>{convertDistanceText(p.range, units)}</dd></div>}
               {p.attack && <div className="detail-row"><dt>{t("detail.yourRoll")}</dt><dd>{p.attack}</dd></div>}
               {p.defense && <div className="detail-row"><dt>{t("detail.enemyRoll")}</dt><dd>{p.defense}</dd></div>}
               {p.effect && <div className="detail-row"><dt>{t("detail.damageEffect")}</dt><dd>{p.effect}</dd></div>}
