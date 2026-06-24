@@ -19,13 +19,15 @@ Cross-cutting from day one: every milestone ships with tests, runs through CI, a
 - Real character migrated losslessly; sample characters cover Warlock/Fighter/Cleric/Sorcerer/multiclass (also test fixtures).
 - **Deliverable:** any 5e character renders and plays correctly.
 
-## M2 — "D&D, but Digital" UI 🚧 in progress
-**Shipped so far (M2.1–M2.3):** centralized theming (3 themes, single token file, `src/theme/`); tabbed navigation (Gioco/Scheda/Inventario/Storia, conditional on content); responsive sticky header; gap-free per-tab masonry layout; unified open/import flow; press-and-hold HP/resource/currency steppers; file status moved to a footer bar.
+## M2 — "D&D, but Digital" UI ✅ done
+**Shipped (M2.1–M2.3):** centralized theming (3 themes, single token file, `src/theme/`); tabbed navigation (Gioco/Scheda/Inventario/Storia, conditional on content); responsive sticky header; gap-free per-tab masonry layout; unified open/import flow; press-and-hold HP/resource/currency steppers; file status moved to a footer bar.
 
-**Guided makeover — design agreed, see [`docs/UI.md`](UI.md).** The collaborative step-by-step brainstorm produced the structural/UX contract for the sheet: 4 tabs (Gioco/Attributi/Inventario/Storia), per-tab blocks, two modes (Play default / Edit later), and the cross-cutting data model (attacks on items + innate list, item-declared AC contributions, `resetOn`-driven rests, category-driven consumables, equipped-flag wiring). Goal: **lightweight, clean, uncluttered, and simple to use**. Implementation follows the order in that doc, schema-first.
+**Guided makeover, see [`docs/UI.md`](UI.md).** The collaborative step-by-step brainstorm produced the structural/UX contract for the sheet: 4 tabs (Gioco/Attributi/Inventario/Storia), per-tab blocks, two modes (Play default / Edit later), and the cross-cutting data model (attacks on items + innate list, item-declared AC contributions, `resetOn`-driven rests, category-driven consumables, equipped-flag wiring, equippable flag). Implemented in full, schema-first.
 
-Still to fold in once the makeover direction is set: a flagship "D&D Digital" look, richer spell-table descriptions, units/locale (e.g. ft vs. metric).
-- **Deliverable:** the sheet looks modern and uncluttered, and is genuinely comfortable to run a session from — validated against the real play loop, not just a visual pass.
+**Visual pass.** The "Arcane" theme is the flagship "D&D Digital" look (dark indigo + gold, `src/theme/themes.css`); headings/panel titles render in the self-hosted `Cinzel` display face (`@fontsource/cinzel`, OFL-licensed — no CDN dependency, works offline for the M4 desktop/mobile shells too) via the `--font-display` token. Richer spell-table descriptions and an imperial/metric units toggle (ft/m, lb/kg) also shipped.
+
+Portrait & gallery moved to M4 (needs a folder-aware `StorageProvider`, see below).
+- **Deliverable:** the sheet looks modern and uncluttered, and is genuinely comfortable to run a session from. ✅
 
 ## M3 — Prompts system
 The 4 prompts (base / create / level-up / validate) are written to be **rules-set agnostic and legally cautious by design**:
