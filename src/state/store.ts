@@ -3,7 +3,7 @@ import { loadCharacter, maxHitDice, type Character, type Issue } from "../schema
 import { applyAction, getByPath, makeRng, type FormulaChange } from "../model/formula";
 import { translate, useI18n, type StringKey } from "../i18n/useI18n";
 import { useToast } from "../ui/useToast";
-import { exportJson, type StorageProvider } from "../storage/provider";
+import { exportJson, type GalleryImage, type StorageProvider } from "../storage/provider";
 
 const FIELD_LABEL: Record<string, StringKey> = {
   "combat.hp.current": "vitals.hp",
@@ -73,6 +73,8 @@ interface CharacterState {
   migrated: boolean;
   ok: boolean;
   sourceName: string;
+  /** Runtime images from the character's `images/` folder (filename order). Never persisted. */
+  images: GalleryImage[];
 
   provider: StorageProvider | null;
   liveSync: boolean;
@@ -80,12 +82,13 @@ interface CharacterState {
   saveError: string | null;
 
   /** Load into memory only (sample / import) — edits are kept until exported. */
-  loadRaw: (raw: unknown, sourceName?: string) => void;
-  /** Connect a live file: edits are written back (debounced). */
+  loadRaw: (raw: unknown, sourceName?: string, images?: GalleryImage[]) => void;
+  /** Connect a live file/folder: edits are written back (debounced). */
   connect: (
     provider: StorageProvider,
     raw: unknown,
     sourceName: string,
+    images?: GalleryImage[],
   ) => void;
   /** Download the current character as JSON. */
   exportCharacter: () => void;
@@ -109,6 +112,13 @@ interface CharacterState {
   removeCondition: (name: string) => void;
   toggleInspiration: () => void;
   setDeathSave: (kind: "successes" | "failures", value: number) => void;
+}
+
+/** Release object URLs from a previous folder load so blobs don't leak on reload/clear. */
+function revokeImages(images: GalleryImage[]): void {
+  for (const img of images) {
+    if (img.url.startsWith("blob:")) URL.revokeObjectURL(img.url);
+  }
 }
 
 export const useCharacter = create<CharacterState>((set, get) => {
@@ -192,16 +202,19 @@ export const useCharacter = create<CharacterState>((set, get) => {
     migrated: false,
     ok: false,
     sourceName: "",
+    images: [],
     provider: null,
     liveSync: false,
     dirty: false,
     saveError: null,
 
-    loadRaw: (raw, sourceName = "") => {
+    loadRaw: (raw, sourceName = "", images = []) => {
       const r = loadCharacter(raw);
+      revokeImages(get().images);
       set({
         ...r,
         sourceName,
+        images,
         provider: null,
         liveSync: false,
         dirty: false,
@@ -209,11 +222,13 @@ export const useCharacter = create<CharacterState>((set, get) => {
       });
     },
 
-    connect: (provider, raw, sourceName) => {
+    connect: (provider, raw, sourceName, images = []) => {
       const r = loadCharacter(raw);
+      revokeImages(get().images);
       set({
         ...r,
         sourceName,
+        images,
         provider,
         liveSync: true,
         dirty: false,
@@ -229,12 +244,14 @@ export const useCharacter = create<CharacterState>((set, get) => {
     },
 
     clear: () => {
+      revokeImages(get().images);
       set({
         character: null,
         issues: [],
         migrated: false,
         ok: false,
         sourceName: "",
+        images: [],
         provider: null,
         liveSync: false,
         dirty: false,

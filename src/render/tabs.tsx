@@ -11,6 +11,7 @@ import { ResourcesSection } from "./ResourcesSection";
 import { SpellsSection } from "./SpellsSection";
 import { FeaturesSection } from "./FeaturesSection";
 import { InventorySection } from "./InventorySection";
+import { PortraitSection } from "./PortraitSection";
 import { DescriptionSection, BioSection, ProficienciesSection, OriginSection, NarrativeSection } from "./TextSections";
 import { CustomSections } from "./CustomSection";
 
@@ -40,14 +41,15 @@ const hasStory = (c: Character): boolean =>
     c.narrative.notes,
   ].some((a) => a.length > 0);
 
-/** Tabs are data-driven: Inventario/Storia appear only when they'd have content. */
-export function getVisibleTabs(c: Character): TabDef[] {
+/** Tabs are data-driven: Inventario/Storia appear only when they'd have content
+ *  (Storia also shows when a loaded folder supplied images, even with no prose). */
+export function getVisibleTabs(c: Character, hasImages = false): TabDef[] {
   const tabs: TabDef[] = [
     { id: "gioco", labelKey: "tab.gioco" },
     { id: "scheda", labelKey: "tab.scheda" },
   ];
   if (hasInventory(c)) tabs.push({ id: "inventario", labelKey: "tab.inventario" });
-  if (hasStory(c)) tabs.push({ id: "storia", labelKey: "tab.storia" });
+  if (hasImages || hasStory(c)) tabs.push({ id: "storia", labelKey: "tab.storia" });
   return tabs;
 }
 
@@ -105,6 +107,7 @@ export function TabContent({ c, tab }: { c: Character; tab: string }) {
       return (
         <Cols
           left={[
+            <PortraitSection key="portrait" c={c} />,
             <DescriptionSection key="description" c={c} />,
             <BioSection key="bio" c={c} />,
             <NarrativeSection key="narrative" c={c} />,

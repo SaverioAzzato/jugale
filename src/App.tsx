@@ -5,8 +5,13 @@ import { Sheet } from "./render/Sheet";
 import { getVisibleTabs } from "./render/tabs";
 import {
   isFileAccessSupported,
+  isDirectoryAccessSupported,
   openCharacterFile,
+  openCharacterFolder,
   importJsonFile,
+  importCharacterFolder,
+  NO_CHARACTER_JSON,
+  type GalleryImage,
 } from "./storage/provider";
 import { useT, type TFn } from "./i18n/useI18n";
 import { SettingsButton, SettingsPage } from "./ui/SettingsMenu";
@@ -19,19 +24,36 @@ import cleric from "../characters/example-cleric/character.json";
 import sorcerer from "../characters/example-sorcerer/character.json";
 import multiclass from "../characters/example-multiclass/character.json";
 
+// Sample images bundled at build time so the example portraits/gallery work with no real folder.
+const imageModules = import.meta.glob("../characters/*/images/*", {
+  eager: true,
+  query: "?url",
+  import: "default",
+}) as Record<string, string>;
+
+/** Images for a sample's folder, alphabetical by filename — same ordering the folder loaders use. */
+function sampleImages(folder: string): GalleryImage[] {
+  const prefix = `../characters/${folder}/images/`;
+  return Object.entries(imageModules)
+    .filter(([path]) => path.startsWith(prefix))
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([path, url]) => ({ name: `images/${path.slice(prefix.length)}`, url }));
+}
+
 const SAMPLES = [
-  { key: "warlock", label: "Warlock", data: warlock },
-  { key: "fighter", label: "Fighter", data: fighter },
-  { key: "cleric", label: "Cleric", data: cleric },
-  { key: "sorcerer", label: "Sorcerer", data: sorcerer },
-  { key: "multiclass", label: "Multiclass", data: multiclass },
+  { key: "warlock", label: "Warlock", folder: "example-warlock", data: warlock },
+  { key: "fighter", label: "Fighter", folder: "example-fighter", data: fighter },
+  { key: "cleric", label: "Cleric", folder: "example-cleric", data: cleric },
+  { key: "sorcerer", label: "Sorcerer", folder: "example-sorcerer", data: sorcerer },
+  { key: "multiclass", label: "Multiclass", folder: "example-multiclass", data: multiclass },
 ];
 
 export function App() {
-  const { character, sourceName, liveSync, dirty, saveError } = useCharacter(
+  const { character, sourceName, images, liveSync, dirty, saveError } = useCharacter(
     useShallow((s) => ({
       character: s.character,
       sourceName: s.sourceName,
+      images: s.images,
       liveSync: s.liveSync,
       dirty: s.dirty,
       saveError: s.saveError,
@@ -43,11 +65,17 @@ export function App() {
   const clear = useCharacter((s) => s.clear);
   const t = useT();
   const fileInput = useRef<HTMLInputElement>(null);
+  const folderInput = useRef<HTMLInputElement>(null);
   const fileAccessSupported = isFileAccessSupported();
+
+  // webkitdirectory isn't in React's typed attributes; set it imperatively.
+  useEffect(() => {
+    folderInput.current?.setAttribute("webkitdirectory", "");
+  }, []);
 
   const [activeTab, setActiveTab] = useState("gioco");
   const [overlay, setOverlay] = useState<"settings" | "prompts" | null>(null);
-  const tabs = character ? getVisibleTabs(character) : [];
+  const tabs = character ? getVisibleTabs(character, images.length > 0) : [];
   const tab = tabs.some((t) => t.id === activeTab)
     ? activeTab
     : (tabs[0]?.id ?? "gioco");
@@ -69,6 +97,16 @@ export function App() {
     if (result) connect(result.provider, result.raw, "file");
   }
 
+  async function handleOpenFolderPicker() {
+    try {
+      const result = await openCharacterFolder();
+      if (result) connect(result.provider, result.raw, result.sourceName, result.images);
+    } catch (e) {
+      const key = e instanceof Error && e.message === NO_CHARACTER_JSON ? "app.noCharacterJson" : "app.invalidJson";
+      useToast.getState().push("error", t(key));
+    }
+  }
+
   function handleBackToHome() {
     if (dirty && !liveSync && !window.confirm(t("app.confirmLeave"))) return;
     clear();
@@ -82,6 +120,14 @@ export function App() {
     fileInput.current?.click();
   }
 
+  function handleOpenFolder() {
+    if (isDirectoryAccessSupported()) {
+      void handleOpenFolderPicker();
+      return;
+    }
+    folderInput.current?.click();
+  }
+
   async function handleImportFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -90,6 +136,23 @@ export function App() {
       loadRaw(await importJsonFile(file), file.name);
     } catch {
       useToast.getState().push("error", t("app.invalidJson"));
+    }
+  }
+
+  async function handleImportFolder(e: ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) {
+      e.target.value = "";
+      return;
+    }
+    try {
+      const result = await importCharacterFolder(files);
+      loadRaw(result.raw, result.sourceName, result.images);
+    } catch (err) {
+      const key = err instanceof Error && err.message === NO_CHARACTER_JSON ? "app.noCharacterJson" : "app.invalidJson";
+      useToast.getState().push("error", t(key));
+    } finally {
+      e.target.value = "";
     }
   }
 
@@ -170,6 +233,7 @@ export function App() {
           hidden
           onChange={handleImportFile}
         />
+        <input ref={folderInput} type="file" hidden multiple onChange={handleImportFolder} />
 
         {!overlay && character && tabs.length > 0 && (
           <nav className="tabbar" role="tablist" aria-label="Sections">
@@ -195,7 +259,12 @@ export function App() {
       ) : character ? (
         <Sheet c={character} tab={tab} />
       ) : (
-        <EmptyState onOpenJson={handleOpenJson} onSample={(d, l) => loadRaw(d, l)} t={t} />
+        <EmptyState
+          onOpenJson={handleOpenJson}
+          onOpenFolder={handleOpenFolder}
+          onSample={(d, l, imgs) => loadRaw(d, l, imgs)}
+          t={t}
+        />
       )}
 
       {!overlay && character && (
@@ -229,11 +298,13 @@ export function App() {
 
 function EmptyState({
   onOpenJson,
+  onOpenFolder,
   onSample,
   t,
 }: {
   onOpenJson: () => void;
-  onSample: (data: unknown, label: string) => void;
+  onOpenFolder: () => void;
+  onSample: (data: unknown, label: string, images: GalleryImage[]) => void;
   t: TFn;
 }) {
   return (
@@ -242,7 +313,10 @@ function EmptyState({
         <h1>{t("empty.title")}</h1>
         <p className="muted">{t("empty.body")}</p>
         <div className="empty-actions">
-          <button className="btn btn-primary" onClick={onOpenJson}>
+          <button className="btn btn-primary" onClick={onOpenFolder}>
+            {t("app.openFolder")}
+          </button>
+          <button className="btn" onClick={onOpenJson}>
             {t("app.open")}
           </button>
         </div>
@@ -252,7 +326,7 @@ function EmptyState({
             <button
               key={s.key}
               className="sample sample-grid-item"
-              onClick={() => onSample(s.data, s.label)}
+              onClick={() => onSample(s.data, s.label, sampleImages(s.folder))}
             >
               {s.label}
             </button>

@@ -78,6 +78,8 @@ load file ─▶ migrate(schemaVersion) ─▶ validate (Zod) ─▶ store.chara
 
 Both implement the same interface; the rest of the app never knows which host it's on. This generalizes the prototype's Electron-vs-browser split (its loader checked `window.electronAPI` to pick a path).
 
+**Web folder loading (M4, shipped):** `openCharacterFolder()` uses `showDirectoryPicker()` for a live read/write folder, reading `character.json` and scanning a sibling `images/` directory (alphabetical filename order) into object URLs; browsers without that API fall back to a read-only `<input type="file" webkitdirectory>` (`importCharacterFolder`). The scanned images ride alongside the character as a runtime `images` channel on the store — they're object URLs, revoked on reload, and **never written into `character.json`** (the JSON only names the active portrait via `meta.portrait.src`; ordering is folder order, by design). The Tauri `fs` implementation will satisfy the same surface natively.
+
 ## 6. Testing strategy
 
 - **Schema & model: exhaustive unit tests.** Validation, migrations, derived-stat math, resource reset (short/long rest), multiclass spell-slot tables, rules consistency checks. This is the part where bugs cost the most, so it gets the most coverage.

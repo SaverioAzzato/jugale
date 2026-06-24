@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Pact sigil">
+  <defs>
+    <radialGradient id="g" cx="0.5" cy="0.5" r="0.6">
+      <stop offset="0" stop-color="#1a1030" />
+      <stop offset="1" stop-color="#0a0a12" />
+    </radialGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#g)" />
+  <circle cx="200" cy="200" r="150" fill="none" stroke="#8a7bf0" stroke-width="3" />
+  <circle cx="200" cy="200" r="110" fill="none" stroke="#e0a44c" stroke-width="2" stroke-dasharray="6 10" />
+  <path d="M200 70 L317 270 L83 270 Z" fill="none" stroke="#e0a44c" stroke-width="3" />
+  <path d="M200 330 L83 130 L317 130 Z" fill="none" stroke="#8a7bf0" stroke-width="3" />
+  <circle cx="200" cy="200" r="24" fill="#e0a44c" />
+</svg>
