@@ -10,6 +10,7 @@ import {
 } from "./storage/provider";
 import { useT, type TFn } from "./i18n/useI18n";
 import { SettingsButton, SettingsPage } from "./ui/SettingsMenu";
+import { PromptsButton, PromptsPage } from "./ui/PromptsPage";
 import { Toasts } from "./ui/Toasts";
 import { useToast } from "./ui/useToast";
 import warlock from "../characters/example-warlock/character.json";
@@ -45,7 +46,7 @@ export function App() {
   const fileAccessSupported = isFileAccessSupported();
 
   const [activeTab, setActiveTab] = useState("gioco");
-  const [showSettings, setShowSettings] = useState(false);
+  const [overlay, setOverlay] = useState<"settings" | "prompts" | null>(null);
   const tabs = character ? getVisibleTabs(character) : [];
   const tab = tabs.some((t) => t.id === activeTab)
     ? activeTab
@@ -97,10 +98,10 @@ export function App() {
       <header className="appbar">
         <nav className="toolbar">
           <div className="toolbar-left">
-            {showSettings ? (
+            {overlay ? (
               <button
                 className="btn btn-back"
-                onClick={() => setShowSettings(false)}
+                onClick={() => setOverlay(null)}
                 title={t("app.back")}
                 aria-label={t("app.back")}
               >
@@ -141,17 +142,22 @@ export function App() {
                 </button>
               )
             )}
-            {showSettings && <span className="toolbar-title">{t("settings.title")}</span>}
+            {overlay && (
+              <span className="toolbar-title">
+                {t(overlay === "settings" ? "settings.title" : "prompts.title")}
+              </span>
+            )}
           </div>
           <div className="toolbar-right">
-            {!showSettings && (
+            {!overlay && (
               <>
                 {character && (
                   <button className="btn" onClick={exportCharacter} title={t("app.export")}>
                     {t("app.export")}
                   </button>
                 )}
-                <SettingsButton onClick={() => setShowSettings(true)} />
+                <PromptsButton onClick={() => setOverlay("prompts")} />
+                <SettingsButton onClick={() => setOverlay("settings")} />
               </>
             )}
           </div>
@@ -165,7 +171,7 @@ export function App() {
           onChange={handleImportFile}
         />
 
-        {!showSettings && character && tabs.length > 0 && (
+        {!overlay && character && tabs.length > 0 && (
           <nav className="tabbar" role="tablist" aria-label="Sections">
             {tabs.map((tabDef) => (
               <button
@@ -182,15 +188,17 @@ export function App() {
         )}
       </header>
 
-      {showSettings ? (
+      {overlay === "settings" ? (
         <SettingsPage />
+      ) : overlay === "prompts" ? (
+        <PromptsPage />
       ) : character ? (
         <Sheet c={character} tab={tab} />
       ) : (
         <EmptyState onOpenJson={handleOpenJson} onSample={(d, l) => loadRaw(d, l)} t={t} />
       )}
 
-      {!showSettings && character && (
+      {!overlay && character && (
         <footer className="statusbar" role="status" aria-live="polite">
           <span className="statusbar-file">
             {t("status.file")}: {sourceName || t("status.unnamed")}

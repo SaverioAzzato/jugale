@@ -37,9 +37,9 @@ A character is a folder: `character.json` + `images/`. The JSON is structured en
 
 Rule of thumb: almost everything is **structural** (changes only on level-up/edit); a small enumerated set is **live** play-state (HP, resource `current`, item quantities, currencies, conditions). The UI only mutates the live fields continuously.
 
-## GPT prompts (coming in M3)
+## GPT prompts
 
-The platform will ship four copy-ready prompts (base / create / level-up / validate) — in the README, [docs](docs/), and an in-app section — plus a published JSON Schema so any external chatbot knows exactly how to write the file.
+Four copy-ready prompts — **base / create / level-up / validate** — let any external chatbot (ChatGPT, Claude, etc.) build, level up, and validate a character against this app's `character.json` contract. Available in-app (the book icon next to Settings, with a one-click JSON Schema download) and documented in **[docs/PROMPTS.md](docs/PROMPTS.md)**.
 
 ## Content & licensing
 
@@ -56,4 +56,4 @@ Free and open: the **web app is the GitHub Pages site**; desktop and mobile bina
 
 ## Docs
 
-- [Architecture](docs/ARCHITECTURE.md) · [Schema](docs/SCHEMA.md) · [Roadmap](docs/ROADMAP.md) · [Automation](docs/AUTOMATION.md)
+- [Architecture](docs/ARCHITECTURE.md) · [Schema](docs/SCHEMA.md) · [Prompts](docs/PROMPTS.md) · [Roadmap](docs/ROADMAP.md) · [Automation](docs/AUTOMATION.md)

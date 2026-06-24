@@ -29,8 +29,8 @@ Cross-cutting from day one: every milestone ships with tests, runs through CI, a
 Portrait & gallery moved to M4 (needs a folder-aware `StorageProvider`, see below).
 - **Deliverable:** the sheet looks modern and uncluttered, and is genuinely comfortable to run a session from. ✅
 
-## M3 — Prompts system
-The 4 prompts (base / create / level-up / validate) are written to be **rules-set agnostic and legally cautious by design**:
+## M3 — Prompts system ✅ done
+The 4 prompts (base / create / level-up / validate) — shipped in [`src/prompts/prompts.ts`](../src/prompts/prompts.ts), an in-app Prompts page (book icon, with copy buttons and a one-click JSON Schema download), [`docs/PROMPTS.md`](PROMPTS.md), and the README — are written to be **rules-set agnostic and legally cautious by design**:
 
 - **Abstracted, not hardcoded.** The base prompt frames the assistant as "a D&D expert that can use RAG to pull rules content for a configurable list of guides" driven by `meta.ruleset` — it never hardcodes a specific commercial sourcebook's name into the prompt text, the schema, or `.github/agents/` seed material.
 - **SRD-only by default.** `meta.ruleset` defaults to `["SRD"]` (the freely-licensed 5e System Reference Document). Adding other guides (PHB, Xanathar, third-party content, homebrew…) is an explicit, user-driven choice via that same field — never something we ship as a default.
@@ -44,9 +44,9 @@ The 4 prompts (base / create / level-up / validate) are written to be **rules-se
   - **Actions** — author `actions[]` (kind `shortRest`/`longRest`/`custom`) with **formulae** like `combat.hp.current = combat.hp.current + 1d8 + abilities.con.mod`. Left side = a writable field path; right side = a `+`/`-` sum of numbers, `NdM` dice, and readable paths (incl. virtuals `level`, `pb`, `maxHitDice`, `abilities.<id>.mod`). This is how class-specific rest perks and one-tap custom effects are expressed. See `docs/SCHEMA.md` → `actions[]`.
 
   GPTs must be instructed *carefully and explicitly* to maintain all of the above, or the sheet will render stale/empty derived values.
-- Surfaced in **README + `docs/PROMPTS.md` + an in-app Prompts section** (copy-ready), plus the published JSON Schema for GPTs.
+- Surfaced in **README + `docs/PROMPTS.md` + an in-app Prompts section** (copy-ready), plus the published JSON Schema for GPTs (downloadable from the same in-app page, generated from the same Zod source — never drifts).
 - Seed material: the early end-user agent sketches in `.github/agents/` (the project's first take on chatbot-driven character editing) — held to the same abstraction + licensing rules.
-- **Deliverable:** a user can build/level/validate a character with any external chatbot, with the legal footing clear from the first line of every prompt.
+- **Deliverable:** a user can build/level/validate a character with any external chatbot, with the legal footing clear from the first line of every prompt. ✅
 
 ## M4 — Multiplatform packaging & distribution
 - Tauri desktop builds (Win/Mac/Linux) + Android APK via CI.
@@ -62,4 +62,4 @@ The 4 prompts (base / create / level-up / validate) are written to be **rules-se
 - **No in-app chat/LLM.** Originally floated as an optional "BYOK chat" milestone, dropped on purpose: an in-app assistant that ingests arbitrary user-supplied rules content and proposes JSON edits is exactly the kind of legal exposure (non-permissive-license content, generated-content liability) this project wants to avoid. External chatbots (ChatGPT, Claude, etc.) driven by the M3 prompts + published JSON Schema remain the fully-supported integration path — that's the whole point of the JSON-as-contract design, at zero legal/cost surface to us.
 
 ## Suggested next concrete step
-M0–M1 are done; M2.1–M2.3 shipped (theming, tabs, responsive header). The next step is **starting the guided UI makeover conversation** for the rest of M2 — going screen-by-screen, in-session-ergonomics-first, before writing more layout code.
+M0–M3 are done. The next step is **M4 — multiplatform packaging & distribution**: wiring up Tauri for desktop/mobile (which also unblocks the deferred Portrait & gallery feature), and the GitHub Pages + Releases pipeline.
