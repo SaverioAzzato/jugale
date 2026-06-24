@@ -57,3 +57,7 @@ Free and open: the **web app is the GitHub Pages site**; desktop and mobile bina
 ## Docs
 
 - [Architecture](docs/ARCHITECTURE.md) · [Schema](docs/SCHEMA.md) · [Prompts](docs/PROMPTS.md) · [Roadmap](docs/ROADMAP.md) · [Automation](docs/AUTOMATION.md)
+
+## License
+
+The **code** is released under the [MIT License](LICENSE). This covers the application only — D&D rules content is a separate matter; see [Content & licensing](#content--licensing) above.
