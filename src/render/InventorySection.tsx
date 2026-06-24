@@ -120,21 +120,31 @@ export function InventorySection({ c }: { c: Character }) {
   const totalWeight = indexed.reduce((sum, e) => sum + (e.it.weight || 0) * (e.it.quantity || 0), 0);
   const hasWeights = indexed.some((e) => e.it.weight > 0);
   const capacity = c.abilities.str.score * 15;
+  const encumbered = hasWeights && totalWeight > capacity;
 
   return (
     <Panel title={t("inv.title")} id="inventory">
-      {(attunedCount > 0 || hasWeights) && (
+      {attunedCount > 0 && (
         <div className="inv-summary">
-          {attunedCount > 0 && (
-            <span className="inv-summary-stat">
-              {t("inv.attunement")} {attunedCount}/3
+          <span className="inv-summary-stat">
+            {t("inv.attunement")} {attunedCount}/3
+          </span>
+        </div>
+      )}
+      {hasWeights && (
+        <div className={encumbered ? "inv-encumbrance is-over" : "inv-encumbrance"}>
+          <div className="inv-encumbrance-label">
+            <span>{t("inv.weight")}</span>
+            <span>
+              {Math.round(totalWeight * 10) / 10} / {capacity} lb
             </span>
-          )}
-          {hasWeights && (
-            <span className="inv-summary-stat">
-              {t("inv.weight")} {Math.round(totalWeight * 10) / 10} / {capacity} lb
-            </span>
-          )}
+          </div>
+          <div className="inv-encumbrance-bar">
+            <div
+              className="inv-encumbrance-fill"
+              style={{ width: `${Math.min(100, (totalWeight / capacity) * 100)}%` }}
+            />
+          </div>
         </div>
       )}
 

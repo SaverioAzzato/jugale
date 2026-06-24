@@ -50,6 +50,7 @@ The 4 prompts (base / create / level-up / validate) are written to be **rules-se
 - Tauri desktop builds (Win/Mac/Linux) + Android APK via CI.
 - GitHub Pages web build with import/export and the "you'll lose changes" unload guard.
 - `release.yml`: artifacts attached to GitHub Releases on tag; downloads linked from README.
+- **Portrait & gallery (Storia tab, deferred from M2):** open a character *folder* (`character.json` + `images/`, alphabetical filename order — no ordering logic in the JSON), list/lightbox the images. Needs a folder-aware `StorageProvider` (web: `showDirectoryPicker()` + a read-only `webkitdirectory` fallback; native: Tauri `fs` once wired here) — held back from M2 because it's a storage-layer feature, not just a render component.
 - **Deliverable:** installable apps on Releases + a live web app, all from one push.
 
 ## M5 — Polish
