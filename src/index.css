@@ -412,6 +412,10 @@ a {
   gap: 16px;
   min-width: 0;
 }
+/* Measurement wrapper for the balanced-columns layout; transparent to styling. */
+.bcol-item {
+  min-width: 0;
+}
 .tab-col-solo {
   max-width: 620px;
   margin: 0 auto;
@@ -438,7 +442,7 @@ a {
 }
 .panel-title {
   margin: 0 0 12px;
-  font-size: 13px;
+  font-size: 15px;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--accent);
@@ -538,6 +542,8 @@ a {
   margin-bottom: 12px;
 }
 .stat {
+  flex: 1 1 0;
+  min-width: 96px;
   text-align: center;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -699,11 +705,19 @@ a {
   padding: 9px 2px;
   font: inherit;
 }
-.attack-caret {
-  color: var(--dim);
-  font-size: 11px;
-  width: 12px;
+.caret {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
   flex-shrink: 0;
+  transition: transform var(--speed), color var(--speed);
+}
+.caret.is-open {
+  transform: rotate(90deg);
+}
+.attack-head:hover .caret,
+.spell-head:hover .caret {
+  color: var(--accent);
 }
 .attack-main {
   min-width: 0;
@@ -1203,6 +1217,10 @@ a {
   color: var(--gold);
   font-weight: 700;
 }
+.stepper-max {
+  color: var(--muted);
+  font-weight: 400;
+}
 
 /* HP control */
 .hp-control {
@@ -1212,6 +1230,13 @@ a {
   display: flex;
   align-items: baseline;
   gap: 6px;
+}
+.hp-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin-right: 2px;
 }
 .hp-current {
   font-size: 26px;
@@ -1242,8 +1267,12 @@ a {
   gap: 6px;
   margin: 8px 0;
 }
+.hp-actions .btn {
+  flex: 1;
+}
 .hp-amount {
   width: 60px;
+  flex-shrink: 0;
 }
 .hp-fine {
   display: flex;
@@ -1251,6 +1280,7 @@ a {
   font-size: 12px;
   color: var(--muted);
   align-items: center;
+  justify-content: space-between;
 }
 .hp-fine label {
   display: inline-flex;

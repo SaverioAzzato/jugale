@@ -40,6 +40,20 @@ export function Panel({
 
 export const fmtMod = (n: number): string => (n >= 0 ? `+${n}` : `${n}`);
 
+/** A rounded disclosure chevron that rotates 90° when open. Used by expandable rows. */
+export function Caret({ open }: { open: boolean }) {
+  return (
+    <svg
+      className={open ? "caret is-open" : "caret"}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /** Generic table; cells are arbitrary nodes. Empty cells fall back to an em dash. */
 export function DataTable({
   headers,

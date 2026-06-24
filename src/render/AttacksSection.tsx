@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Character, AttackProfile } from "../schema";
-import { Panel, WikiLink } from "./primitives";
+import { Caret, Panel, WikiLink } from "./primitives";
 import { useT } from "../i18n/useI18n";
 import { useSettings, type UnitSystem } from "../ui/useSettings";
 import { convertDistanceText } from "../model/units";
@@ -37,9 +37,7 @@ function AttackRow({ a }: { a: AttackView }) {
   return (
     <li className={dimmed ? "attack is-dimmed" : "attack"}>
       <button type="button" className="attack-head" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        <span className="attack-caret" aria-hidden>
-          {open ? "▾" : "▸"}
-        </span>
+        <Caret open={open} />
         <span className="attack-main">
           <span className="attack-name">
             {a.name}

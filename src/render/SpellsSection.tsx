@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { type AbilityId, type Character, type SpellEntry } from "../schema";
 import { spellSaveDc, spellAttackBonus } from "../schema";
-import { Panel, WikiLink, fmtMod } from "./primitives";
+import { Caret, Panel, WikiLink, fmtMod } from "./primitives";
 import { useT } from "../i18n/useI18n";
 import { useSettings, type UnitSystem } from "../ui/useSettings";
 import { convertDistanceText } from "../model/units";
@@ -27,9 +27,7 @@ function SpellRow({ s }: { s: SpellEntry }) {
   return (
     <li className="spell">
       <button type="button" className="spell-head" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        <span className="attack-caret" aria-hidden>
-          {open ? "▾" : "▸"}
-        </span>
+        <Caret open={open} />
         <span className="attack-main">
           <span className="attack-name">
             {s.name}

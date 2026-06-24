@@ -59,6 +59,7 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
   return (
     <div className="hp-control">
       <div className="hp-readout">
+        <span className="hp-label">{t("vitals.hp")}</span>
         <strong className="hp-current">{hp.current}</strong>
         <span className="hp-max">/ {hp.max}</span>
         {hp.temp > 0 && <span className="hp-temp">+{hp.temp} temp</span>}
@@ -149,10 +150,10 @@ function HitDiceControl({ c }: { c: Character }) {
         <Stepper
           value={c.combat.hp.hitDiceRemaining}
           max={max}
+          showMax
           onChange={(next) => adjustHitDice(next - c.combat.hp.hitDiceRemaining)}
           label={t("vitals.hitDice")}
         />
-        <span className="muted"> / {max}</span>
       </label>
     </div>
   );

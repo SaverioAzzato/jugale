@@ -32,12 +32,15 @@ export function Stepper({
   min = 0,
   max,
   label,
+  showMax = false,
 }: {
   value: number;
   onChange: (next: number) => void;
   min?: number;
   max?: number;
   label?: string;
+  /** Render the cap as `value/max` inside the control (only the current value is highlighted). */
+  showMax?: boolean;
 }) {
   const dec = useHoldRepeat(() => onChange(value - 1));
   const inc = useHoldRepeat(() => onChange(value + 1));
@@ -60,7 +63,10 @@ export function Stepper({
       >
         −
       </button>
-      <span className="stepper-value">{value}</span>
+      <span className="stepper-value">
+        {value}
+        {showMax && max != null && <span className="stepper-max">/{max}</span>}
+      </span>
       <button
         type="button"
         className="stepper-btn"
