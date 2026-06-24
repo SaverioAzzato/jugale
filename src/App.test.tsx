@@ -8,7 +8,7 @@ describe("App — empty state + live editing wiring", () => {
 
   it("starts on the welcome screen and loads a sample on demand", () => {
     render(<App />);
-    expect(screen.getByText(/Il tuo personaggio/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Your character, always yours/i })).toBeInTheDocument(); // default locale: en
 
     fireEvent.click(screen.getByRole("button", { name: "Warlock" })); // empty-state sample chip
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Esempio Warlock");
@@ -20,7 +20,7 @@ describe("App — empty state + live editing wiring", () => {
 
     const hpCurrent = () => container.querySelector(".hp-current")?.textContent;
     expect(hpCurrent()).toBe("38");
-    fireEvent.click(screen.getByText("Danno")); // default amount 1
+    fireEvent.click(screen.getByText("Damage")); // default amount 1, en locale
     expect(hpCurrent()).toBe("37");
   });
 });

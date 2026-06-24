@@ -8,7 +8,10 @@ import {
   openCharacterFile,
   importJsonFile,
 } from "./storage/provider";
-import { ThemeSwitcher } from "./theme/ThemeSwitcher";
+import { useT, type TFn } from "./i18n/useI18n";
+import { SettingsButton, SettingsPage } from "./ui/SettingsMenu";
+import { Toasts } from "./ui/Toasts";
+import { useToast } from "./ui/useToast";
 import warlock from "../characters/example-warlock/character.json";
 import fighter from "../characters/example-fighter/character.json";
 import cleric from "../characters/example-cleric/character.json";
@@ -20,7 +23,7 @@ const SAMPLES = [
   { key: "fighter", label: "Fighter", data: fighter },
   { key: "cleric", label: "Cleric", data: cleric },
   { key: "sorcerer", label: "Sorcerer", data: sorcerer },
-  { key: "multiclass", label: "Multiclasse", data: multiclass },
+  { key: "multiclass", label: "Multiclass", data: multiclass },
 ];
 
 export function App() {
@@ -37,10 +40,12 @@ export function App() {
   const connect = useCharacter((s) => s.connect);
   const exportCharacter = useCharacter((s) => s.exportCharacter);
   const clear = useCharacter((s) => s.clear);
+  const t = useT();
   const fileInput = useRef<HTMLInputElement>(null);
   const fileAccessSupported = isFileAccessSupported();
 
   const [activeTab, setActiveTab] = useState("gioco");
+  const [showSettings, setShowSettings] = useState(false);
   const tabs = character ? getVisibleTabs(character) : [];
   const tab = tabs.some((t) => t.id === activeTab)
     ? activeTab
@@ -64,12 +69,7 @@ export function App() {
   }
 
   function handleBackToHome() {
-    if (
-      dirty &&
-      !liveSync &&
-      !window.confirm("Ci sono modifiche non esportate. Tornare alla home?")
-    )
-      return;
+    if (dirty && !liveSync && !window.confirm(t("app.confirmLeave"))) return;
     clear();
   }
 
@@ -88,7 +88,7 @@ export function App() {
     try {
       loadRaw(await importJsonFile(file), file.name);
     } catch {
-      alert("File JSON non valido.");
+      useToast.getState().push("error", t("app.invalidJson"));
     }
   }
 
@@ -97,19 +97,14 @@ export function App() {
       <header className="appbar">
         <nav className="toolbar">
           <div className="toolbar-left">
-            {character && (
+            {showSettings ? (
               <button
                 className="btn btn-back"
-                onClick={handleBackToHome}
-                title="Torna alla schermata iniziale"
-                aria-label="Torna indietro"
+                onClick={() => setShowSettings(false)}
+                title={t("app.back")}
+                aria-label={t("app.back")}
               >
-                <svg
-                  className="back-icon"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  focusable="false"
-                >
+                <svg className="back-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                   <path
                     d="M15.5 4.5 8 12l7.5 7.5"
                     fill="none"
@@ -120,19 +115,45 @@ export function App() {
                   />
                 </svg>
               </button>
+            ) : (
+              character && (
+                <button
+                  className="btn btn-back"
+                  onClick={handleBackToHome}
+                  title={t("app.backTitle")}
+                  aria-label={t("app.back")}
+                >
+                  <svg
+                    className="back-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    focusable="false"
+                  >
+                    <path
+                      d="M15.5 4.5 8 12l7.5 7.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              )
             )}
+            {showSettings && <span className="toolbar-title">{t("settings.title")}</span>}
           </div>
           <div className="toolbar-right">
-            {character && (
-              <button
-                className="btn"
-                onClick={exportCharacter}
-                title="Scarica una copia JSON del character corrente"
-              >
-                Esporta JSON
-              </button>
+            {!showSettings && (
+              <>
+                {character && (
+                  <button className="btn" onClick={exportCharacter} title={t("app.export")}>
+                    {t("app.export")}
+                  </button>
+                )}
+                <SettingsButton onClick={() => setShowSettings(true)} />
+              </>
             )}
-            <ThemeSwitcher />
           </div>
         </nav>
 
@@ -144,46 +165,41 @@ export function App() {
           onChange={handleImportFile}
         />
 
-        {character && tabs.length > 0 && (
-          <nav className="tabbar" role="tablist" aria-label="Sezioni">
-            {tabs.map((t) => (
+        {!showSettings && character && tabs.length > 0 && (
+          <nav className="tabbar" role="tablist" aria-label="Sections">
+            {tabs.map((tabDef) => (
               <button
-                key={t.id}
+                key={tabDef.id}
                 role="tab"
-                aria-selected={tab === t.id}
-                className={tab === t.id ? "tab is-active" : "tab"}
-                onClick={() => setActiveTab(t.id)}
+                aria-selected={tab === tabDef.id}
+                className={tab === tabDef.id ? "tab is-active" : "tab"}
+                onClick={() => setActiveTab(tabDef.id)}
               >
-                {t.label}
+                {t(tabDef.labelKey)}
               </button>
             ))}
           </nav>
         )}
       </header>
 
-      {character ? (
+      {showSettings ? (
+        <SettingsPage />
+      ) : character ? (
         <Sheet c={character} tab={tab} />
       ) : (
-        <EmptyState
-          onOpenJson={handleOpenJson}
-          onSample={(d, l) => loadRaw(d, l)}
-        />
+        <EmptyState onOpenJson={handleOpenJson} onSample={(d, l) => loadRaw(d, l)} t={t} />
       )}
 
-      {character && (
+      {!showSettings && character && (
         <footer className="statusbar" role="status" aria-live="polite">
           <span className="statusbar-file">
-            File: {sourceName || "(senza nome)"}
+            {t("status.file")}: {sourceName || t("status.unnamed")}
           </span>
           <span className="statusbar-sep" aria-hidden>
             •
           </span>
           <span className="statusbar-sync">
-            {liveSync
-              ? "Sync live"
-              : dirty
-                ? "Modifiche non esportate"
-                : "In memoria"}
+            {liveSync ? t("status.live") : dirty ? t("status.unsaved") : t("status.memory")}
           </span>
           {saveError && (
             <>
@@ -191,12 +207,14 @@ export function App() {
                 •
               </span>
               <span className="statusbar-error">
-                Errore salvataggio: {saveError}
+                {t("status.saveError")}: {saveError}
               </span>
             </>
           )}
         </footer>
       )}
+
+      <Toasts />
     </div>
   );
 }
@@ -204,26 +222,24 @@ export function App() {
 function EmptyState({
   onOpenJson,
   onSample,
+  t,
 }: {
   onOpenJson: () => void;
   onSample: (data: unknown, label: string) => void;
+  t: TFn;
 }) {
   return (
     <div className="empty-state">
       <div className="empty-card">
-        <h1>Il tuo personaggio, sempre tuo.</h1>
-        <p className="muted">
-          Apri il tuo <code>character.json</code> per iniziare subito.
-        </p>
+        <h1>{t("empty.title")}</h1>
+        <p className="muted">{t("empty.body")}</p>
         <div className="empty-actions">
           <button className="btn btn-primary" onClick={onOpenJson}>
-            Apri JSON
+            {t("app.open")}
           </button>
         </div>
         <div className="empty-samples">
-          <span className="muted empty-samples-label">
-            Oppure prova un esempio
-          </span>
+          <span className="muted empty-samples-label">{t("empty.tryExample")}</span>
           {SAMPLES.map((s) => (
             <button
               key={s.key}

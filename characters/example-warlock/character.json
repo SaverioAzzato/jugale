@@ -48,18 +48,7 @@
     "armorClass": 13,
     "speed": { "walk": 30 },
     "hp": { "max": 38, "current": 38, "temp": 0, "hitDiceRemaining": 5 },
-    "attacks": [
-      {
-        "name": "Eldritch Blast",
-        "link": "https://www.dndbeyond.com/spells/eldritch-blast",
-        "level": "Trucchetto",
-        "range": "120 ft",
-        "attack": "Attacco a distanza con incantesimo",
-        "defense": "—",
-        "effect": "2 raggi · 1d10 forza ciascuno",
-        "notes": "Agonizing Blast: +CAR ai danni di ogni raggio"
-      }
-    ]
+    "attacks": []
   },
   "resources": [
     {
@@ -134,11 +123,39 @@
       "source": "subclass",
       "level": 1,
       "description": "Quando riduci a 0 PF una creatura ostile, ottieni PF temporanei pari a CAR + livello da warlock."
+    },
+    {
+      "id": "inv-agonizing-blast",
+      "name": "Agonizing Blast",
+      "source": "class",
+      "link": "https://www.dndbeyond.com/sources/basic-rules/warlock#EldritchInvocations",
+      "description": "Invocazione Occulta: aggiungi il mod. CAR ai danni di ogni raggio di Eldritch Blast."
+    },
+    {
+      "id": "inv-devils-sight",
+      "name": "Devil's Sight",
+      "source": "class",
+      "description": "Invocazione Occulta: vedi nell'oscurità (anche magica) entro 36 m."
+    },
+    {
+      "id": "inv-book-of-ancient-secrets",
+      "name": "Book of Ancient Secrets",
+      "source": "class",
+      "description": "Invocazione Occulta: annota e lancia rituali nel Libro delle Ombre."
     }
   ],
   "inventory": {
     "items": [
-      { "id": "potion-healing", "name": "Pozione di guarigione", "link": "https://www.dndbeyond.com/magic-items/potion-of-healing", "quantity": 3, "category": "consumable", "notes": "2d4+2 PF" },
+      { "id": "potion-healing", "name": "Pozione di guarigione", "link": "https://www.dndbeyond.com/magic-items/potion-of-healing", "quantity": 3, "category": "consumable", "equippable": false, "notes": "2d4+2 PF" },
+      { "id": "leather-armor", "name": "Armatura di cuoio", "category": "armor", "quantity": 1, "equipped": true,
+        "ac": { "base": 11, "addDex": true, "dexCap": null, "bonus": 0, "label": "cuoio" } },
+      { "id": "dagger", "name": "Pugnale", "link": "https://www.dndbeyond.com/equipment/dagger", "category": "weapon", "quantity": 2, "equipped": true,
+        "attacks": [
+          { "label": "Mischia", "range": "Mischia", "attack": "1d20 +5", "effect": "1d4+3 perforanti" },
+          { "label": "Lancio", "range": "6/18 m", "attack": "1d20 +5", "effect": "1d4+3 perforanti", "notes": "Arma da lancio (finezza)" }
+        ] },
+      { "id": "shortsword", "name": "Spada corta", "link": "https://www.dndbeyond.com/equipment/shortsword", "category": "weapon", "quantity": 1, "equipped": false,
+        "attacks": [ { "label": "Mischia", "range": "Mischia", "attack": "1d20 +5", "effect": "1d6+3 perforanti" } ] },
       { "id": "book-of-shadows", "name": "Libro delle Ombre", "quantity": 1, "equipped": true }
     ],
     "currencies": { "pp": 0, "gp": 120, "ep": 0, "sp": 5, "cp": 0 },
@@ -161,12 +178,24 @@
     "backstory": ["Ha stretto un patto in cambio di sapere proibito."],
     "notes": []
   },
-  "customSections": [
+  "customSections": [],
+  "actions": [
     {
-      "id": "invocazioni",
-      "title": "Invocazioni Occulte",
-      "layout": "list",
-      "items": ["Agonizing Blast", "Devil's Sight", "Book of Ancient Secrets"]
+      "id": "spend-hit-die",
+      "label": "Spendi Dado Vita",
+      "kind": "custom",
+      "info": "Recupera 1d8 + mod. Costituzione, consumando un Dado Vita.",
+      "formulas": [
+        "combat.hp.current = combat.hp.current + 1d8 + abilities.con.mod",
+        "combat.hp.hitDiceRemaining = combat.hp.hitDiceRemaining - 1"
+      ]
+    },
+    {
+      "id": "dark-blessing-temp",
+      "label": "Benedizione dell'Oscuro",
+      "kind": "custom",
+      "info": "PF temporanei = CAR + livello da warlock (quando abbatti un nemico).",
+      "formulas": ["combat.hp.temp = abilities.cha.mod + level"]
     }
   ],
   "session": {

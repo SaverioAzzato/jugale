@@ -65,7 +65,7 @@
   "inventory": {
     "items": [
       { "id": "greatsword", "name": "Spadone", "quantity": 1, "equipped": true },
-      { "id": "rations", "name": "Razioni", "quantity": 10, "category": "consumable" }
+      { "id": "rations", "name": "Razioni", "quantity": 10, "category": "consumable", "equippable": false }
     ],
     "currencies": { "gp": 75, "sp": 0, "cp": 0 }
   },

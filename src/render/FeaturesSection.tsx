@@ -1,20 +1,12 @@
 import type { Character } from "../schema";
 import { Panel, WikiLink } from "./primitives";
-
-const SOURCE: Record<string, string> = {
-  class: "classe",
-  subclass: "sottoclasse",
-  race: "razza",
-  background: "background",
-  feat: "talento",
-  item: "oggetto",
-  custom: "custom",
-};
+import { useT, type StringKey } from "../i18n/useI18n";
 
 export function FeaturesSection({ c }: { c: Character }) {
+  const t = useT();
   if (c.features.length === 0) return null;
   return (
-    <Panel title="Privilegi e Talenti" id="features">
+    <Panel title={t("features.title")} id="features">
       <ul className="feature-list">
         {c.features.map((f) => (
           <li key={f.id || f.name}>
@@ -23,8 +15,8 @@ export function FeaturesSection({ c }: { c: Character }) {
             </WikiLink>
             <span className="muted">
               {" "}
-              ({SOURCE[f.source]}
-              {f.level ? `, liv. ${f.level}` : ""})
+              ({t(`source.${f.source}` as StringKey)}
+              {f.level ? `, ${t("features.level")} ${f.level}` : ""})
             </span>
             {f.description ? <p className="feature-desc">{f.description}</p> : null}
           </li>

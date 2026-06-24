@@ -1,40 +1,33 @@
-import type { ReactNode } from "react";
 import type { Character } from "../schema";
-import { totalLevel, proficiencyBonus } from "../schema";
+import { proficiencyBonus } from "../schema";
 import { fmtMod } from "./primitives";
 import { TabContent } from "./tabs";
-
-function HeaderStat({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="header-stat">
-      <span className="header-stat-label">{label}</span>
-      <strong className="header-stat-value">{value}</strong>
-    </div>
-  );
-}
+import { useT } from "../i18n/useI18n";
 
 /**
  * The character identity header (always visible) + the active tab's sections.
- * The tab bar itself lives in the app's sticky header (App.tsx).
+ * Name + a proficiency chip on the top line, then two compact subtitle lines
+ * (class/level, then race · background). Any longer description lives in the
+ * Story tab. The tab bar itself lives in the app's sticky header (App.tsx).
  */
 export function Sheet({ c, tab }: { c: Character; tab: string }) {
+  const t = useT();
   const classLine = c.classes
     .map((cl) => `${cl.name}${cl.subclass ? ` (${cl.subclass})` : ""} ${cl.level}`)
     .join(" / ");
-  const subtitle = [classLine, c.identity.race, c.identity.background].filter(Boolean).join(" · ");
+  const originLine = [c.identity.race, c.identity.background].filter(Boolean).join(" · ");
 
   return (
     <article className="sheet">
       <header className="sheet-header">
-        <div className="sheet-id">
+        <div className="sheet-headline">
           <h1>{c.meta.name}</h1>
-          {subtitle && <p className="subtitle">{subtitle}</p>}
-          {c.meta.summary && <p className="muted">{c.meta.summary}</p>}
+          <span className="pb-chip" title={t("header.proficiency")}>
+            {t("header.profShort")} {fmtMod(proficiencyBonus(c))}
+          </span>
         </div>
-        <div className="header-stats">
-          <HeaderStat label="Livello" value={totalLevel(c) || "—"} />
-          <HeaderStat label="Competenza" value={fmtMod(proficiencyBonus(c))} />
-        </div>
+        {classLine && <p className="subtitle">{classLine}</p>}
+        {originLine && <p className="subtitle subtitle-2">{originLine}</p>}
       </header>
 
       <TabContent c={c} tab={tab} />
