@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { composePrompt, DEFAULT_GUIDES } from "./prompts";
 
 describe("composePrompt", () => {
-  it("base includes the disclaimer, the sources, and the data contract", () => {
+  it("base includes the disclaimer, interaction style, the sources, and the data contract", () => {
     const text = composePrompt("base", { guides: [{ name: "SRD" }] });
     expect(text).toContain("Content & licensing");
+    expect(text).toContain("Interaction style");
+    expect(text).toContain("one decision at a time");
     expect(text).toContain("Sources in scope");
     expect(text).toContain("- SRD");
     expect(text).toContain("How to edit character.json");
@@ -16,7 +18,7 @@ describe("composePrompt", () => {
     const create = composePrompt("create", { guides: [{ name: "SRD" }] });
     expect(create).toContain("Content & licensing");
     expect(create).toContain("Task: create a character");
-    expect(create).toContain("Work in stages");
+    expect(create).toContain("step by step");
   });
 
   it("falls back to SRD-only when no guides are given", () => {

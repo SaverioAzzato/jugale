@@ -27,13 +27,13 @@ Because every task prompt includes the base, the licensing disclaimer and the da
 ## The four prompts
 
 ### Base
-General-purpose assistant: answers rules questions (RAW vs. table-ruling), explains what the character can do, and edits `character.json` for ad hoc changes. Good as a starting point for any conversation.
+General-purpose assistant: answers rules questions (RAW vs. table-ruling), explains what the character can do, and edits `character.json` for ad hoc changes. Its **Interaction style** section sets the default for the whole family: rules questions get a direct answer, but anything that *builds or changes* the character is done **one decision at a time** — the assistant lays out the options in scope (or points to the wiki when there are too many), explains the trade-offs, and asks you to choose, rather than running ahead.
 
 ### Create
-Walks through building a brand-new character **in stages, interactively**: one round of concept/constraint questions → proposes a build for confirmation → emits the `character.json` (offering to go section by section for a large file). Designed not to dump the whole file after a single message.
+A **guided, step-by-step** character builder, not a one-shot generator. It walks the decisions in order — concept → race/subrace → class/subclass → background → ability scores → proficiencies → feats → spells → starting equipment — and at each step shows the options with what each gives, asks you to pick, then moves on (e.g. it shows the subraces and their traits and asks you to choose; proposes a base loadout and asks "keep or change?"; points you to the spell list when it's too long to inline). It only emits the `character.json` once the decisions are made (section by section for a large file).
 
 ### Level-up
-Given an existing `character.json` and a target level/class, applies the level-up correctly — HP, new features, new/expanded resources, new spells, multiclass slot recalculation — while leaving everything else (especially live play-state) untouched.
+Also **guided**: given an existing `character.json` and a target level/class, it walks the choices that level opens up one at a time (subclass, ASI vs feat, a feature with options, new spells), letting you decide, then applies HP, new features, new/expanded resources, new spells, and multiclass slot recalculation — leaving everything else (especially live play-state) untouched.
 
 ### Validate
 Reviews an existing `character.json` for schema-shape problems (errors) and 5e rules-consistency issues (warnings), including the data-encoding conventions specifically (no duplicated spells, no stray features in `customSections[]`, stale AC, etc.), and proposes fixes for confirmation rather than silently rewriting the file.
