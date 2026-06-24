@@ -42,14 +42,32 @@ const Portrait = z
   .passthrough()
   .default({});
 
+/**
+ * A rules guide in scope for this character: a bare name (e.g. "SRD") or, for niche
+ * guides, `{ name, url }` where `url` is the base wiki URL the assistant may reference.
+ */
+const RulesetEntry = z.union([
+  z.string(),
+  z
+    .object({ name: z.string(), url: z.string().optional() })
+    .passthrough(),
+]);
+
 const Meta = z
   .object({
     name: z.string().min(1),
     player: z.string().default(""),
     summary: z.string().default(""),
     portrait: Portrait,
-    // Default is the freely-licensed SRD only; adding other sourcebooks is the user's own call (and licensing responsibility).
-    ruleset: z.array(z.string()).default(["SRD"]),
+    ruleset: z
+      .array(RulesetEntry)
+      .default(["SRD"])
+      .describe(
+        "Rules guides in scope for this character. Default is the freely-licensed SRD only; " +
+          "each entry is a name string or { name, url } for a guide's base wiki URL. Adding other " +
+          "sourcebooks is the user's own choice and licensing responsibility — only reference content " +
+          "that is SRD or otherwise free to access/scrape under its terms of use.",
+      ),
     tags: strings,
   })
   .passthrough();
@@ -140,10 +158,15 @@ const Combat = z
     initiativeOverride: z.number().int().nullable().default(null),
     speed: z.object({ walk: z.number().default(30) }).passthrough().default({}),
     hp: Hp,
-    // Innate / item-less attacks only (breath weapon, unarmed strike, natural weapons).
-    // Weapon attacks live on the inventory item (Item.attacks) and are merged into the
-    // attacks view at render time. See docs/UI.md.
-    attacks: z.array(Attack).default([]),
+    attacks: z
+      .array(Attack)
+      .default([])
+      .describe(
+        "Innate / item-less attacks ONLY (breath weapon, unarmed strike, natural weapons). " +
+          "Weapon attacks live on the inventory item (inventory.items[].attacks) and are merged " +
+          "into the attacks view at render time. NEVER put a spell here — spells live only in " +
+          "spellSections[], or they would show twice.",
+      ),
   })
   .passthrough()
   .default({});
@@ -152,11 +175,21 @@ const Resource = z
   .object({
     id: z.string(),
     label: z.string().default(""),
-    category: z.enum(["spellSlot", "points", "dice", "charges", "ammo", "custom"]).default("custom"),
+    category: z
+      .enum(["spellSlot", "points", "dice", "charges", "ammo", "custom"])
+      .default("custom")
+      .describe(
+        "The generic tracker kind. Model ANYTHING spent/recovered as a resource (spell slots of " +
+          "any name, pact magic, ki, rage, sorcery points, channel divinity, ammo…); never hardcode " +
+          "a class-specific field.",
+      ),
     max: z.number().int().min(0).default(0),
-    current: z.number().int().min(0).default(0),
-    level: z.number().int().min(0).max(9).nullable().default(null),
-    resetOn: z.enum(["shortRest", "longRest", "dawn", "manual", "none"]).default("manual"),
+    current: z.number().int().min(0).default(0).describe("Live play-state: remaining uses; mutated during play."),
+    level: z.number().int().min(0).max(9).nullable().default(null).describe("Only meaningful for category 'spellSlot': which spell level these slots cast."),
+    resetOn: z
+      .enum(["shortRest", "longRest", "dawn", "manual", "none"])
+      .default("manual")
+      .describe("Which rest/event restores this resource; drives the rest buttons."),
     link,
   })
   .passthrough();
@@ -194,7 +227,14 @@ const Feature = z
   .object({
     id: z.string().default(""),
     name: z.string().default(""),
-    source: z.enum(["class", "subclass", "race", "background", "feat", "item", "custom"]).default("custom"),
+    source: z
+      .enum(["class", "subclass", "race", "background", "feat", "item", "custom"])
+      .default("custom")
+      .describe(
+        "Where the feature comes from; the Attributi tab groups by this. EVERY class/subclass/race/" +
+          "background/feat feature (invocations, metamagic, maneuvers, fighting styles…) goes in features[], " +
+          "never in customSections[].",
+      ),
     level: z.number().int().nullable().default(null),
     link,
     description: z.string().default(""),
@@ -243,15 +283,21 @@ const Item = z
     weight: z.number().min(0).default(0),
     value: z.number().min(0).nullable().default(null),
     equipped: z.boolean().default(false),
-    // Whether this item can be worn/wielded at all (vs. a consumable, treasure, etc.).
-    equippable: z.boolean().default(true),
+    equippable: z
+      .boolean()
+      .default(true)
+      .describe("Whether this item can ever be worn/wielded at all. Set false on consumables, treasure, etc. so no Equip button shows."),
     attuned: z.boolean().default(false),
-    category: z.string().default(""),
+    category: z
+      .string()
+      .default("")
+      .describe("Open string (weapon | armor | consumable | ammo | component | alchemy | treasure | gear…). Drives Inventario grouping and surfaces ammo/consumable in the Gioco tab."),
     notes: z.string().default(""),
-    // A weapon item carries 1+ attack profiles; they surface in the combat attacks view.
-    attacks: z.array(AttackProfile).default([]),
-    // An armor/shield item carries its AC contribution; summed when equipped.
-    ac: ArmorAc.nullable().default(null),
+    attacks: z
+      .array(AttackProfile)
+      .default([])
+      .describe("A weapon item's attack profiles (modes: one-hand / two-hand / thrown…); they surface in the combat attacks view."),
+    ac: ArmorAc.nullable().default(null).describe("An armor/shield item's AC contribution while equipped; the app sums equipped contributions (never compute AC by hand)."),
   })
   .passthrough();
 
@@ -312,7 +358,14 @@ const Action = z
     id: z.string().default(""),
     label: z.string().default(""),
     kind: z.enum(["shortRest", "longRest", "custom"]).default("custom"),
-    formulas: z.array(z.string()).default([]),
+    formulas: z
+      .array(z.string())
+      .default([])
+      .describe(
+        "Each is `path = expression`: left = a writable field path (combat.hp.current, resources.<id>.current…); " +
+          "right = a +/- sum of numbers, NdM dice, and readable paths incl. virtuals level, pb, maxHitDice, abilities.<id>.mod. " +
+          "E.g. 'combat.hp.current = combat.hp.current + 1d8 + abilities.con.mod'.",
+      ),
     info: z.string().default(""),
   })
   .passthrough();

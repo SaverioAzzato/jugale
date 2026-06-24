@@ -171,11 +171,86 @@ a {
 .prompts-page {
   max-width: 760px;
 }
+.prompts-banner {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--accent-weak);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+}
 .prompts-intro {
   margin: 0 0 18px;
   font-size: 13px;
   color: var(--muted);
   line-height: 1.5;
+}
+.prompts-params {
+  margin-bottom: 18px;
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.prompts-params-title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+}
+.prompts-field-label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.prompts-guide-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.prompts-input {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 13px;
+  min-width: 0;
+}
+.prompts-guide-row .prompts-input:first-child {
+  flex: 0 0 38%;
+}
+.prompts-guide-row .prompts-input:nth-child(2) {
+  flex: 1 1 auto;
+}
+.prompts-guide-remove {
+  flex: 0 0 auto;
+  padding: 0 12px;
+  font-size: 18px;
+  line-height: 1;
+}
+.prompts-focus {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+}
+.prompts-focus-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 200px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.prompts-focus-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
 }
 .prompt-block {
   margin-top: 18px;

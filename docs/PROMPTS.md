@@ -2,18 +2,27 @@
 
 > Status: **shipped (M3)**. These four prompts are also available copy-ready inside the app (the book icon next to Settings) and are kept in sync with `src/prompts/prompts.ts`.
 
-`character.json` is the contract: any chatbot that can read these instructions can build, level up, and validate a character for this app — no plugin, no API key, no lock-in. Paste exactly **one** of the four prompts below into a chatbot's system/custom instructions (or as the first message of a conversation), then talk to it normally.
+`character.json` is the contract: any chatbot that can read these instructions can build, level up, and validate a character for this app — no plugin, no API key, no lock-in. In the app's Prompts page you fill in your reference guides (and optionally a class/race focus), then copy **one** composed prompt into a chatbot's system/custom instructions (or as its first message) and talk to it normally.
 
-## Why four separate prompts, not one
+## How the prompts compose
 
-Each prompt is fully self-contained on purpose — you paste one block into a chatbot and it works standalone, so the shared rules (licensing + how to encode `character.json`) are deliberately repeated in full in each one rather than split across documents you'd have to paste together.
+The prompts are not four unrelated blocks — they layer:
+
+- **base** = the read-first disclaimer + the assistant's role + **Sources in scope** (your guides, printed) + (optionally) a **Focus** on a class/race + the `character.json` data contract.
+- **create / level-up / validate** = the base, plus that task's step-by-step process.
+
+Because every task prompt includes the base, the licensing disclaimer and the data contract **travel with every copied prompt** — there's no separate block you have to remember to paste. The in-app Prompts page renders all four already composed from your parameters, each with its own copy button.
+
+## Parameters (filled in the app, printed into the prompt)
+
+- **Reference guides** — name + optional base wiki URL, one or more. Pre-filled from the loaded character's `meta.ruleset` (which now accepts either plain strings or `{ name, url }` objects). The prompt instructs the assistant to use **only** these sources. Adding a guide here is the same act as adding it to `meta.ruleset`.
+- **Focus (optional)** — a class and/or race. When set, the prompt gains a Focus section telling the assistant to tailor everything to that build; pre-filled from the loaded character. Leave empty for general-purpose prompts.
 
 ## Design rules these prompts follow
 
-- **Ruleset-agnostic.** None of them hardcode a specific commercial sourcebook's name. They frame the assistant around `meta.ruleset` (default `["SRD"]`, the freely-licensed D&D 5e System Reference Document) — whatever rules sets *that* character lists are what's in scope.
-- **Licensing & responsibility baked in.** Every prompt states plainly that using a source outside `meta.ruleset` is the user's own choice, that the user is responsible for holding the rights/license to that material and for using it legally, and that neither the chatbot nor this app are responsible for misuse of copyrighted content.
-- **Teach the data-encoding conventions the renderer relies on.** The app never computes 5e rules itself — it only sums/derives from what's encoded in the JSON. Every prompt repeats the concrete rules: item-declared AC, weapon-attacks-on-the-item vs. innate-only `combat.attacks[]`, `features[]` (never `customSections[]`) for class/subclass/race/background/feat features, generic `resources[]` with `resetOn`, and the `actions[]` formula grammar for rest perks and custom buttons. See `docs/SCHEMA.md` for the full contract these summarize.
-- **Concrete non-SRD examples are illustrative and README-only.** If you want a chatbot to use a specific commercial sourcebook, that's done by setting `meta.ruleset` on *your* character file — never something baked into the prompt text itself.
+- **Content & licensing, up front.** The base opens with a read-first disclaimer: use **only** SRD content or material whose terms of use permit free and automated/AI access; don't point a chatbot at sources that prohibit scraping; don't reproduce verbatim commercial text. The user is responsible for using their chosen guides responsibly, within their terms of use, and legally — neither the assistant nor this app is responsible for misuse. The app also shows this as a banner at the top of the Prompts page.
+- **Ruleset-agnostic & parametric.** No commercial sourcebook name is hardcoded. The guides in scope come from the parameters you fill in (seeded from `meta.ruleset`), and are printed verbatim into the prompt's "Sources in scope" list.
+- **Teach the data-encoding conventions the renderer relies on.** The app never computes 5e rules itself — it only sums/derives from what's encoded in the JSON. The base contract covers: item-declared AC, weapon-attacks-on-the-item vs. innate-only `combat.attacks[]`, `features[]` (never `customSections[]`) for class/subclass/race/background/feat features, generic `resources[]` with `resetOn`, and the `actions[]` formula grammar for rest perks and custom buttons. The downloadable JSON Schema carries the same rules as `description` annotations. See `docs/SCHEMA.md` for the full contract.
 
 ## The four prompts
 
@@ -21,7 +30,7 @@ Each prompt is fully self-contained on purpose — you paste one block into a ch
 General-purpose assistant: answers rules questions (RAW vs. table-ruling), explains what the character can do, and edits `character.json` for ad hoc changes. Good as a starting point for any conversation.
 
 ### Create
-Walks through building a brand-new character from level 1 (or any starting level): asks the essential questions once, proposes a build, then outputs a complete `character.json`.
+Walks through building a brand-new character **in stages, interactively**: one round of concept/constraint questions → proposes a build for confirmation → emits the `character.json` (offering to go section by section for a large file). Designed not to dump the whole file after a single message.
 
 ### Level-up
 Given an existing `character.json` and a target level/class, applies the level-up correctly — HP, new features, new/expanded resources, new spells, multiclass slot recalculation — while leaving everything else (especially live play-state) untouched.

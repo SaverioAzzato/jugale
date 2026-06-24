@@ -28,6 +28,15 @@ describe("loadCharacter", () => {
     expect((character as Record<string, unknown>).homebrew).toEqual({ luck: 3 });
   });
 
+  it("accepts meta.ruleset as plain strings or { name, url } objects", () => {
+    const { character, ok } = loadCharacter({
+      meta: { name: "Tav", ruleset: ["SRD", { name: "MyWiki", url: "https://wiki.example" }] },
+    });
+    expect(ok).toBe(true);
+    expect(character.meta.ruleset[0]).toBe("SRD");
+    expect(character.meta.ruleset[1]).toEqual({ name: "MyWiki", url: "https://wiki.example" });
+  });
+
   it("warns when a resource is overspent", () => {
     const result = loadCharacter({
       meta: { name: "Tav" },

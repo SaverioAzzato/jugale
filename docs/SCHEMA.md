@@ -56,8 +56,12 @@ Only `schemaVersion` and `meta.name` are strictly required; every section has a 
   "player": "Saverio",
   "summary": "Tiefling Warlock, Patto del Tomo.",
   "portrait": { "src": "images/01-portrait.png", "alt": "..." },
-  "ruleset": ["SRD"],   // default is the freely-licensed SRD only; user-overridable, drives the prompts —
-                         // adding other sourcebooks here is the user's own choice and licensing responsibility
+  "ruleset": ["SRD", { "name": "My Homebrew Wiki", "url": "https://wiki.example/srd" }],
+                         // rules guides in scope; drives the prompts. Each entry is a bare name
+                         // string or { name, url } (base wiki URL for niche guides). Default is the
+                         // freely-licensed SRD only — only reference content that is SRD or otherwise
+                         // free to access/scrape under its terms of use; that choice (and the
+                         // licensing responsibility) is the user's.
   "tags": ["warlock", "draconide"]
 }
 ```
