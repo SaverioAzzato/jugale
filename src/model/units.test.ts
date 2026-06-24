@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertDistanceText, feetToMeters, formatDistance } from "./units";
+import { convertDistanceText, feetToMeters, formatDistance, formatWeight, poundsToKg } from "./units";
 
 describe("feetToMeters", () => {
   it("converts using the 0.3 m/ft table", () => {
@@ -36,5 +36,24 @@ describe("convertDistanceText", () => {
   it("leaves non-distance text unchanged", () => {
     expect(convertDistanceText("Self", "metric")).toBe("Self");
     expect(convertDistanceText("", "metric")).toBe("");
+  });
+});
+
+describe("poundsToKg", () => {
+  it("converts using the 0.5 kg/lb table", () => {
+    expect(poundsToKg(6)).toBe(3);
+    expect(poundsToKg(255)).toBe(127.5);
+    expect(poundsToKg(0)).toBe(0);
+  });
+});
+
+describe("formatWeight", () => {
+  it("passes through pounds when imperial", () => {
+    expect(formatWeight(6, "imperial")).toBe("6 lb");
+  });
+
+  it("converts to kilograms when metric", () => {
+    expect(formatWeight(6, "metric")).toBe("3 kg");
+    expect(formatWeight(255, "metric")).toBe("127.5 kg");
   });
 });

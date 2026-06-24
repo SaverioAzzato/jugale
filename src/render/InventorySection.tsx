@@ -3,6 +3,8 @@ import { Panel, WikiLink } from "./primitives";
 import { Stepper } from "./controls";
 import { useCharacter } from "../state/store";
 import { useT, type StringKey, type TFn } from "../i18n/useI18n";
+import { useSettings, type UnitSystem } from "../ui/useSettings";
+import { formatWeight } from "../model/units";
 
 const COIN_ORDER = ["pp", "gp", "ep", "sp", "cp"];
 const COIN_KEY: Record<string, StringKey> = {
@@ -41,7 +43,7 @@ function acNote(it: Item): string | null {
   return parts.join(" · ") || null;
 }
 
-function ItemRow({ entry, t }: { entry: Indexed; t: TFn }) {
+function ItemRow({ entry, t, units }: { entry: Indexed; t: TFn; units: UnitSystem }) {
   const setItemQuantity = useCharacter((s) => s.setItemQuantity);
   const toggleEquipped = useCharacter((s) => s.toggleEquipped);
   const { it, index } = entry;
@@ -56,7 +58,7 @@ function ItemRow({ entry, t }: { entry: Indexed; t: TFn }) {
         </span>
         {(ac || it.notes || it.weight > 0) && (
           <span className="inv-item-meta">
-            {[ac, it.notes, it.weight > 0 ? `${it.weight} lb` : ""].filter(Boolean).join(" · ")}
+            {[ac, it.notes, it.weight > 0 ? formatWeight(it.weight, units) : ""].filter(Boolean).join(" · ")}
           </span>
         )}
       </div>
@@ -87,6 +89,7 @@ function categoryLabel(cat: string, t: TFn): string {
 
 export function InventorySection({ c }: { c: Character }) {
   const t = useT();
+  const units = useSettings((s) => s.units);
   const setCurrency = useCharacter((s) => s.setCurrency);
 
   const indexed: Indexed[] = c.inventory.items.map((it, index) => ({ it, index }));
@@ -136,7 +139,7 @@ export function InventorySection({ c }: { c: Character }) {
           <div className="inv-encumbrance-label">
             <span>{t("inv.weight")}</span>
             <span>
-              {Math.round(totalWeight * 10) / 10} / {capacity} lb
+              {formatWeight(Math.round(totalWeight * 10) / 10, units)} / {formatWeight(capacity, units)}
             </span>
           </div>
           <div className="inv-encumbrance-bar">
@@ -153,7 +156,7 @@ export function InventorySection({ c }: { c: Character }) {
           <h3 className="inv-group-title">{t("inv.equipped")}</h3>
           <ul className="inv-list">
             {equipped.map((e) => (
-              <ItemRow key={e.it.id || e.index} entry={e} t={t} />
+              <ItemRow key={e.it.id || e.index} entry={e} t={t} units={units} />
             ))}
           </ul>
         </div>
@@ -164,7 +167,7 @@ export function InventorySection({ c }: { c: Character }) {
           <h3 className="inv-group-title">{categoryLabel(cat, t)}</h3>
           <ul className="inv-list">
             {groups.get(cat)!.map((e) => (
-              <ItemRow key={e.it.id || e.index} entry={e} t={t} />
+              <ItemRow key={e.it.id || e.index} entry={e} t={t} units={units} />
             ))}
           </ul>
         </div>

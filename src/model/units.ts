@@ -32,3 +32,17 @@ export function convertDistanceText(text: string, units: UnitSystem): string {
   );
   return withRanges.replace(/(\d+(?:\.\d+)?)\s*ft\b/gi, (_match, num: string) => formatMeters(Number(num)));
 }
+
+/** Community-standard 5e conversion: 1 lb ≈ 0.5 kg. */
+const LB_TO_KG = 0.5;
+
+export function poundsToKg(lb: number): number {
+  return Math.round(lb * LB_TO_KG * 10) / 10;
+}
+
+/** Renders a numeric weight (item weight, carrying capacity…) in the active unit system. */
+export function formatWeight(lb: number, units: UnitSystem): string {
+  if (units !== "metric") return `${lb} lb`;
+  const kg = poundsToKg(lb);
+  return `${kg % 1 === 0 ? kg.toFixed(0) : kg} kg`;
+}
