@@ -20,13 +20,17 @@ Cross-cutting from day one: every milestone ships with tests, runs through CI, a
 - **Deliverable:** any 5e character renders and plays correctly.
 
 ## M2 — "D&D, but Digital" UI ✅ done
-**Shipped (M2.1–M2.3):** centralized theming (3 themes, single token file, `src/theme/`); tabbed navigation (Gioco/Scheda/Inventario/Storia, conditional on content); responsive sticky header; gap-free per-tab masonry layout; unified open/import flow; press-and-hold HP/resource/currency steppers; file status moved to a footer bar.
+**Shipped (M2.1–M2.3):** centralized theming (3 themes, single token file, `src/theme/`); tabbed navigation (Gioco/Attributi/Inventario/Storia, conditional on content); responsive sticky header; gap-free per-tab masonry layout; unified open/import flow; press-and-hold HP/resource/currency steppers; file status moved to a footer bar.
 
 **Guided makeover, see [`docs/UI.md`](UI.md).** The collaborative step-by-step brainstorm produced the structural/UX contract for the sheet: 4 tabs (Gioco/Attributi/Inventario/Storia), per-tab blocks, two modes (Play default / Edit later), and the cross-cutting data model (attacks on items + innate list, item-declared AC contributions, `resetOn`-driven rests, category-driven consumables, equipped-flag wiring, equippable flag). Implemented in full, schema-first.
 
 **Visual pass.** The "Arcane" theme is the flagship "D&D Digital" look (dark indigo + gold, `src/theme/themes.css`); headings/panel titles render in the self-hosted `Cinzel` display face (`@fontsource/cinzel`, OFL-licensed — no CDN dependency, works offline for the M4 desktop/mobile shells too) via the `--font-display` token. Richer spell-table descriptions and an imperial/metric units toggle (ft/m, lb/kg) also shipped.
 
 Portrait & gallery moved to M4 (needs a folder-aware `StorageProvider`, see below).
+
+**Vitals follow-up.** HP control redesign (clearer current/max/temp layout, order-preserving columns), Hit Dice moved next to Temp, press-and-hold steppers fixed to stop themselves at their bounds instead of needing a second click, and death saves now clear automatically when HP is regained.
+
+**Dice roller.** A topbar utility (global, not tied to any tab — works even before a character is loaded) for rolling all 7 D&D dice. Custom three.js scene rather than an off-the-shelf 3D dice library — `@3d-dice/dice-box` was evaluated and rejected (no per-die tap API; runs in a Web Worker, so tap-to-dismiss wasn't possible). Dice tap-to-dismiss or drag-to-reposition, spawn without overlapping each other, can't be dragged through one another, retheme live with the active skin, and use the Web Crypto RNG. The toggle button itself is a small pseudo-3D cube icon (solid filled facets, transparent gaps between them) — a deliberate departure from the flat outline dice glyphs used in the roll menu.
 - **Deliverable:** the sheet looks modern and uncluttered, and is genuinely comfortable to run a session from. ✅
 
 ## M3 — Prompts system ✅ done
