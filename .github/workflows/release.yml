@@ -1,9 +1,11 @@
 name: Release
 
 # Push a tag (e.g. v1.0.0) from GitHub to build the desktop app for Mac/Win/Linux plus an
-# Android debug APK, and attach them all to a (draft) GitHub Release on that tag. Pages
-# deploys separately, also on tag (pages.yml). Everyday PRs only get the fast Rust
-# cargo-check (tauri-check.yml) — full builds are reserved for an actual release.
+# Android debug APK, and attach them all to a (draft) GitHub Release on that tag. All four
+# jobs run in parallel and each finds-or-creates the same draft release before attaching its
+# own asset to it — none of them wait on each other. Pages deploys separately, also on tag
+# (pages.yml). Everyday PRs only get the fast Rust cargo-check (tauri-check.yml) — full builds
+# are reserved for an actual release.
 on:
   push:
     tags: ["v*"]
@@ -51,7 +53,6 @@ jobs:
           prerelease: false
 
   release-android:
-    needs: release
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -103,6 +104,20 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          tag="${{ github.ref_name }}"
+          safe_tag="${tag//\//-}"
+
+          # The matrix jobs each find-or-create this same draft release via tauri-action.
+          # We run in parallel with them, so do the same find-or-create here instead of
+          # waiting on them (`needs:`) — whichever job gets there first wins, the rest attach.
+          # `|| true`: a matrix job racing us to create the same release is expected and fine —
+          # gh release create fails on an existing tag, but by then the release we wanted exists.
+          if ! gh release view "$tag" -R "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release create "$tag" --draft --title "JUGALE $tag" \
+              --notes "See the assets below to download and install this version." \
+              -R "${{ github.repository }}" || true
+          fi
+
           apk=$(find src-tauri/gen/android -name "*.apk" -path "*debug*" | head -n1)
-          cp "$apk" "JUGALE-${{ github.ref_name }}-android-debug.apk"
-          gh release upload "${{ github.ref_name }}" "JUGALE-${{ github.ref_name }}-android-debug.apk" --clobber -R "${{ github.repository }}"
+          cp "$apk" "JUGALE-${safe_tag}-android-debug.apk"
+          gh release upload "$tag" "JUGALE-${safe_tag}-android-debug.apk" --clobber -R "${{ github.repository }}"
