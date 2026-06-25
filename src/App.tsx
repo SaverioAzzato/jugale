@@ -18,6 +18,7 @@ import { useT, type TFn } from "./i18n/useI18n";
 import { SettingsButton, SettingsPage } from "./ui/SettingsMenu";
 import { PromptsButton, PromptsPage } from "./ui/PromptsPage";
 import { DicePalette } from "./ui/DicePalette";
+import { IssuesChip } from "./ui/IssuesChip";
 import { DiceCanvas } from "./ui/dice/DiceCanvas";
 import { Toasts } from "./ui/Toasts";
 import { useToast } from "./ui/useToast";
@@ -54,7 +55,7 @@ const SAMPLES = [
 ];
 
 export function App() {
-  const { character, sourceName, images, liveSync, dirty, saveError } = useCharacter(
+  const { character, sourceName, images, liveSync, dirty, saveError, issues } = useCharacter(
     useShallow((s) => ({
       character: s.character,
       sourceName: s.sourceName,
@@ -62,6 +63,7 @@ export function App() {
       liveSync: s.liveSync,
       dirty: s.dirty,
       saveError: s.saveError,
+      issues: s.issues,
     })),
   );
   const loadRaw = useCharacter((s) => s.loadRaw);
@@ -274,26 +276,29 @@ export function App() {
       )}
 
       {!overlay && character && (
-        <footer className="statusbar" role="status" aria-live="polite">
-          <span className="statusbar-file">
-            {t("status.file")}: {sourceName || t("status.unnamed")}
+        <footer className="statusbar">
+          <span className="statusbar-status" role="status" aria-live="polite">
+            <span className="statusbar-file">
+              {t("status.file")}: {sourceName || t("status.unnamed")}
+            </span>
+            <span className="statusbar-sep" aria-hidden>
+              •
+            </span>
+            <span className="statusbar-sync">
+              {liveSync ? t("status.live") : dirty ? t("status.unsaved") : t("status.memory")}
+            </span>
+            {saveError && (
+              <>
+                <span className="statusbar-sep" aria-hidden>
+                  •
+                </span>
+                <span className="statusbar-error">
+                  {t("status.saveError")}: {saveError}
+                </span>
+              </>
+            )}
           </span>
-          <span className="statusbar-sep" aria-hidden>
-            •
-          </span>
-          <span className="statusbar-sync">
-            {liveSync ? t("status.live") : dirty ? t("status.unsaved") : t("status.memory")}
-          </span>
-          {saveError && (
-            <>
-              <span className="statusbar-sep" aria-hidden>
-                •
-              </span>
-              <span className="statusbar-error">
-                {t("status.saveError")}: {saveError}
-              </span>
-            </>
-          )}
+          <IssuesChip issues={issues} />
         </footer>
       )}
 

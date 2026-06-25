@@ -3,10 +3,26 @@ import { migrateToCurrent, needsMigration } from "./migrate";
 
 export type Severity = "error" | "warning";
 
+/**
+ * Stable identifier for a rule-check issue, so the UI can render a localized message.
+ * "schema" covers raw Zod validation errors, whose `message` is Zod's own (English,
+ * technical) text — those aren't enumerable, so they're shown as-is rather than localized.
+ */
+export type IssueCode =
+  | "schema"
+  | "levelExceeds20"
+  | "proficiencyBonusMismatch"
+  | "resourceOverspent"
+  | "hpExceedsMax";
+
 export interface Issue {
   path: string;
+  /** English fallback text — always present, shown verbatim for code "schema". */
   message: string;
   severity: Severity;
+  code: IssueCode;
+  /** Interpolation values for the UI's localized message (unused for code "schema"). */
+  params?: Record<string, string | number>;
 }
 
 export interface LoadResult {
@@ -35,6 +51,7 @@ export function loadCharacter(raw: unknown): LoadResult {
     path: i.path.join("."),
     message: i.message,
     severity: "error",
+    code: "schema",
   }));
   const name =
     (data as { meta?: { name?: unknown } } | null)?.meta?.name != null
@@ -50,7 +67,13 @@ export function ruleChecks(c: Character): Issue[] {
 
   const level = c.classes.reduce((sum, x) => sum + x.level, 0);
   if (level > 20) {
-    issues.push({ path: "classes", message: `Livello totale ${level} supera 20`, severity: "warning" });
+    issues.push({
+      path: "classes",
+      message: `Total level ${level} exceeds 20`,
+      severity: "warning",
+      code: "levelExceeds20",
+      params: { level },
+    });
   }
 
   const override = c.proficiencies.proficiencyBonusOverride;
@@ -59,8 +82,10 @@ export function ruleChecks(c: Character): Issue[] {
     if (override !== derived) {
       issues.push({
         path: "proficiencies.proficiencyBonusOverride",
-        message: `Bonus competenza ${override} diverso dal derivato ${derived} per livello ${level}`,
+        message: `Proficiency bonus ${override} disagrees with the derived ${derived} for level ${level}`,
         severity: "warning",
+        code: "proficiencyBonusMismatch",
+        params: { override, derived, level },
       });
     }
   }
@@ -69,14 +94,21 @@ export function ruleChecks(c: Character): Issue[] {
     if (r.current > r.max) {
       issues.push({
         path: `resources.${r.id}`,
-        message: `${r.label || r.id}: usi correnti (${r.current}) maggiori del massimo (${r.max})`,
+        message: `${r.label || r.id}: current uses (${r.current}) exceed the max (${r.max})`,
         severity: "warning",
+        code: "resourceOverspent",
+        params: { label: r.label || r.id, current: r.current, max: r.max },
       });
     }
   }
 
   if (c.combat.hp.max > 0 && c.combat.hp.current > c.combat.hp.max + c.combat.hp.temp) {
-    issues.push({ path: "combat.hp", message: "PF correnti superano massimi + temporanei", severity: "warning" });
+    issues.push({
+      path: "combat.hp",
+      message: "Current HP exceeds max + temporary",
+      severity: "warning",
+      code: "hpExceedsMax",
+    });
   }
 
   return issues;

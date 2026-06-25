@@ -61,7 +61,8 @@ The 4 prompts (base / create / level-up / validate) — shipped in [`src/prompts
 - **Deliverable:** installable apps on Releases + a live web app, all from one push.
 
 ## M5 — Polish
-- Validation UX, accessibility pass, performance, more sample characters, docs completeness, optional code-signing.
+- **Validation UX ✅ done:** `loadCharacter`'s issues (schema errors + 5e rule-check warnings) now surface in the UI — previously generated but never displayed. Each non-schema issue carries a stable `code` + `params` (`src/schema/validate.ts`) instead of a hardcoded Italian string, localized at render time via the existing EN/IT i18n (`issues.*` keys, `interpolate()` in `src/i18n/useI18n.ts`); raw Zod schema errors keep their (English, technical) message as-is. A footer chip (`src/ui/IssuesChip.tsx`) shows separate error/warning counts and opens a popover listing every issue with its localized message and JSON path — non-blocking, consistent with "a half-edited file is never locked out." Out of scope for this pass: clicking an issue to jump to the relevant field in the sheet (would need every render component to tag itself with its data path — a bigger follow-up).
+- Accessibility pass, performance, more sample characters, docs completeness, optional code-signing.
 
 ## Explicitly out of scope
 - **No in-app chat/LLM.** Originally floated as an optional "BYOK chat" milestone, dropped on purpose: an in-app assistant that ingests arbitrary user-supplied rules content and proposes JSON edits is exactly the kind of legal exposure (non-permissive-license content, generated-content liability) this project wants to avoid. External chatbots (ChatGPT, Claude, etc.) driven by the M3 prompts + published JSON Schema remain the fully-supported integration path — that's the whole point of the JSON-as-contract design, at zero legal/cost surface to us.
