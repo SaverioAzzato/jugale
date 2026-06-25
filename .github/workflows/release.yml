@@ -1,7 +1,9 @@
 name: Release
 
-# Push a tag (e.g. v1.0.0) from GitHub to build the desktop app for Mac/Win/Linux and attach
-# the installers to a (draft) GitHub Release on that tag. Pages deploys separately, also on tag
+# Push a tag (e.g. v1.0.0) from GitHub to build the desktop app for Mac/Win/Linux plus an
+# Android debug APK, and attach them all to a (draft) GitHub Release on that tag. All four
+# jobs run in parallel and each finds-or-creates the same draft release before attaching its
+# own asset to it — none of them wait on each other. Pages deploys separately, also on tag
 # (pages.yml). Everyday PRs only get the fast Rust cargo-check (tauri-check.yml) — full builds
 # are reserved for an actual release.
 on:
@@ -49,3 +51,73 @@ jobs:
           releaseBody: "See the assets below to download and install this version."
           releaseDraft: true
           prerelease: false
+
+  release-android:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    env:
+      NDK_VERSION: "27.0.11902837"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install NDK
+        run: sdkmanager "ndk;${{ env.NDK_VERSION }}"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Init Android project
+        run: npx tauri android init --ci
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ env.NDK_VERSION }}
+
+      - name: Build debug APK
+        # Debug-signed (Android's auto-generated debug keystore): no secrets needed,
+        # installable by sideloading. Play Store-grade release signing is a separate,
+        # opt-in follow-up once we actually want Play Store distribution.
+        run: npx tauri android build --apk --debug --ci
+        env:
+          NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ env.NDK_VERSION }}
+
+      - name: Attach APK to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${{ github.ref_name }}"
+          safe_tag="${tag//\//-}"
+
+          # The matrix jobs each find-or-create this same draft release via tauri-action.
+          # We run in parallel with them, so do the same find-or-create here instead of
+          # waiting on them (`needs:`) — whichever job gets there first wins, the rest attach.
+          # `|| true`: a matrix job racing us to create the same release is expected and fine —
+          # gh release create fails on an existing tag, but by then the release we wanted exists.
+          if ! gh release view "$tag" -R "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release create "$tag" --draft --title "JUGALE $tag" \
+              --notes "See the assets below to download and install this version." \
+              -R "${{ github.repository }}" || true
+          fi
+
+          apk=$(find src-tauri/gen/android -name "*.apk" -path "*debug*" | head -n1)
+          cp "$apk" "JUGALE-${safe_tag}-android-debug.apk"
+          gh release upload "$tag" "JUGALE-${safe_tag}-android-debug.apk" --clobber -R "${{ github.repository }}"

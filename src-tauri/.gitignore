@@ -2,3 +2,7 @@
 # will have compiled files and executables
 /target/
 /gen/schemas
+
+# Generated mobile shells (scaffolded fresh by `tauri android/ios init --ci` in CI)
+/gen/android
+/gen/ios

@@ -31,6 +31,8 @@ npm run tauri build   # installable app bundle in src-tauri/target/release/bundl
 
 Requires a Rust toolchain ([rustup](https://rustup.rs)) in addition to Node. The desktop shell wraps the exact same frontend; native file/folder access (`src/storage/tauriProvider.ts`) replaces the browser's File System Access API one-for-one — nothing in `src/render`, `src/schema`, or `src/state` knows which host it's running on.
 
+Android (`npm run tauri android dev` / `build`) shares the same config and requires the Android SDK + NDK + a local `tauri android init` first ([Tauri Android prerequisites](https://v2.tauri.app/start/prerequisites/)); CI builds and attaches a debug APK on every tagged release, so this is only needed for local device testing.
+
 ## Project structure
 
 ```
@@ -60,7 +62,7 @@ By default, characters ship with `meta.ruleset: ["SRD"]` — the freely-licensed
 
 ## Distribution
 
-Free and open: the **web app is the GitHub Pages site** ([live](https://saverioazzato.github.io/jugale/)); desktop and mobile binaries are attached to **GitHub Releases**. Both are built and shipped by GitHub Actions, and both happen on the same trigger: **pushing a version tag** (`v*`) — [`pages.yml`](.github/workflows/pages.yml) redeploys the web app, [`release.yml`](.github/workflows/release.yml) builds Mac/Win/Linux installers and attaches them to a (draft) GitHub Release. Merging PRs to `main` doesn't ship anything by itself; tag when you want a release. No app stores, no hosting bills.
+Free and open: the **web app is the GitHub Pages site** ([live](https://saverioazzato.github.io/jugale/)); desktop and Android binaries are attached to **GitHub Releases**. Both are built and shipped by GitHub Actions, and both happen on the same trigger: **pushing a version tag** (`v*`) — [`pages.yml`](.github/workflows/pages.yml) redeploys the web app, [`release.yml`](.github/workflows/release.yml) builds Mac/Win/Linux installers plus an Android APK and attaches them to a (draft) GitHub Release. The Android APK is debug-signed (Android's own auto-generated debug keystore) — no Play Store signing key yet, so it's a sideload-and-install file, not a Play Store upload. Merging PRs to `main` doesn't ship anything by itself; tag when you want a release. No app stores, no hosting bills.
 
 ## Contributing & automation
 
