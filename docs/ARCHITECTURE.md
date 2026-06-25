@@ -1,4 +1,4 @@
-# Architecture — D&D Manager ("D&D, but Digital")
+# Architecture — JUGALE ("D&D, but Digital")
 
 > Status: **Draft for review** · Last updated: 2026-06-21
 > This is the spec-first source of truth for technical decisions. Code follows this doc; when they disagree, fix one of them on purpose, not by accident.

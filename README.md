@@ -1,4 +1,6 @@
-# D&D Manager — "D&D, but Digital"
+# JUGALE — "D&D, but Digital"
+
+*Si legge "iugale".*
 
 A character-sheet platform for tabletop RPGs (D&D 5e in practice) where **the JSON is the character** and the app is a beautiful, stateless lens over it. Build and edit characters with any chatbot (or by hand), then view and *play* them — track HP, resources, spell slots, currencies — with the app kept in sync with a plain, open `character.json`.
 

@@ -1,4 +1,4 @@
-# Roadmap — D&D Manager
+# Roadmap — JUGALE
 
 > Status: **Draft for review** · Milestones are sequential but each ships something usable. Order is a proposal — tell me if you want to reshuffle.
 

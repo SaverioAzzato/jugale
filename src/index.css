@@ -1133,6 +1133,15 @@ a {
   place-items: center;
   padding: 24px;
 }
+.empty-brand {
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 600;
+  letter-spacing: 6px;
+  color: var(--gold, var(--accent));
+  margin-bottom: 18px;
+  text-align: center;
+}
 .empty-card {
   max-width: 520px;
   text-align: center;
