@@ -4,6 +4,8 @@ import type { RolledDie } from "../useDice";
 
 const DIE_PX = 52; // bounding-sphere radius in px → dice ~104px across
 const DRAG_THRESH = 6; // px of movement before a press becomes a drag (vs a tap)
+const SPAWN_MIN_DIST = DIE_PX * 2.25; // a little breathing room between freshly-rolled dice
+const DRAG_MIN_DIST = DIE_PX * 2; // touching distance — a dragged die can't pass through another
 
 const reduceMotion =
   typeof window !== "undefined" &&
@@ -124,13 +126,8 @@ export class DiceScene {
     const die = makeDie(d.sides, d.result, this.theme);
     const baseScale = DIE_PX / die.radius;
     die.group.userData.dieId = d.id;
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    die.group.position.set(
-      (Math.random() * 2 - 1) * Math.min(w * 0.3, 360),
-      (Math.random() * 0.5 - 0.18) * Math.min(h, 640),
-      0,
-    );
+    const p = this.findSpawnSpot();
+    die.group.position.set(p.x, p.y, 0);
     this.scene.add(die.group);
     this.entries.push({
       id: d.id,
@@ -144,6 +141,26 @@ export class DiceScene {
       leaveAt: 0,
       leaveSpin: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(),
     });
+  }
+
+  /** A random spot that, where possible, doesn't land inside another die already on screen. */
+  private findSpawnSpot(): { x: number; y: number } {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const boxX = Math.min(w * 0.3, 360);
+    const boxY = Math.min(h, 640);
+    const others = this.entries.filter((e) => !e.leaving);
+    const pick = () => ({
+      x: (Math.random() * 2 - 1) * boxX,
+      y: (Math.random() * 0.5 - 0.18) * boxY,
+    });
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const p = pick();
+      if (others.every((e) => Math.hypot(p.x - e.group.position.x, p.y - e.group.position.y) >= SPAWN_MIN_DIST)) {
+        return p;
+      }
+    }
+    return pick(); // crowded — give up gracefully rather than block the roll
   }
 
   private start(): void {
@@ -257,9 +274,31 @@ export class DiceScene {
       this.drag.moved = true;
     if (this.drag.moved) {
       const wp = this.worldOnPlane(e.clientX, e.clientY);
-      this.drag.entry.group.position.set(wp.x - this.drag.offset.x, wp.y - this.drag.offset.y, 0);
+      const target = { x: wp.x - this.drag.offset.x, y: wp.y - this.drag.offset.y };
+      const p = this.resolveDragCollisions(this.drag.entry, target);
+      this.drag.entry.group.position.set(p.x, p.y, 0);
     }
   };
+
+  /** Clamp a dragged die's candidate position so it can't pass through another resting die. */
+  private resolveDragCollisions(moving: Entry, target: { x: number; y: number }): { x: number; y: number } {
+    const others = this.entries.filter((e) => e !== moving && !e.leaving);
+    const p = { ...target };
+    for (let iter = 0; iter < 4; iter++) {
+      for (const o of others) {
+        const dx = p.x - o.group.position.x;
+        const dy = p.y - o.group.position.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < DRAG_MIN_DIST) {
+          const nx = dist < 1e-6 ? 1 : dx / dist;
+          const ny = dist < 1e-6 ? 0 : dy / dist;
+          p.x = o.group.position.x + nx * DRAG_MIN_DIST;
+          p.y = o.group.position.y + ny * DRAG_MIN_DIST;
+        }
+      }
+    }
+    return p;
+  }
 
   private onPointerUp = (e: PointerEvent): void => {
     window.removeEventListener("pointermove", this.onPointerMove, true);
