@@ -63,7 +63,7 @@
     {
       "id": "stregone-noti", "title": "Stregone — conosciuti",
       "entries": [
-        { "name": "Chaos Bolt", "link": "https://www.dndbeyond.com/spells/chaos-bolt", "level": "1", "range": "120 ft", "concentration": false, "attack": "Attacco con incantesimo a distanza", "defense": "—", "effect": "2d8 + 1d6 (tipo casuale); può rimbalzare" },
+        { "name": "Chromatic Orb", "link": "https://www.dndbeyond.com/spells/chromatic-orb", "level": "1", "range": "90 ft", "components": "V, S, M", "concentration": false, "attack": "Attacco con incantesimo a distanza", "defense": "—", "effect": "3d8 danni di tipo a scelta (acido/freddo/fuoco/fulmine/veleno/tuono); +1d8 per slot superiore" },
         { "name": "Fire Bolt", "link": "https://www.dndbeyond.com/spells/fire-bolt", "level": "0", "range": "120 ft", "concentration": false, "attack": "Attacco con incantesimo a distanza", "defense": "—", "effect": "1d10 da fuoco" }
       ]
     }
