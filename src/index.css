@@ -1592,9 +1592,27 @@ code {
   text-anchor: middle;
   dominant-baseline: central;
 }
-.dice-toggle .die-svg {
-  width: 24px;
-  height: 24px;
+.die-3d-icon {
+  display: block;
+  width: 26px;
+  height: 26px;
+  overflow: visible;
+}
+.die-3d-face {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.92); /* shrinks each facet toward its own center — the gap this opens
+  between facets is real transparency down to the button background, not a stroke. */
+}
+.die-3d-face-top {
+  fill: var(--gold);
+}
+.die-3d-face-left {
+  fill: var(--accent);
+}
+.die-3d-face-right {
+  fill: var(--accent);
+  filter: brightness(0.75);
 }
 
 .dice-menu {

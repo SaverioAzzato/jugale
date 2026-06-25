@@ -38,6 +38,18 @@ function DieShape({ sides, label }: { sides: number; label?: ReactNode }) {
   );
 }
 
+/** Pseudo-3D cube glyph for the toggle button: solid filled facets, separated by a thin gap
+ * down to the button background instead of an outline — reads as a die, not a flat polygon. */
+function Die3DIcon() {
+  return (
+    <svg className="die-3d-icon" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+      <polygon className="die-3d-face die-3d-face-top" points="50,14 82.9,33 50,52 17.1,33" />
+      <polygon className="die-3d-face die-3d-face-left" points="17.1,33 50,52 50,90 17.1,71" />
+      <polygon className="die-3d-face die-3d-face-right" points="82.9,33 82.9,71 50,90 50,52" />
+    </svg>
+  );
+}
+
 /**
  * Topbar dice palette. Two ways to roll:
  *  - tap the toggle to open, then click a die;
@@ -143,7 +155,7 @@ export function DicePalette() {
         onPointerDown={onTogglePointerDown}
         onClick={onToggleClick}
       >
-        <DieShape sides={20} />
+        <Die3DIcon />
       </button>
       {open && (
         <div className="dice-menu" role="menu" style={{ top: pos.top, right: pos.right }}>
