@@ -235,6 +235,16 @@ const en = {
   "narrative.backstory": "Backstory",
   "narrative.notes": "Notes",
   "custom.fallback": "Section",
+  // validation issues
+  "issues.title": "Validation issues",
+  "issues.close": "Close",
+  "issues.error": "Error",
+  "issues.warning": "Warning",
+  "issues.field": "Field",
+  "issues.levelExceeds20": "Total level {level} exceeds 20",
+  "issues.proficiencyBonusMismatch": "Proficiency bonus {override} disagrees with the derived {derived} for level {level}",
+  "issues.resourceOverspent": "{label}: current uses ({current}) exceed the max ({max})",
+  "issues.hpExceedsMax": "Current HP exceeds max + temporary",
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -440,6 +450,15 @@ const it: Record<StringKey, string> = {
   "narrative.backstory": "Storia",
   "narrative.notes": "Note",
   "custom.fallback": "Sezione",
+  "issues.title": "Problemi di validazione",
+  "issues.close": "Chiudi",
+  "issues.error": "Errore",
+  "issues.warning": "Avviso",
+  "issues.field": "Campo",
+  "issues.levelExceeds20": "Livello totale {level} supera 20",
+  "issues.proficiencyBonusMismatch": "Bonus competenza {override} diverso dal derivato {derived} per livello {level}",
+  "issues.resourceOverspent": "{label}: usi correnti ({current}) maggiori del massimo ({max})",
+  "issues.hpExceedsMax": "PF correnti superano massimi + temporanei",
 };
 
 const dict: Record<Locale, Record<StringKey, string>> = { en, it };
@@ -475,4 +494,9 @@ export function translate(locale: Locale, key: StringKey): string {
 export function useT(): TFn {
   const locale = useI18n((s) => s.locale);
   return (key) => translate(locale, key);
+}
+
+/** Substitutes `{paramName}` tokens in a translated template, e.g. interpolate(t("issues.levelExceeds20"), { level: 25 }). */
+export function interpolate(template: string, params: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (match, name) => (name in params ? String(params[name]) : match));
 }

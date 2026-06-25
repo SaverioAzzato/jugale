@@ -19,7 +19,7 @@ describe("loadCharacter", () => {
   it("never throws and stays renderable on invalid input (missing name)", () => {
     const result = loadCharacter({ schemaVersion: "2.0.0", meta: {} });
     expect(result.ok).toBe(false);
-    expect(result.issues.some((i) => i.severity === "error")).toBe(true);
+    expect(result.issues.some((i) => i.severity === "error" && i.code === "schema")).toBe(true);
     expect(result.character.meta.name).toBe("Personaggio"); // fallback, still renderable
   });
 
@@ -43,7 +43,10 @@ describe("loadCharacter", () => {
       resources: [{ id: "ki", label: "Ki", max: 3, current: 5 }],
     });
     expect(result.ok).toBe(true);
-    expect(result.issues.some((i) => i.severity === "warning" && i.path === "resources.ki")).toBe(true);
+    const issue = result.issues.find((i) => i.path === "resources.ki");
+    expect(issue?.severity).toBe("warning");
+    expect(issue?.code).toBe("resourceOverspent");
+    expect(issue?.params).toEqual({ label: "Ki", current: 5, max: 3 });
   });
 
   it("warns on a proficiency bonus override that disagrees with level", () => {
@@ -52,6 +55,26 @@ describe("loadCharacter", () => {
       classes: [{ name: "Wizard", level: 1 }],
       proficiencies: { proficiencyBonusOverride: 6 },
     });
-    expect(result.issues.some((i) => i.path === "proficiencies.proficiencyBonusOverride")).toBe(true);
+    const issue = result.issues.find((i) => i.path === "proficiencies.proficiencyBonusOverride");
+    expect(issue?.code).toBe("proficiencyBonusMismatch");
+    expect(issue?.params).toEqual({ override: 6, derived: 2, level: 1 });
+  });
+
+  it("warns when total level exceeds 20", () => {
+    const result = loadCharacter({
+      meta: { name: "Tav" },
+      classes: [{ name: "Wizard", level: 20 }, { name: "Fighter", level: 5 }],
+    });
+    const issue = result.issues.find((i) => i.code === "levelExceeds20");
+    expect(issue?.severity).toBe("warning");
+    expect(issue?.params).toEqual({ level: 25 });
+  });
+
+  it("warns when current HP exceeds max + temporary", () => {
+    const result = loadCharacter({
+      meta: { name: "Tav" },
+      combat: { hp: { max: 10, current: 15, temp: 0 } },
+    });
+    expect(result.issues.some((i) => i.code === "hpExceedsMax" && i.path === "combat.hp")).toBe(true);
   });
 });

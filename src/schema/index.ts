@@ -23,5 +23,5 @@ export {
   derivedArmorClass,
 } from "./derive";
 export { migrateToCurrent, needsMigration, schemaMajor } from "./migrate";
-export { loadCharacter, ruleChecks, type Issue, type LoadResult, type Severity } from "./validate";
+export { loadCharacter, ruleChecks, type Issue, type IssueCode, type LoadResult, type Severity } from "./validate";
 export { characterJsonSchema } from "./jsonSchema";
