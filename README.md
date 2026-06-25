@@ -64,12 +64,14 @@ Free and open: the **web app is the GitHub Pages site** ([live](https://saverioa
 
 ## Contributing & automation
 
-- CI (`.github/workflows/ci.yml`) runs typecheck + tests + build on every PR.
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the project's ground rules before sending a PR.
+
+- CI (`.github/workflows/ci.yml`) runs typecheck + tests + build on every PR; a PR touching `src-tauri/` also gets a fast Rust `cargo check` (`tauri-check.yml`, no bundling).
 - You can hand Claude a ticket and get a PR back — via [Claude Code on the web](https://claude.ai/code) (runs on Anthropic's cloud) or a local Claude Code session. See **[docs/AUTOMATION.md](docs/AUTOMATION.md)**.
 
 ## Docs
 
-- [Architecture](docs/ARCHITECTURE.md) · [Schema](docs/SCHEMA.md) · [Prompts](docs/PROMPTS.md) · [Roadmap](docs/ROADMAP.md) · [Automation](docs/AUTOMATION.md)
+- [Architecture](docs/ARCHITECTURE.md) · [Schema](docs/SCHEMA.md) · [UI](docs/UI.md) · [Prompts](docs/PROMPTS.md) · [Roadmap](docs/ROADMAP.md) · [Automation](docs/AUTOMATION.md)
 
 ## Assets & Credits
 
