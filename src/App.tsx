@@ -13,6 +13,7 @@ import {
   NO_CHARACTER_JSON,
   type GalleryImage,
 } from "./storage/provider";
+import { isTauri, openCharacterFileTauri, openCharacterFolderTauri } from "./storage/tauriProvider";
 import { useT, type TFn } from "./i18n/useI18n";
 import { SettingsButton, SettingsPage } from "./ui/SettingsMenu";
 import { PromptsButton, PromptsPage } from "./ui/PromptsPage";
@@ -70,7 +71,7 @@ export function App() {
   const t = useT();
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
-  const fileAccessSupported = isFileAccessSupported();
+  const fileAccessSupported = isTauri() || isFileAccessSupported();
 
   // webkitdirectory isn't in React's typed attributes; set it imperatively.
   useEffect(() => {
@@ -97,13 +98,13 @@ export function App() {
   }, [dirty, liveSync]);
 
   async function handleOpen() {
-    const result = await openCharacterFile();
+    const result = isTauri() ? await openCharacterFileTauri() : await openCharacterFile();
     if (result) connect(result.provider, result.raw, "file");
   }
 
   async function handleOpenFolderPicker() {
     try {
-      const result = await openCharacterFolder();
+      const result = isTauri() ? await openCharacterFolderTauri() : await openCharacterFolder();
       if (result) connect(result.provider, result.raw, result.sourceName, result.images);
     } catch (e) {
       const key = e instanceof Error && e.message === NO_CHARACTER_JSON ? "app.noCharacterJson" : "app.invalidJson";
@@ -125,7 +126,7 @@ export function App() {
   }
 
   function handleOpenFolder() {
-    if (isDirectoryAccessSupported()) {
+    if (isTauri() || isDirectoryAccessSupported()) {
       void handleOpenFolderPicker();
       return;
     }

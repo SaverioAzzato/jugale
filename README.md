@@ -22,12 +22,23 @@ npm run build      # production web build
 
 Requires Node 20+.
 
+### Desktop (Tauri)
+
+```bash
+npm run tauri dev    # native window, hot-reloading the same web build
+npm run tauri build   # installable app bundle in src-tauri/target/release/bundle/
+```
+
+Requires a Rust toolchain ([rustup](https://rustup.rs)) in addition to Node. The desktop shell wraps the exact same frontend; native file/folder access (`src/storage/tauriProvider.ts`) replaces the browser's File System Access API one-for-one — nothing in `src/render`, `src/schema`, or `src/state` knows which host it's running on.
+
 ## Project structure
 
 ```
 src/
   schema/        # Zod character schema (v2) + types, derived stats, v1→v2 migration, validation
-  …              # model/ state/ storage/ render/ arrive in later milestones
+  storage/       # StorageProvider interface + browser (File System Access) + Tauri (native fs) implementations
+  …              # model/ render/ arrive in later milestones
+src-tauri/       # Tauri 2 desktop/mobile shell — config + thin Rust (fs/dialog plugins only)
 docs/            # spec-first: ARCHITECTURE, SCHEMA, ROADMAP, AUTOMATION
 characters/      # sample characters (also test fixtures); your real PGs go in pg/ (gitignored)
 index.html       # Vite entry
