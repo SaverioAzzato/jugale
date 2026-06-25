@@ -60,7 +60,7 @@ By default, characters ship with `meta.ruleset: ["SRD"]` — the freely-licensed
 
 ## Distribution
 
-Free and open: the **web app is the GitHub Pages site** ([live](https://saverioazzato.github.io/jugale/), deployed on every push to `main` via [`pages.yml`](.github/workflows/pages.yml)); desktop and mobile binaries are attached to **GitHub Releases** (no app stores, no hosting bills). Built and shipped by GitHub Actions.
+Free and open: the **web app is the GitHub Pages site** ([live](https://saverioazzato.github.io/jugale/)); desktop and mobile binaries are attached to **GitHub Releases**. Both are built and shipped by GitHub Actions, and both happen on the same trigger: **pushing a version tag** (`v*`) — [`pages.yml`](.github/workflows/pages.yml) redeploys the web app, [`release.yml`](.github/workflows/release.yml) builds Mac/Win/Linux installers and attaches them to a (draft) GitHub Release. Merging PRs to `main` doesn't ship anything by itself; tag when you want a release. No app stores, no hosting bills.
 
 ## Contributing & automation
 

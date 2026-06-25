@@ -89,8 +89,8 @@ Both implement the same interface; the rest of the app never knows which host it
 
 ## 7. CI/CD & "ticket → PR" automation
 
-- **PR checks** (`.github/workflows/ci.yml`): typecheck + lint + unit/component + Playwright + web build, on every PR.
-- **Release** (`release.yml`, not yet built): on tag `v*`, build per-platform artifacts (dmg/zip, exe/msi, AppImage, apk) and attach to a GitHub Release. Web deploy to Pages on push to `main` is already live (`pages.yml`); a Win/Mac/Linux build-verification matrix for the Tauri desktop shell already runs on every push/PR (`tauri-build.yml`, uploads to CI artifacts, not yet to Releases).
+- **PR checks** (`.github/workflows/ci.yml`): typecheck + lint + unit/component + Playwright + web build, on every PR. A second, narrow check (`tauri-check.yml`) runs `cargo check` (no bundling) only on PRs that touch `src-tauri/**`, so a broken Rust change is caught before merge without paying for a full cross-platform build on every PR.
+- **Release, tag-triggered (`release.yml`, shipped):** merging PRs to `main` does **not** ship anything by itself. Pushing a version tag (`v*`) is the one trigger for both deploy targets: [`pages.yml`](../.github/workflows/pages.yml) redeploys the web app, and `release.yml` builds the Mac/Win/Linux Tauri bundles in parallel (via `tauri-apps/tauri-action`) and attaches them to a **draft** GitHub Release on that tag — reviewed and published by hand, so a flaky build never goes public automatically.
 - **Ticket → PR**: no GitHub-Actions-runner `claude.yml` — by design, so nothing bills the Anthropic API per token. Instead, Claude Code on the web (claude.ai/code, runs on Anthropic's cloud via the GitHub App) or a local Claude Code session implements on a branch and opens a PR via `gh`, which `ci.yml` then validates. Full detail in `docs/AUTOMATION.md`.
 - **Distribution is free.** Releases host the binaries; the only optional cost is code-signing/notarization to remove "unidentified developer" warnings (Apple Dev $99/yr, Windows cert) — deferred. Android APK self-signs and sideloads for free; iOS without a paid account is covered by the installable PWA.
 

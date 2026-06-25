@@ -1,13 +1,18 @@
-name: Tauri Desktop Build
+name: Release
 
+# Push a tag (e.g. v1.0.0) from GitHub to build the desktop app for Mac/Win/Linux and attach
+# the installers to a (draft) GitHub Release on that tag. Pages deploys separately, also on tag
+# (pages.yml). Everyday PRs only get the fast Rust cargo-check (tauri-check.yml) — full builds
+# are reserved for an actual release.
 on:
-  pull_request:
   push:
-    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
 
 jobs:
-  build:
+  release:
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -35,12 +40,12 @@ jobs:
 
       - run: npm ci
 
-      - name: Build Tauri app
-        run: npm run tauri build
-
-      - name: Upload bundle artifacts
-        uses: actions/upload-artifact@v4
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: jugale-${{ matrix.platform }}
-          path: src-tauri/target/release/bundle/**
-          if-no-files-found: ignore
+          tagName: ${{ github.ref_name }}
+          releaseName: "JUGALE ${{ github.ref_name }}"
+          releaseBody: "See the assets below to download and install this version."
+          releaseDraft: true
+          prerelease: false
