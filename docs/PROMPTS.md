@@ -33,6 +33,14 @@ Tailor all guidance to the **Warlock** class. Prefer options, synergies, and exa
 
 The Prompts page has **Edit** (pencil) and **Reset** (circular arrows) controls. Edit reveals the prompts' editable building blocks: the base's static text (disclaimer + role + interaction style, and the `character.json` data contract) in two fields, and each task's *addition on top of base* in its own field. The generated "Sources in scope" + "Focus" header is shown locked — it always comes from the parameter fields, never hand-edited. **Save** recomposes every prompt from the edited blocks and persists them locally (`localStorage`); **Reset** restores the shipped originals below. Customizations are per-browser and don't touch any character file.
 
+## The in-app banner
+
+The Prompts page also shows this short disclaimer as a banner above the prompts, independent of which one you copy — same substance as the full disclaimer below, condensed for the UI (`prompts.banner` in `src/i18n/useI18n.ts`):
+
+```
+Only use SRD content, or content whose terms of use permit free and automated/AI access. Don't point a chatbot at sources that prohibit scraping. You're responsible for using your chosen guides legally and within their terms.
+```
+
 ## The Base prompt, in full
 
 Every task prompt below is this text, plus the generated "Sources in scope"/"Focus" header, plus that task's own section appended at the end.
@@ -132,4 +140,4 @@ The full machine-readable JSON Schema (generated from the same Zod source as the
 
 ## Source of truth
 
-The prompt blocks quoted above are copied verbatim from the `DISCLAIMER`, `BASE_CORE`, `DATA_CONTRACT`, `CREATE_TASK`, `LEVEL_UP_TASK`, and `VALIDATE_TASK` constants in [`src/prompts/prompts.ts`](../src/prompts/prompts.ts), which is what the app's Prompts page actually renders. If you change the prompt text in code, update this file in the same change — there's no automated check that the two stay in sync. For actual use, copy from the in-app page (it composes the parametric header for you) rather than from here.
+The prompt blocks quoted above are copied verbatim from the `DISCLAIMER`, `BASE_CORE`, `DATA_CONTRACT`, `CREATE_TASK`, `LEVEL_UP_TASK`, and `VALIDATE_TASK` constants in [`src/prompts/prompts.ts`](../src/prompts/prompts.ts); the banner quote is from `prompts.banner` in [`src/i18n/useI18n.ts`](../src/i18n/useI18n.ts). Both are what the app's Prompts page actually renders. If you change either in code, update this file in the same change — there's no automated check that they stay in sync. For actual use, copy from the in-app page (it composes the parametric header for you) rather than from here.
