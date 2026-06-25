@@ -4,7 +4,7 @@
 
 A character-sheet platform for tabletop RPGs (D&D 5e in practice) where **the JSON is the character** and the app is a beautiful, stateless lens over it. Build and edit characters with any chatbot (or by hand), then view and *play* them — track HP, resources, spell slots, currencies — with the app kept in sync with a plain, open `character.json`.
 
-> **Status:** mid-rewrite. The generalized v2 engine lives at the repo root (React + Vite + TypeScript). The original vanilla-JS prototype was retired when the rewrite began — it's tagged [`prototype-v1`](https://github.com/SaverioAzzato/dnd-pg-manager/releases/tag/prototype-v1) in git if you need it. See the [roadmap](docs/ROADMAP.md).
+> **Status:** mid-rewrite. The generalized v2 engine lives at the repo root (React + Vite + TypeScript). The original vanilla-JS prototype was retired when the rewrite began — it's tagged [`prototype-v1`](https://github.com/SaverioAzzato/jugale/releases/tag/prototype-v1) in git if you need it. See the [roadmap](docs/ROADMAP.md).
 
 ## Why
 
@@ -49,7 +49,7 @@ By default, characters ship with `meta.ruleset: ["SRD"]` — the freely-licensed
 
 ## Distribution
 
-Free and open: the **web app is the GitHub Pages site** ([live](https://saverioazzato.github.io/dnd-pg-manager/), deployed on every push to `main` via [`pages.yml`](.github/workflows/pages.yml)); desktop and mobile binaries are attached to **GitHub Releases** (no app stores, no hosting bills). Built and shipped by GitHub Actions.
+Free and open: the **web app is the GitHub Pages site** ([live](https://saverioazzato.github.io/jugale/), deployed on every push to `main` via [`pages.yml`](.github/workflows/pages.yml)); desktop and mobile binaries are attached to **GitHub Releases** (no app stores, no hosting bills). Built and shipped by GitHub Actions.
 
 ## Contributing & automation
 
