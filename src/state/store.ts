@@ -59,6 +59,15 @@ function notify(label: string, c: Character, changes: FormulaChange[], rolls: st
 const clamp = (n: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, n));
 
+/** Regaining HP from 0 clears death saves, so a later death starts the count fresh. */
+function clearDeathOnRevive(before: Character, after: Character): Character {
+  const ds = after.session.deathSaves;
+  if (before.combat.hp.current <= 0 && after.combat.hp.current > 0 && (ds.successes > 0 || ds.failures > 0)) {
+    return { ...after, session: { ...after.session, deathSaves: { ...ds, successes: 0, failures: 0 } } };
+  }
+  return after;
+}
+
 const slug = (s: string) =>
   s
     .toLowerCase()
@@ -142,7 +151,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
   const mutate = (fn: (c: Character) => Character) => {
     const c = get().character;
     if (!c) return;
-    set({ character: fn(c), dirty: true });
+    set({ character: clearDeathOnRevive(c, fn(c)), dirty: true });
     scheduleSave();
   };
 
@@ -192,7 +201,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
 
     const label = translate(useI18n.getState().locale, kind === "shortRest" ? "vitals.shortRest" : "vitals.longRest");
     notify(label, c, diffLiveFields(c, cur), rolls, errors);
-    set({ character: cur, dirty: true });
+    set({ character: clearDeathOnRevive(c, cur), dirty: true });
     scheduleSave();
   };
 
@@ -305,7 +314,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
       const { character, changes, errors, rolls } = applyAction(c, action.formulas, makeRng(Date.now()));
       notify(action.label || action.id, c, changes, rolls, errors);
       if (changes.length > 0) {
-        set({ character, dirty: true });
+        set({ character: clearDeathOnRevive(c, character), dirty: true });
         scheduleSave();
       }
     },

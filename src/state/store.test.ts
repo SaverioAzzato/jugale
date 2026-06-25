@@ -58,4 +58,20 @@ describe("store — live play mutations", () => {
     useCharacter.getState().heal(1);
     expect(useCharacter.getState().dirty).toBe(true);
   });
+
+  it("clears death saves when HP is regained from 0", () => {
+    useCharacter.getState().damage(999); // drop to 0 (dying)
+    useCharacter.getState().setDeathSave("successes", 2);
+    useCharacter.getState().setDeathSave("failures", 1);
+    expect(c().session.deathSaves).toMatchObject({ successes: 2, failures: 1 });
+    useCharacter.getState().heal(5); // back above 0
+    expect(c().session.deathSaves).toMatchObject({ successes: 0, failures: 0 });
+  });
+
+  it("leaves death saves alone while still at 0 HP", () => {
+    useCharacter.getState().damage(999);
+    useCharacter.getState().setDeathSave("failures", 2);
+    useCharacter.getState().setTempHp(3); // temp HP, current still 0
+    expect(c().session.deathSaves.failures).toBe(2);
+  });
 });

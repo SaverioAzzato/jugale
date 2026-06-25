@@ -18,12 +18,15 @@ function Stat({ label, value, note }: { label: string; value: ReactNode; note?: 
   );
 }
 
-function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
+function HpControl({ c }: { c: Character }) {
   const t = useT();
+  const hp = c.combat.hp;
   const damage = useCharacter((s) => s.damage);
   const heal = useCharacter((s) => s.heal);
   const setCurrentHp = useCharacter((s) => s.setCurrentHp);
   const setTempHp = useCharacter((s) => s.setTempHp);
+  const adjustHitDice = useCharacter((s) => s.adjustHitDice);
+  const maxHd = maxHitDice(c);
   const damagePressed = useRef(false);
   const healPressed = useRef(false);
   const pct = hp.max > 0 ? Math.round((hp.current / hp.max) * 100) : 0;
@@ -119,28 +122,19 @@ function HpControl({ hp }: { hp: Character["combat"]["hp"] }) {
           {t("vitals.temp")}{" "}
           <Stepper value={hp.temp} onChange={setTempHp} label={t("vitals.temp")} />
         </label>
+        {maxHd > 0 && (
+          <label>
+            {t("vitals.hitDice")}{" "}
+            <Stepper
+              value={hp.hitDiceRemaining}
+              max={maxHd}
+              showMax
+              onChange={(next) => adjustHitDice(next - hp.hitDiceRemaining)}
+              label={t("vitals.hitDice")}
+            />
+          </label>
+        )}
       </div>
-    </div>
-  );
-}
-
-function HitDiceControl({ c }: { c: Character }) {
-  const t = useT();
-  const adjustHitDice = useCharacter((s) => s.adjustHitDice);
-  const max = maxHitDice(c);
-  if (max <= 0) return null;
-  return (
-    <div className="hp-fine">
-      <label>
-        {t("vitals.hitDice")}{" "}
-        <Stepper
-          value={c.combat.hp.hitDiceRemaining}
-          max={max}
-          showMax
-          onChange={(next) => adjustHitDice(next - c.combat.hp.hitDiceRemaining)}
-          label={t("vitals.hitDice")}
-        />
-      </label>
     </div>
   );
 }
@@ -159,8 +153,7 @@ export function CombatSection({ c }: { c: Character }) {
         <Stat label={t("vitals.speed")} value={formatDistance(c.combat.speed.walk, units)} />
       </div>
 
-      <HpControl hp={c.combat.hp} />
-      <HitDiceControl c={c} />
+      <HpControl c={c} />
     </Panel>
   );
 }

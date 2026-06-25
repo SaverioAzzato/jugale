@@ -3,25 +3,28 @@
 import { useRef, useCallback } from "react";
 
 /** Fires `cb` immediately, then repeatedly after a delay + interval while held.
- *  Uses a ref so the interval always sees the latest `cb` (avoids stale closures). */
-export function useHoldRepeat(cb: () => void) {
+ *  Uses a ref so the interval always sees the latest `cb` (avoids stale closures).
+ *  If `cb` returns false (e.g. a bound was reached) the repeat self-stops. */
+export function useHoldRepeat(cb: () => void | boolean) {
   const cbRef = useRef(cb);
   cbRef.current = cb;
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const start = useCallback(() => {
-    cbRef.current();
-    timeoutRef.current = setTimeout(() => {
-      intervalRef.current = setInterval(() => cbRef.current(), 80);
-    }, 400);
-  }, []);
-
   const stop = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     if (intervalRef.current) clearInterval(intervalRef.current);
   }, []);
+
+  const start = useCallback(() => {
+    if (cbRef.current() === false) return; // already at a bound: don't schedule a repeat
+    timeoutRef.current = setTimeout(() => {
+      intervalRef.current = setInterval(() => {
+        if (cbRef.current() === false) stop();
+      }, 80);
+    }, 400);
+  }, [stop]);
 
   return { start, stop };
 }
@@ -42,8 +45,15 @@ export function Stepper({
   /** Render the cap as `value/max` inside the control (only the current value is highlighted). */
   showMax?: boolean;
 }) {
-  const dec = useHoldRepeat(() => onChange(value - 1));
-  const inc = useHoldRepeat(() => onChange(value + 1));
+  // Return false at the bound so a held button stops instead of running past it.
+  const dec = useHoldRepeat(() => {
+    if (value <= min) return false;
+    onChange(value - 1);
+  });
+  const inc = useHoldRepeat(() => {
+    if (max != null && value >= max) return false;
+    onChange(value + 1);
+  });
 
   return (
     <span className="stepper" role="group" aria-label={label}>
