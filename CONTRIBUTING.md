@@ -1,4 +1,4 @@
-# Contributing to JUGALE
+# Contributing to :JUGALE
 
 Thanks for taking a look. This is a small, opinionated project — read this before sending a PR so your change lands cleanly.
 

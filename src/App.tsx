@@ -315,7 +315,7 @@ function EmptyState({
 }) {
   return (
     <div className="empty-state">
-      <div className="empty-brand">JUGALE</div>
+      <div className="empty-brand">:JUGALE</div>
       <div className="empty-card">
         <h1>{t("empty.title")}</h1>
         <p className="muted">{t("empty.body")}</p>
