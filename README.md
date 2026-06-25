@@ -1,4 +1,4 @@
-# JUGALE — "D&D, but Digital"
+# :JUGALE — "D&D, but Digital"
 
 *Si legge "iugale".*
 
