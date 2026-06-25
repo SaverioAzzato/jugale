@@ -82,6 +82,27 @@ export function App() {
 
   const [activeTab, setActiveTab] = useState("gioco");
   const [overlay, setOverlay] = useState<"settings" | "prompts" | null>(null);
+  const overlayBackRef = useRef<HTMLButtonElement>(null);
+
+  // Settings/Prompts are full-page overlays, not floating popovers — nothing else behind
+  // them is reachable (the toolbar's other buttons and the footer all unmount while one is
+  // open), so a full Tab-trap isn't needed. Just move focus in, let Escape close, and give
+  // it back to whatever opened the overlay once it's gone. The triggering button (Settings/
+  // Prompts) unmounts while the overlay is open and a structurally-new one remounts once it
+  // closes — a saved DOM-node ref would be stale by then, so this re-queries by
+  // [data-overlay-trigger] for a live node instead of holding onto one.
+  useEffect(() => {
+    if (!overlay) return;
+    overlayBackRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOverlay(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.querySelector<HTMLElement>(`[data-overlay-trigger="${overlay}"]`)?.focus();
+    };
+  }, [overlay]);
   const tabs = character ? getVisibleTabs(character, images.length > 0) : [];
   const tab = tabs.some((t) => t.id === activeTab)
     ? activeTab
@@ -170,6 +191,7 @@ export function App() {
           <div className="toolbar-left">
             {overlay ? (
               <button
+                ref={overlayBackRef}
                 className="btn btn-back"
                 onClick={() => setOverlay(null)}
                 title={t("app.back")}
@@ -248,8 +270,10 @@ export function App() {
             {tabs.map((tabDef) => (
               <button
                 key={tabDef.id}
+                id={`tab-${tabDef.id}`}
                 role="tab"
                 aria-selected={tab === tabDef.id}
+                aria-controls={`tabpanel-${tabDef.id}`}
                 className={tab === tabDef.id ? "tab is-active" : "tab"}
                 onClick={() => setActiveTab(tabDef.id)}
               >

@@ -30,7 +30,9 @@ export function Sheet({ c, tab }: { c: Character; tab: string }) {
         {originLine && <p className="subtitle subtitle-2">{originLine}</p>}
       </header>
 
-      <TabContent c={c} tab={tab} />
+      <div role="tabpanel" id={`tabpanel-${tab}`} aria-labelledby={`tab-${tab}`}>
+        <TabContent c={c} tab={tab} />
+      </div>
     </article>
   );
 }

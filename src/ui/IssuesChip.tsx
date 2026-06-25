@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Issue, IssueCode } from "../schema";
 import { interpolate, useT, type TFn } from "../i18n/useI18n";
+import { useFocusTrap } from "./useFocusTrap";
 
 const MESSAGE_KEY: Partial<Record<IssueCode, "issues.levelExceeds20" | "issues.proficiencyBonusMismatch" | "issues.resourceOverspent" | "issues.hpExceedsMax">> = {
   levelExceeds20: "issues.levelExceeds20",
@@ -22,8 +23,11 @@ export function IssuesChip({ issues }: { issues: Issue[] }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const [pos, setPos] = useState<{ bottom: number; right: number }>({ bottom: 0, right: 0 });
+
+  useFocusTrap(open, panelRef);
 
   useEffect(() => {
     if (!open) return;
@@ -85,7 +89,14 @@ export function IssuesChip({ issues }: { issues: Issue[] }) {
         )}
       </button>
       {open && (
-        <div className="issues-panel" role="dialog" aria-label={t("issues.title")} style={{ bottom: pos.bottom, right: pos.right }}>
+        <div
+          ref={panelRef}
+          className="issues-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("issues.title")}
+          style={{ bottom: pos.bottom, right: pos.right }}
+        >
           <div className="issues-panel-header">
             <span>{t("issues.title")}</span>
             <button type="button" className="issues-panel-close" aria-label={t("issues.close")} onClick={() => setOpen(false)}>

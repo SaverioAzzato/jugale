@@ -60,7 +60,7 @@
   --border-strong: rgba(255, 255, 255, 0.14);
   --text: #d7d7e2;
   --muted: #8a8a9e;
-  --dim: #565667;
+  --dim: #616175; /* was #565667 — 2.55–2.83:1 on this theme's surfaces, under WCAG's 3:1 non-text minimum */
   --accent: #6f8fd8;
   --accent-weak: rgba(111, 143, 216, 0.14);
   --gold: #c9923f;
@@ -81,12 +81,12 @@
   --border-strong: rgba(60, 45, 25, 0.32);
   --text: #2c2218;
   --muted: #6a5b46;
-  --dim: #9a8b73;
+  --dim: #97886f; /* was #9a8b73 — 2.68–3.08:1, under WCAG's 3:1 non-text minimum */
   --accent: #6b4fbb;
   --accent-weak: rgba(107, 79, 187, 0.14);
-  --gold: #9a6a1e;
-  --ok: #3f8a52;
-  --warn: #9a6a1e;
+  --gold: #8a5f1b; /* was #9a6a1e — 3.80–4.15:1 as text color, under WCAG's 4.5:1 minimum */
+  --ok: #357445; /* was #3f8a52 — 3.72:1, under WCAG's 4.5:1 minimum */
+  --warn: #8a5f1b; /* was #9a6a1e — see --gold above (same value, same fix) */
   --error: #b03a3a;
   --on-accent: #fbf6ea;
 }

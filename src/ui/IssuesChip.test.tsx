@@ -48,4 +48,22 @@ describe("IssuesChip", () => {
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
+
+  it("is a proper modal: moves focus in on open, traps it, and returns it to the toggle on close", () => {
+    render(<IssuesChip issues={[warning]} />);
+    const toggle = screen.getByRole("button", { name: "Validation issues" });
+    toggle.focus();
+
+    fireEvent.click(toggle);
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    const closeBtn = screen.getByRole("button", { name: "Close" });
+    expect(document.activeElement).toBe(closeBtn); // focus moved into the dialog
+
+    fireEvent.keyDown(closeBtn, { key: "Tab" }); // single focusable: Tab stays put (trapped)
+    expect(document.activeElement).toBe(closeBtn);
+
+    fireEvent.click(closeBtn);
+    expect(document.activeElement).toBe(toggle); // focus restored to whatever opened it
+  });
 });

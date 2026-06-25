@@ -245,6 +245,9 @@ const en = {
   "issues.proficiencyBonusMismatch": "Proficiency bonus {override} disagrees with the derived {derived} for level {level}",
   "issues.resourceOverspent": "{label}: current uses ({current}) exceed the max ({max})",
   "issues.hpExceedsMax": "Current HP exceeds max + temporary",
+  // stepper
+  "stepper.decrease": "Decrease",
+  "stepper.increase": "Increase",
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -459,6 +462,8 @@ const it: Record<StringKey, string> = {
   "issues.proficiencyBonusMismatch": "Bonus competenza {override} diverso dal derivato {derived} per livello {level}",
   "issues.resourceOverspent": "{label}: usi correnti ({current}) maggiori del massimo ({max})",
   "issues.hpExceedsMax": "PF correnti superano massimi + temporanei",
+  "stepper.decrease": "Diminuisci",
+  "stepper.increase": "Aumenta",
 };
 
 const dict: Record<Locale, Record<StringKey, string>> = { en, it };
