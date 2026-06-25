@@ -16,6 +16,8 @@ import {
 import { useT, type TFn } from "./i18n/useI18n";
 import { SettingsButton, SettingsPage } from "./ui/SettingsMenu";
 import { PromptsButton, PromptsPage } from "./ui/PromptsPage";
+import { DicePalette } from "./ui/DicePalette";
+import { DiceCanvas } from "./ui/dice/DiceCanvas";
 import { Toasts } from "./ui/Toasts";
 import { useToast } from "./ui/useToast";
 import warlock from "../characters/example-warlock/character.json";
@@ -221,6 +223,7 @@ export function App() {
                     {t("app.export")}
                   </button>
                 )}
+                <DicePalette />
                 <PromptsButton onClick={() => setOverlay("prompts")} />
                 <SettingsButton onClick={() => setOverlay("settings")} />
               </>
@@ -293,6 +296,7 @@ export function App() {
         </footer>
       )}
 
+      <DiceCanvas />
       <Toasts />
     </div>
   );
