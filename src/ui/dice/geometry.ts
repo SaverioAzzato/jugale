@@ -67,8 +67,11 @@ function extractFaces(geo: THREE.BufferGeometry): Face[] {
 function trapezohedron(): THREE.BufferGeometry {
   const n = 5;
   const R = 1;
-  const yRing = 0.18;
-  const apex = 1.02;
+  const apex = 1.05;
+  // Each kite face spans the apex + 3 consecutive ring points (2 near, 1 far). Those 4
+  // points are only coplanar (a flat kite, not a creased one) at this exact apex:ring-offset
+  // ratio — derived from the ring's angular step (π/n) via the kite's symmetry plane.
+  const yRing = apex * (1 - Math.cos(Math.PI / n)) / (1 + Math.cos(Math.PI / n));
   const top = new THREE.Vector3(0, apex, 0);
   const bot = new THREE.Vector3(0, -apex, 0);
   const ring: THREE.Vector3[] = [];
@@ -84,7 +87,10 @@ function trapezohedron(): THREE.BufferGeometry {
     tri(p0, p2, p3);
   };
   const at = (i: number) => ring[((i % (2 * n)) + 2 * n) % (2 * n)];
-  for (let k = 0; k < n; k++) quad(top, at(2 * k), at(2 * k + 1), at(2 * k + 2));
+  // Reversed vertex order on the top fan vs. the bottom: the two apexes face opposite
+  // ways, so winding has to flip too or the top faces point inward and silently merge
+  // with the bottom ones in extractFaces (same normal direction, one face group lost).
+  for (let k = 0; k < n; k++) quad(top, at(2 * k + 2), at(2 * k + 1), at(2 * k));
   for (let k = 0; k < n; k++) quad(bot, at(2 * k + 1), at(2 * k + 2), at(2 * k + 3));
   const geo = new THREE.BufferGeometry();
   geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
@@ -94,8 +100,6 @@ function trapezohedron(): THREE.BufferGeometry {
 
 function baseGeometry(sides: number): { geo: THREE.BufferGeometry; edgeThreshold: number } {
   switch (sides) {
-    case 4:
-      return { geo: new THREE.TetrahedronGeometry(1), edgeThreshold: 1 };
     case 6:
       return { geo: new THREE.BoxGeometry(1.18, 1.18, 1.18), edgeThreshold: 1 };
     case 8:
@@ -160,8 +164,131 @@ function drawNumber(ctx: CanvasRenderingContext2D, text: string, color: string):
   }
 }
 
+/**
+ * A real d4 doesn't show its result on a face toward the viewer — it lands face-down and
+ * the result is read at the top point, where each of the 3 visible faces prints the same
+ * number in its corner. So every vertex gets one fixed number, stamped at that corner on
+ * each of the 3 faces touching it, and "rolling" just turns the matching vertex to face up.
+ */
+function buildD4(result: number, theme: ThemeColors): DieObject {
+  const SIZE = 1.05;
+  const verts = [
+    new THREE.Vector3(1, 1, 1),
+    new THREE.Vector3(1, -1, -1),
+    new THREE.Vector3(-1, 1, -1),
+    new THREE.Vector3(-1, -1, 1),
+  ].map((v) => v.normalize().multiplyScalar(SIZE));
+
+  const faces = [0, 1, 2, 3].map((omit) => {
+    let [a, b, c] = [0, 1, 2, 3].filter((i) => i !== omit);
+    const A = verts[a];
+    const B = verts[b];
+    const C = verts[c];
+    const center = new THREE.Vector3().add(A).add(B).add(C).divideScalar(3);
+    const normal = new THREE.Vector3().crossVectors(B.clone().sub(A), C.clone().sub(A)).normalize();
+    if (normal.dot(center) < 0) {
+      [b, c] = [c, b];
+      normal.negate();
+    }
+    return { idx: [a, b, c] as [number, number, number], center, normal };
+  });
+
+  const positions: number[] = [];
+  faces.forEach((f) => {
+    const [a, b, c] = f.idx;
+    positions.push(...verts[a].toArray(), ...verts[b].toArray(), ...verts[c].toArray());
+  });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.computeVertexNormals();
+  geo.computeBoundingSphere();
+  const radius = geo.boundingSphere?.radius ?? SIZE;
+
+  const group = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(theme.body),
+    roughness: 0.5,
+    metalness: 0.18,
+    flatShading: true,
+    side: THREE.DoubleSide,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
+  });
+  group.add(new THREE.Mesh(geo, bodyMat));
+
+  const edgeMat = new THREE.LineBasicMaterial({ color: new THREE.Color(theme.edge) });
+  const edgeGeo = new THREE.EdgesGeometry(geo, 1);
+  group.add(new THREE.LineSegments(edgeGeo, edgeMat));
+
+  // One canvas per vertex value — reused at every corner where that vertex appears.
+  const vertexLabels = [1, 2, 3, 4].map((n) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 96;
+    const ctx = canvas.getContext("2d");
+    if (ctx) drawNumber(ctx, String(n), theme.num);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.anisotropy = 4;
+    return { ctx, tex, text: String(n) };
+  });
+
+  const labelGeos: THREE.BufferGeometry[] = [];
+  faces.forEach((f) => {
+    const cornerSize = f.center.distanceTo(verts[f.idx[0]]) * 0.5;
+    f.idx.forEach((vi) => {
+      const V = verts[vi];
+      // Numbers point outward, top toward their own corner — matches how real d4s print them.
+      const outward = V.clone().sub(f.center).normalize();
+      const z = f.normal;
+      const x = new THREE.Vector3().crossVectors(outward, z).normalize();
+      const y = new THREE.Vector3().crossVectors(z, x).normalize();
+      const pg = new THREE.PlaneGeometry(cornerSize, cornerSize);
+      labelGeos.push(pg);
+      const mat = new THREE.MeshBasicMaterial({ map: vertexLabels[vi].tex, transparent: true, depthWrite: false });
+      const plane = new THREE.Mesh(pg, mat);
+      plane.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+      plane.position.copy(f.center).lerp(V, 0.62).addScaledVector(z, radius * 0.02);
+      plane.renderOrder = 1;
+      group.add(plane);
+    });
+  });
+
+  // Orientation that turns the result's vertex toward the camera (the visible "up" point).
+  const heroVertex = verts[result - 1].clone().normalize();
+  const tz = HERO_DIR.clone();
+  const wup = Math.abs(tz.y) > 0.92 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0);
+  const tx = new THREE.Vector3().crossVectors(wup, tz).normalize();
+  const ty = new THREE.Vector3().crossVectors(tz, tx).normalize();
+  const mTarget = new THREE.Matrix4().makeBasis(tx, ty, tz);
+  const mLocal = labelBasis(heroVertex);
+  const targetQuat = new THREE.Quaternion()
+    .setFromRotationMatrix(mTarget)
+    .multiply(new THREE.Quaternion().setFromRotationMatrix(mLocal).invert());
+
+  const applyTheme = (t: ThemeColors) => {
+    bodyMat.color.set(t.body);
+    edgeMat.color.set(t.edge);
+    vertexLabels.forEach((l) => {
+      if (l.ctx) drawNumber(l.ctx, l.text, t.num);
+      l.tex.needsUpdate = true;
+    });
+  };
+
+  const dispose = () => {
+    geo.dispose();
+    bodyMat.dispose();
+    edgeGeo.dispose();
+    edgeMat.dispose();
+    labelGeos.forEach((g) => g.dispose());
+    vertexLabels.forEach((l) => l.tex.dispose());
+  };
+
+  return { group, targetQuat, radius, applyTheme, dispose };
+}
+
 /** Build a themed 3D die already oriented to show `result`. */
 export function makeDie(sides: number, result: number, theme: ThemeColors): DieObject {
+  if (sides === 4) return buildD4(result, theme);
   const { geo, edgeThreshold } = baseGeometry(sides);
   geo.computeBoundingSphere();
   const radius = geo.boundingSphere?.radius ?? 1;
