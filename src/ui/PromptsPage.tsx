@@ -21,7 +21,13 @@ import { useToast } from "./useToast";
 export function PromptsButton({ onClick }: { onClick: () => void }) {
   const t = useT();
   return (
-    <button type="button" className="btn btn-icon" aria-label={t("prompts.title")} onClick={onClick}>
+    <button
+      type="button"
+      className="btn btn-icon"
+      aria-label={t("prompts.title")}
+      data-overlay-trigger="prompts"
+      onClick={onClick}
+    >
       <svg viewBox="0 0 24 24" width="24" height="24" className="settings-icon" aria-hidden="true" focusable="false">
         <path
           fill="currentColor"
@@ -140,9 +146,12 @@ function SegmentEditors({
   return (
     <>
       <div className="prompt-block">
-        <h3 className="prompt-edit-label">{t("prompts.editBaseIntro")}</h3>
+        <h3 className="prompt-edit-label" id="prompt-edit-label-base-intro">
+          {t("prompts.editBaseIntro")}
+        </h3>
         <textarea
           className="prompt-edit-area"
+          aria-labelledby="prompt-edit-label-base-intro"
           value={draft.baseIntro}
           onChange={(e) => setDraft((d) => ({ ...d, baseIntro: e.target.value }))}
         />
@@ -150,9 +159,12 @@ function SegmentEditors({
         <p className="prompt-locked-note">{t("prompts.lockedHeader")}</p>
         <pre className="prompt-text prompt-locked">{composeHeader(params)}</pre>
 
-        <h3 className="prompt-edit-label">{t("prompts.editBaseContract")}</h3>
+        <h3 className="prompt-edit-label" id="prompt-edit-label-base-contract">
+          {t("prompts.editBaseContract")}
+        </h3>
         <textarea
           className="prompt-edit-area"
+          aria-labelledby="prompt-edit-label-base-contract"
           value={draft.baseContract}
           onChange={(e) => setDraft((d) => ({ ...d, baseContract: e.target.value }))}
         />
@@ -160,13 +172,15 @@ function SegmentEditors({
 
       {taskIds.map((id) => {
         const def = PROMPTS.find((p) => p.id === id)!;
+        const labelId = `prompt-edit-label-task-${id}`;
         return (
           <div className="prompt-block" key={id}>
-            <h3 className="prompt-edit-label">
+            <h3 className="prompt-edit-label" id={labelId}>
               {t(def.titleKey)} <span className="muted">— {t("prompts.editTaskHint")}</span>
             </h3>
             <textarea
               className="prompt-edit-area"
+              aria-labelledby={labelId}
               value={draft.tasks[id]}
               onChange={(e) => setDraft((d) => ({ ...d, tasks: { ...d.tasks, [id]: e.target.value } }))}
             />
@@ -237,12 +251,14 @@ export function PromptsPage() {
                 className="prompts-input"
                 value={g.name}
                 placeholder={t("prompts.guideName")}
+                aria-label={t("prompts.guideName")}
                 onChange={(e) => updateGuide(i, { name: e.target.value })}
               />
               <input
                 className="prompts-input"
                 value={g.url ?? ""}
                 placeholder={t("prompts.guideUrl")}
+                aria-label={t("prompts.guideUrl")}
                 onChange={(e) => updateGuide(i, { url: e.target.value })}
               />
               <button

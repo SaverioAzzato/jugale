@@ -9,7 +9,13 @@ const TOAST_OPTIONS = [5, 10, 15, 20, 0];
 export function SettingsButton({ onClick }: { onClick: () => void }) {
   const t = useT();
   return (
-    <button type="button" className="btn btn-icon" aria-label={t("settings.title")} onClick={onClick}>
+    <button
+      type="button"
+      className="btn btn-icon"
+      aria-label={t("settings.title")}
+      data-overlay-trigger="settings"
+      onClick={onClick}
+    >
       <svg
         viewBox="0 0 24 24"
         width="24"

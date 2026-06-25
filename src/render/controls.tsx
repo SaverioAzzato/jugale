@@ -1,6 +1,7 @@
 /** Small interactive primitives for live play-state editing. */
 
 import { useRef, useCallback } from "react";
+import { useT } from "../i18n/useI18n";
 
 /** Fires `cb` immediately, then repeatedly after a delay + interval while held.
  *  Uses a ref so the interval always sees the latest `cb` (avoids stale closures).
@@ -45,6 +46,7 @@ export function Stepper({
   /** Render the cap as `value/max` inside the control (only the current value is highlighted). */
   showMax?: boolean;
 }) {
+  const t = useT();
   // Return false at the bound so a held button stops instead of running past it.
   const dec = useHoldRepeat(() => {
     if (value <= min) return false;
@@ -55,13 +57,24 @@ export function Stepper({
     onChange(value + 1);
   });
 
+  // Mouse/touch already step via start()/stop() above. Keyboard activation (Enter/Space)
+  // only fires a `click` — with no mousedown/touchstart, it would otherwise do nothing.
+  // event.detail is 0 for a keyboard-triggered click and >=1 for a real pointer click, so
+  // this only fires the missing keyboard path; start()+stop() synchronously cancels the
+  // pending hold-repeat before it can schedule, leaving exactly one step.
+  const onKeyboardClick = (repeat: ReturnType<typeof useHoldRepeat>) => (e: React.MouseEvent) => {
+    if (e.detail !== 0) return;
+    repeat.start();
+    repeat.stop();
+  };
+
   return (
     <span className="stepper" role="group" aria-label={label}>
       <button
         type="button"
         className="stepper-btn"
         disabled={value <= min}
-        aria-label="meno"
+        aria-label={t("stepper.decrease")}
         onMouseDown={dec.start}
         onMouseUp={dec.stop}
         onMouseLeave={dec.stop}
@@ -70,6 +83,7 @@ export function Stepper({
           dec.start();
         }}
         onTouchEnd={dec.stop}
+        onClick={onKeyboardClick(dec)}
       >
         −
       </button>
@@ -81,7 +95,7 @@ export function Stepper({
         type="button"
         className="stepper-btn"
         disabled={max != null && value >= max}
-        aria-label="più"
+        aria-label={t("stepper.increase")}
         onMouseDown={inc.start}
         onMouseUp={inc.stop}
         onMouseLeave={inc.stop}
@@ -90,6 +104,7 @@ export function Stepper({
           inc.start();
         }}
         onTouchEnd={inc.stop}
+        onClick={onKeyboardClick(inc)}
       >
         +
       </button>
