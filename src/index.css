@@ -1223,8 +1223,8 @@ a {
 }
 .empty-samples {
   display: grid;
-  grid-template-columns: repeat(3, minmax(96px, 1fr));
-  justify-items: center;
+  grid-template-columns: repeat(3, minmax(96px, max-content));
+  justify-content: center;
   gap: 8px;
   margin-top: 14px;
   font-size: 13px;
@@ -1248,7 +1248,7 @@ a {
 
 @media (max-width: 640px) {
   .empty-samples {
-    grid-template-columns: repeat(2, minmax(96px, 1fr));
+    grid-template-columns: repeat(2, minmax(96px, max-content));
   }
 }
 
