@@ -89,9 +89,14 @@ interface CharacterState {
   liveSync: boolean;
   dirty: boolean;
   saveError: string | null;
+  /** A live-synced file/folder whose last write failed: sync is given up so we don't keep
+   *  failing silently — surfaced as a read-only badge, with Export as the way to keep changes. */
+  readOnly: boolean;
 
-  /** Load into memory only (sample / import) — edits are kept until exported. */
-  loadRaw: (raw: unknown, sourceName?: string, images?: GalleryImage[]) => void;
+  /** Load into memory only (sample / import) — edits are kept until exported. `readOnly`
+   *  flags a real file/folder that this host simply can't write back to live (the no-write
+   *  fallback import), so the UI warns up front instead of waiting for a write to fail. */
+  loadRaw: (raw: unknown, sourceName?: string, images?: GalleryImage[], readOnly?: boolean) => void;
   /** Connect a live file/folder: edits are written back (debounced). */
   connect: (
     provider: StorageProvider,
@@ -142,7 +147,10 @@ export const useCharacter = create<CharacterState>((set, get) => {
         await provider.write(character);
         set({ dirty: false, saveError: null });
       } catch (e) {
-        set({ saveError: e instanceof Error ? e.message : String(e) });
+        const message = e instanceof Error ? e.message : String(e);
+        const locale = useI18n.getState().locale;
+        useToast.getState().push("error", translate(locale, "toast.saveFailed"), message);
+        set({ saveError: message, liveSync: false, readOnly: true });
       }
     }, 250);
   };
@@ -216,8 +224,9 @@ export const useCharacter = create<CharacterState>((set, get) => {
     liveSync: false,
     dirty: false,
     saveError: null,
+    readOnly: false,
 
-    loadRaw: (raw, sourceName = "", images = []) => {
+    loadRaw: (raw, sourceName = "", images = [], readOnly = false) => {
       const r = loadCharacter(raw);
       revokeImages(get().images);
       set({
@@ -228,6 +237,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
         liveSync: false,
         dirty: false,
         saveError: null,
+        readOnly,
       });
     },
 
@@ -242,6 +252,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
         liveSync: true,
         dirty: false,
         saveError: null,
+        readOnly: false,
       });
     },
 
@@ -265,6 +276,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
         liveSync: false,
         dirty: false,
         saveError: null,
+        readOnly: false,
       });
     },
 

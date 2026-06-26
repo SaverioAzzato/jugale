@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { App } from "./App";
 import { useCharacter } from "./state/store";
 
@@ -47,5 +47,18 @@ describe("App — empty state + live editing wiring", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("heading", { name: /Your character, always yours/i })).toBeInTheDocument();
+  });
+
+  it("shows a read-only badge with an export shortcut once live sync has failed", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
+    expect(screen.queryByText("Read-only")).not.toBeInTheDocument();
+
+    act(() => useCharacter.setState({ readOnly: true, saveError: "boom" }));
+    expect(screen.getByText("Read-only")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Export to save" })).toBeInTheDocument();
+    // The gray sync status is replaced, not duplicated, by the read-only badge.
+    expect(screen.queryByText("In memory")).not.toBeInTheDocument();
+    expect(screen.queryByText("Unexported changes")).not.toBeInTheDocument();
   });
 });
