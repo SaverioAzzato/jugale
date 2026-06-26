@@ -171,6 +171,36 @@ a {
 .prompts-page {
   max-width: 760px;
 }
+.help-page {
+  max-width: 760px;
+}
+.btn.help-button {
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+}
+.help-schema-list {
+  margin: 14px 0 0;
+}
+.help-schema-item {
+  margin-bottom: 14px;
+}
+.help-schema-item dt code {
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-weak);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.help-schema-item dd {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+}
 .prompts-banner {
   margin: 0 0 14px;
   padding: 10px 14px;
@@ -1163,19 +1193,41 @@ a {
   gap: 10px;
   margin: 20px 0 8px;
 }
+.empty-samples-disclosure {
+  max-width: 520px;
+  width: 100%;
+  margin-top: 22px;
+  text-align: center;
+}
+.empty-samples-disclosure summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--dim);
+  list-style: none;
+}
+.empty-samples-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+.empty-samples-disclosure summary .caret {
+  width: 14px;
+  height: 14px;
+}
+.empty-samples-disclosure[open] summary .caret {
+  transform: rotate(90deg);
+}
+.empty-samples-disclosure summary:hover {
+  color: var(--muted);
+}
 .empty-samples {
   display: grid;
   grid-template-columns: repeat(3, minmax(96px, 1fr));
   justify-items: center;
   gap: 8px;
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px solid var(--border);
+  margin-top: 14px;
   font-size: 13px;
-}
-.empty-samples-label {
-  grid-column: 1 / -1;
-  margin-bottom: 4px;
 }
 .sample-grid-item {
   width: 100%;

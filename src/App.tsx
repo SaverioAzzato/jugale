@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useCharacter } from "./state/store";
 import { Sheet } from "./render/Sheet";
 import { getVisibleTabs } from "./render/tabs";
+import { Caret } from "./render/primitives";
 import {
   isFileAccessSupported,
   isDirectoryAccessSupported,
@@ -17,6 +18,7 @@ import { isTauri, openCharacterFileTauri, openCharacterFolderTauri } from "./sto
 import { useT, type TFn } from "./i18n/useI18n";
 import { SettingsButton, SettingsPage } from "./ui/SettingsMenu";
 import { PromptsButton, PromptsPage } from "./ui/PromptsPage";
+import { HelpButton, HelpPage } from "./ui/HelpPage";
 import { DicePalette } from "./ui/DicePalette";
 import { IssuesChip } from "./ui/IssuesChip";
 import { DiceCanvas } from "./ui/dice/DiceCanvas";
@@ -81,7 +83,7 @@ export function App() {
   }, []);
 
   const [activeTab, setActiveTab] = useState("gioco");
-  const [overlay, setOverlay] = useState<"settings" | "prompts" | null>(null);
+  const [overlay, setOverlay] = useState<"settings" | "prompts" | "help" | null>(null);
   const overlayBackRef = useRef<HTMLButtonElement>(null);
 
   // Settings/Prompts are full-page overlays, not floating popovers — nothing else behind
@@ -236,7 +238,7 @@ export function App() {
             )}
             {overlay && (
               <span className="toolbar-title">
-                {t(overlay === "settings" ? "settings.title" : "prompts.title")}
+                {t(overlay === "settings" ? "settings.title" : overlay === "prompts" ? "prompts.title" : "help.title")}
               </span>
             )}
           </div>
@@ -248,6 +250,7 @@ export function App() {
                     {t("app.export")}
                   </button>
                 )}
+                {!character && <HelpButton onClick={() => setOverlay("help")} />}
                 <DicePalette />
                 <PromptsButton onClick={() => setOverlay("prompts")} />
                 <SettingsButton onClick={() => setOverlay("settings")} />
@@ -288,6 +291,8 @@ export function App() {
         <SettingsPage />
       ) : overlay === "prompts" ? (
         <PromptsPage />
+      ) : overlay === "help" ? (
+        <HelpPage />
       ) : character ? (
         <Sheet c={character} tab={tab} />
       ) : (
@@ -348,7 +353,6 @@ function EmptyState({
       <div className="empty-brand">:JUGALE</div>
       <div className="empty-card">
         <h1>{t("empty.title")}</h1>
-        <p className="muted">{t("empty.body")}</p>
         <div className="empty-actions">
           <button className="btn btn-primary" onClick={onOpenFolder}>
             {t("app.openFolder")}
@@ -357,8 +361,13 @@ function EmptyState({
             {t("app.open")}
           </button>
         </div>
+      </div>
+      <details className="empty-samples-disclosure">
+        <summary>
+          <Caret open={false} />
+          {t("empty.tryExample")}
+        </summary>
         <div className="empty-samples">
-          <span className="muted empty-samples-label">{t("empty.tryExample")}</span>
           {SAMPLES.map((s) => (
             <button
               key={s.key}
@@ -369,7 +378,7 @@ function EmptyState({
             </button>
           ))}
         </div>
-      </div>
+      </details>
     </div>
   );
 }

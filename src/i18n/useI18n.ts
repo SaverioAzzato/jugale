@@ -27,8 +27,7 @@ const en = {
   "app.invalidJson": "Invalid JSON file.",
   "app.noCharacterJson": "No character.json found in that folder.",
   "empty.title": "Your character, always yours.",
-  "empty.body": "Open a character folder (character.json + images), or a single character.json.",
-  "empty.tryExample": "Or try an example",
+  "empty.tryExample": "Try an example",
   "status.file": "File",
   "status.unnamed": "(unnamed)",
   "status.live": "Live sync",
@@ -77,7 +76,7 @@ const en = {
   // prompts page
   "prompts.title": "GPT prompts",
   "prompts.banner": "Only use SRD content, or content whose terms of use permit free and automated/AI access. Don't point a chatbot at sources that prohibit scraping. You're responsible for using your chosen guides legally and within their terms.",
-  "prompts.intro": "Fill in the guides (and optionally a class/race focus), then copy one of the prompts into any chatbot (ChatGPT, Claude, etc.) to build, level up, or validate a character against this app's character.json contract. Prompts are kept in English so they work with any chatbot regardless of your interface language.",
+  "prompts.intro": "Fill in the parameters. This will auto-compile the prompts. (Optionally, manually modify the prompts through Edit.) Download the JSON Schema and feed it, together with the specific prompt you need (Base is just the foundation for the other prompts), into your favourite AI chatbot.",
   "prompts.params": "Parameters",
   "prompts.guides": "Reference guides",
   "prompts.guideName": "Guide name (e.g. SRD)",
@@ -248,6 +247,8 @@ const en = {
   // stepper
   "stepper.decrease": "Decrease",
   "stepper.increase": "Increase",
+  // help
+  "help.title": "How to use :JUGALE",
 } as const;
 
 export type StringKey = keyof typeof en;
@@ -263,8 +264,7 @@ const it: Record<StringKey, string> = {
   "app.invalidJson": "File JSON non valido.",
   "app.noCharacterJson": "Nessun character.json trovato nella cartella.",
   "empty.title": "Il tuo personaggio, sempre tuo.",
-  "empty.body": "Apri una cartella del personaggio (character.json + images), o un singolo character.json.",
-  "empty.tryExample": "Oppure prova un esempio",
+  "empty.tryExample": "Prova un esempio",
   "status.file": "File",
   "status.unnamed": "(senza nome)",
   "status.live": "Sync live",
@@ -309,7 +309,7 @@ const it: Record<StringKey, string> = {
   "settings.unitsMetric": "Metrico (m, kg)",
   "prompts.title": "Prompt per chatbot",
   "prompts.banner": "Usa solo contenuto SRD, o contenuto i cui termini d'uso consentono l'accesso libero e automatico/AI. Non puntare un chatbot a fonti che vietano lo scraping. Sei responsabile di usare le guide scelte legalmente e nei loro termini d'uso.",
-  "prompts.intro": "Compila le guide (e opzionalmente un focus su classe/razza), poi copia uno dei prompt in un chatbot qualsiasi (ChatGPT, Claude, ecc.) per costruire, far salire di livello o validare un personaggio secondo il contratto character.json di questa app. I prompt restano in inglese così funzionano con qualsiasi chatbot indipendentemente dalla lingua dell'interfaccia.",
+  "prompts.intro": "Compila i parametri: i prompt si aggiornano automaticamente. (Puoi anche modificarli a mano con Modifica.) Scarica lo JSON Schema e forniscilo, insieme al prompt specifico che ti serve (Base è solo la base su cui si costruiscono gli altri), al tuo chatbot AI preferito.",
   "prompts.params": "Parametri",
   "prompts.guides": "Guide di riferimento",
   "prompts.guideName": "Nome guida (es. SRD)",
@@ -464,6 +464,7 @@ const it: Record<StringKey, string> = {
   "issues.hpExceedsMax": "PF correnti superano massimi + temporanei",
   "stepper.decrease": "Diminuisci",
   "stepper.increase": "Aumenta",
+  "help.title": "Come usare :JUGALE",
 };
 
 const dict: Record<Locale, Record<StringKey, string>> = { en, it };
