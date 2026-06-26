@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useCharacter } from "./store";
+import { useToast } from "../ui/useToast";
+import type { StorageProvider } from "../storage/provider";
 import multiclass from "../../characters/example-multiclass/character.json";
 
 const c = () => useCharacter.getState().character!;
@@ -73,5 +75,37 @@ describe("store — live play mutations", () => {
     useCharacter.getState().setDeathSave("failures", 2);
     useCharacter.getState().setTempHp(3); // temp HP, current still 0
     expect(c().session.deathSaves.failures).toBe(2);
+  });
+});
+
+describe("store — live sync failure falls back to read-only", () => {
+  beforeEach(() => useCharacter.getState().loadRaw(multiclass, "test"));
+
+  it("drops liveSync, flags readOnly, and toasts when a write fails", async () => {
+    const failingProvider: StorageProvider = {
+      kind: "file",
+      read: async () => multiclass,
+      write: async () => {
+        throw new Error("boom");
+      },
+    };
+    useCharacter.getState().connect(failingProvider, multiclass, "test-file");
+    expect(useCharacter.getState().liveSync).toBe(true);
+    expect(useCharacter.getState().readOnly).toBe(false);
+
+    useCharacter.getState().heal(1); // any mutation schedules the debounced save
+    await new Promise((r) => setTimeout(r, 300)); // past the 250ms debounce
+
+    expect(useCharacter.getState().liveSync).toBe(false);
+    expect(useCharacter.getState().readOnly).toBe(true);
+    expect(useCharacter.getState().saveError).toBe("boom");
+    expect(useToast.getState().toasts.some((t) => t.kind === "error")).toBe(true);
+  });
+
+  it("loadRaw flags readOnly immediately when the host has no live-write fallback", () => {
+    useCharacter.getState().loadRaw(multiclass, "test-file", [], true);
+    expect(useCharacter.getState().readOnly).toBe(true);
+    expect(useCharacter.getState().liveSync).toBe(false);
+    expect(useCharacter.getState().saveError).toBe(null); // known up front, not a failure
   });
 });

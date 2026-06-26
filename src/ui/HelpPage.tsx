@@ -107,6 +107,7 @@ const CONTENT: Record<Locale, HelpContent> = {
     miscTitle: "A few other things worth knowing",
     miscItems: [
       "Live sync vs. export: if your browser or device can keep writing to your chosen folder live, changes save themselves; otherwise (or with a single JSON file) hit Export JSON to keep what you changed.",
+      "If live sync isn't possible — or it was working and a save then fails — the status bar switches to a yellow \"Read-only · Export to save\" notice. Nothing is lost: just hit Export to download your latest changes as JSON.",
       "Switch theme, language, or units anytime from Settings (the gear icon).",
       "The chip in the bottom-right corner, when it appears, flags validation issues — schema problems or 5e inconsistencies — without ever blocking you from playing.",
       "The dice icon rolls any of the 7 standard dice, independently of any character being loaded.",
@@ -184,6 +185,7 @@ const CONTENT: Record<Locale, HelpContent> = {
     miscTitle: "Qualche altra cosa utile da sapere",
     miscItems: [
       "Sync live vs esportazione: se il tuo browser o dispositivo può continuare a scrivere nella cartella scelta, le modifiche si salvano da sole; altrimenti (o con un singolo file JSON) usa Esporta JSON per non perdere quello che hai cambiato.",
+      "Se la sync live non è possibile — o era attiva e un salvataggio poi fallisce — la status bar passa all'avviso giallo \"Solo lettura · Esporta per salvare\". Non perdi nulla: basta premere Esporta per scaricare le ultime modifiche come JSON.",
       "Cambia tema, lingua o unità in qualsiasi momento da Impostazioni (l'icona dell'ingranaggio).",
       "Il chip in basso a destra, quando appare, segnala problemi di validazione — di schema o di coerenza con le regole 5e — senza mai impedirti di giocare.",
       "L'icona dei dadi lancia uno qualsiasi dei 7 dadi standard, indipendentemente da qualsiasi personaggio caricato.",

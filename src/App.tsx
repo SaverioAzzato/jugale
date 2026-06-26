@@ -57,7 +57,7 @@ const SAMPLES = [
 ];
 
 export function App() {
-  const { character, sourceName, images, liveSync, dirty, saveError, issues } = useCharacter(
+  const { character, sourceName, images, liveSync, dirty, saveError, readOnly, issues } = useCharacter(
     useShallow((s) => ({
       character: s.character,
       sourceName: s.sourceName,
@@ -65,6 +65,7 @@ export function App() {
       liveSync: s.liveSync,
       dirty: s.dirty,
       saveError: s.saveError,
+      readOnly: s.readOnly,
       issues: s.issues,
     })),
   );
@@ -111,6 +112,7 @@ export function App() {
     : (tabs[0]?.id ?? "gioco");
 
   // Warn before leaving with unsaved in-memory edits (live-synced files save themselves).
+  // Also covers a live sync that broke and fell back to read-only: liveSync flips false then.
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (dirty && !liveSync) {
@@ -163,7 +165,7 @@ export function App() {
     e.target.value = "";
     if (!file) return;
     try {
-      loadRaw(await importJsonFile(file), file.name);
+      loadRaw(await importJsonFile(file), file.name, [], true);
     } catch {
       useToast.getState().push("error", t("app.invalidJson"));
     }
@@ -177,7 +179,7 @@ export function App() {
     }
     try {
       const result = await importCharacterFolder(files);
-      loadRaw(result.raw, result.sourceName, result.images);
+      loadRaw(result.raw, result.sourceName, result.images, true);
     } catch (err) {
       const key = err instanceof Error && err.message === NO_CHARACTER_JSON ? "app.noCharacterJson" : "app.invalidJson";
       useToast.getState().push("error", t(key));
@@ -313,18 +315,22 @@ export function App() {
             <span className="statusbar-sep" aria-hidden>
               •
             </span>
-            <span className="statusbar-sync">
-              {liveSync ? t("status.live") : dirty ? t("status.unsaved") : t("status.memory")}
-            </span>
-            {saveError && (
+            {readOnly ? (
               <>
-                <span className="statusbar-sep" aria-hidden>
-                  •
+                <span
+                  className="statusbar-readonly"
+                  title={saveError ? `${t("status.saveError")}: ${saveError}` : t("status.readOnlyHint")}
+                >
+                  {t("status.readOnly")}
                 </span>
-                <span className="statusbar-error">
-                  {t("status.saveError")}: {saveError}
-                </span>
+                <button type="button" className="statusbar-export-link" onClick={exportCharacter}>
+                  {t("status.exportToSave")}
+                </button>
               </>
+            ) : (
+              <span className={liveSync ? "statusbar-sync is-live" : "statusbar-sync"}>
+                {liveSync ? t("status.live") : dirty ? t("status.unsaved") : t("status.memory")}
+              </span>
             )}
           </span>
           <IssuesChip issues={issues} />

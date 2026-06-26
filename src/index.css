@@ -1489,12 +1489,50 @@ input[type="number"] {
 .statusbar-sync {
   color: var(--muted);
 }
+.statusbar-sync.is-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ok);
+  font-weight: 600;
+}
+.statusbar-sync.is-live::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ok);
+  flex: none;
+}
 
-.statusbar-error {
-  color: var(--error);
+.statusbar-readonly {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--gold);
+  font-weight: 600;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+.statusbar-readonly::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  flex: none;
+}
+.statusbar-export-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--gold);
+  text-decoration: underline;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.statusbar-export-link:hover {
+  color: var(--text);
 }
 
 .issues-chip {
