@@ -23,4 +23,29 @@ describe("App — empty state + live editing wiring", () => {
     fireEvent.click(screen.getByText("Damage")); // default amount 1, en locale
     expect(hpCurrent()).toBe("37");
   });
+
+  it("collapses the sample characters into a closed disclosure by default", () => {
+    const { container } = render(<App />);
+    const details = container.querySelector(".empty-samples-disclosure");
+    expect(details).toBeInTheDocument();
+    expect(details).not.toHaveAttribute("open");
+    expect(screen.getByRole("button", { name: "Warlock" })).toBeInTheDocument(); // present in the DOM either way
+  });
+
+  it("shows the help button only on the welcome screen, not once a character is loaded", () => {
+    render(<App />);
+    expect(screen.getByRole("button", { name: "How to use :JUGALE" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
+    expect(screen.queryByRole("button", { name: "How to use :JUGALE" })).not.toBeInTheDocument();
+  });
+
+  it("opens the Help page with how-to content and returns to the welcome screen on Back", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "How to use :JUGALE" }));
+    expect(screen.getByText("What this app is")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("heading", { name: /Your character, always yours/i })).toBeInTheDocument();
+  });
 });
