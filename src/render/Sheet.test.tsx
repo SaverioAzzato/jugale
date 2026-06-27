@@ -14,10 +14,10 @@ const sheet = (raw: unknown, tab: string) => {
 describe("Sheet — header (always visible)", () => {
   it("shows name and a compact subtitle with class and derived proficiency", () => {
     const { container } = sheet(multiclass, "gioco");
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Esempio Multiclasse");
-    // Paladino 3 + Stregone 2 = level 5 → PB +3; default locale en → "Prof. +3"
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Example Multiclass");
+    // Paladin 3 + Sorcerer 2 = level 5 → PB +3; default locale en → "Prof. +3"
     expect(container.querySelector(".pb-chip")).toHaveTextContent("Prof. +3");
-    expect(container.querySelector(".subtitle")).toHaveTextContent("Paladino");
+    expect(container.querySelector(".subtitle")).toHaveTextContent("Paladin");
   });
 });
 
@@ -50,6 +50,6 @@ describe("Sheet — Scheda tab", () => {
 describe("Sheet — Storia tab", () => {
   it("renders custom sections by their layout", () => {
     sheet(multiclass, "storia");
-    expect(screen.getByText("Promemoria multiclasse")).toBeInTheDocument();
+    expect(screen.getByText("Multiclass reminders")).toBeInTheDocument();
   });
 });

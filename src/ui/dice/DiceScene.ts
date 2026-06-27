@@ -116,6 +116,7 @@ export class DiceScene {
     window.removeEventListener("pointerdown", this.onPointerDown, true);
     window.removeEventListener("pointermove", this.onPointerMove, true);
     window.removeEventListener("pointerup", this.onPointerUp, true);
+    window.removeEventListener("touchmove", this.onTouchMove, true);
     for (const e of this.entries) e.die.dispose();
     this.entries = [];
     this.renderer.dispose();
@@ -263,7 +264,17 @@ export class DiceScene {
     };
     window.addEventListener("pointermove", this.onPointerMove, true);
     window.addEventListener("pointerup", this.onPointerUp, true);
+    // On touch, the canvas is pointer-events:none so we can't rely on CSS touch-action to
+    // stop the page from scrolling under our finger — and once the browser starts a scroll it
+    // fires pointercancel and the drag dies. While a die is held, swallow touchmove (non-passive,
+    // so preventDefault actually works) to keep the gesture ours. No effect on mouse/pen drags.
+    window.addEventListener("touchmove", this.onTouchMove, { passive: false, capture: true });
     this.start();
+  };
+
+  /** While a die is being dragged, keep touch gestures from scrolling the sheet underneath. */
+  private onTouchMove = (e: TouchEvent): void => {
+    if (this.drag) e.preventDefault();
   };
 
   private onPointerMove = (e: PointerEvent): void => {
@@ -303,6 +314,7 @@ export class DiceScene {
   private onPointerUp = (e: PointerEvent): void => {
     window.removeEventListener("pointermove", this.onPointerMove, true);
     window.removeEventListener("pointerup", this.onPointerUp, true);
+    window.removeEventListener("touchmove", this.onTouchMove, true);
     const d = this.drag;
     this.drag = null;
     if (!d) return;

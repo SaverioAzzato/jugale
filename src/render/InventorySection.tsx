@@ -51,7 +51,7 @@ interface Indexed {
 function acNote(it: Item): string | null {
   if (!it.ac) return null;
   const parts: string[] = [];
-  if (it.ac.base != null) parts.push(`${it.ac.label || "CA"} ${it.ac.base}${it.ac.addDex ? " +Des" : ""}`);
+  if (it.ac.base != null) parts.push(`${it.ac.label || "AC"} ${it.ac.base}${it.ac.addDex ? " +Dex" : ""}`);
   if (it.ac.bonus) parts.push(`${it.ac.label || ""} ${it.ac.bonus >= 0 ? "+" : ""}${it.ac.bonus}`.trim());
   return parts.join(" · ") || null;
 }

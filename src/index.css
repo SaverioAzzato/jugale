@@ -29,19 +29,22 @@ a {
   background: var(--surface);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
+  /* On mobile (notch / status bar / gesture area) keep the toolbar clear of the system UI.
+     Pairs with viewport-fit=cover in index.html; resolves to 0 on every desktop browser. */
+  padding-top: env(safe-area-inset-top);
 }
 .toolbar {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 10px 20px;
+  padding: 10px max(20px, env(safe-area-inset-right)) 10px max(20px, env(safe-area-inset-left));
   flex-wrap: nowrap;
   overflow-x: auto;
 }
 .tabbar {
   display: flex;
   gap: 4px;
-  padding: 0 14px;
+  padding: 0 max(14px, env(safe-area-inset-right)) 0 max(14px, env(safe-area-inset-left));
   overflow-x: auto;
   border-top: 1px solid var(--border);
 }
@@ -66,7 +69,8 @@ a {
 }
 .app {
   min-height: 100vh;
-  padding-bottom: 34px;
+  /* clear the home indicator / gesture bar on mobile; 34px everywhere else */
+  padding-bottom: calc(34px + env(safe-area-inset-bottom));
 }
 .toolbar-right {
   margin-left: auto;

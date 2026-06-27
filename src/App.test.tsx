@@ -11,7 +11,7 @@ describe("App — empty state + live editing wiring", () => {
     expect(screen.getByRole("heading", { name: /Your character, always yours/i })).toBeInTheDocument(); // default locale: en
 
     fireEvent.click(screen.getByRole("button", { name: "Warlock" })); // empty-state sample chip
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Esempio Warlock");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Example Warlock");
   });
 
   it("applies damage to HP through the combat control", () => {

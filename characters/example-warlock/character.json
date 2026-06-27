@@ -1,9 +1,9 @@
 {
   "schemaVersion": "2.0.0",
   "meta": {
-    "name": "Esempio Warlock",
-    "player": "Da compilare",
-    "summary": "Tiefling Warlock — Patto del Tomo. Template v2 di esempio.",
+    "name": "Example Warlock",
+    "player": "To fill in",
+    "summary": "Tiefling Warlock — Pact of the Tome. Example v2 template.",
     "ruleset": ["SRD"],
     "tags": ["warlock", "example"]
   },
@@ -39,13 +39,13 @@
       { "id": "deception", "proficient": true },
       { "id": "investigation", "proficient": true }
     ],
-    "languages": ["Comune", "Infernale", "Abissale"],
-    "armor": ["Leggera"],
-    "weapons": ["Semplici"]
+    "languages": ["Common", "Infernal", "Abyssal"],
+    "armor": ["Light"],
+    "weapons": ["Simple"]
   },
-  "senses": ["Scurovisione 18 m"],
+  "senses": ["Darkvision 60 ft"],
   "defenses": {
-    "resistances": ["fuoco"],
+    "resistances": ["fire"],
     "immunities": [],
     "vulnerabilities": [],
     "conditionImmunities": []
@@ -59,7 +59,7 @@
   "resources": [
     {
       "id": "pact-slots",
-      "label": "Slot del Patto",
+      "label": "Pact Slots",
       "category": "spellSlot",
       "max": 2,
       "current": 2,
@@ -70,44 +70,44 @@
   ],
   "spellSections": [
     {
-      "id": "trucchetti",
-      "title": "Trucchetti",
+      "id": "cantrips",
+      "title": "Cantrips",
       "entries": [
         {
           "name": "Eldritch Blast",
           "link": "https://www.dndbeyond.com/spells/eldritch-blast",
           "level": "0",
-          "school": "Invocazione",
-          "castingTime": "1 azione",
+          "school": "Evocation",
+          "castingTime": "1 action",
           "range": "120 ft",
           "components": "V, S",
-          "duration": "Istantaneo",
+          "duration": "Instantaneous",
           "concentration": false,
-          "attack": "Attacco a distanza con incantesimo",
+          "attack": "Ranged spell attack",
           "defense": "—",
-          "effect": "1d10 danni da forza per raggio",
-          "description": "Scaglia un raggio di energia crepitante. Ai livelli 5/11/17 aggiunge raggi.",
-          "notes": "Con Agonizing Blast aggiungi il mod. CAR ai danni di ogni raggio."
+          "effect": "1d10 force damage per beam",
+          "description": "Hurl a beam of crackling energy. Adds beams at levels 5/11/17.",
+          "notes": "With Agonizing Blast, add your Cha mod to each beam's damage."
         }
       ]
     },
     {
-      "id": "livello-1-3",
-      "title": "Incantesimi (slot del patto, liv. 3)",
+      "id": "level-1-3",
+      "title": "Spells (pact slots, lvl 3)",
       "entries": [
         {
           "name": "Hex",
           "link": "https://www.dndbeyond.com/spells/hex",
           "level": "1",
-          "school": "Ammaliamento",
-          "castingTime": "1 bonus",
+          "school": "Enchantment",
+          "castingTime": "1 bonus action",
           "range": "90 ft",
           "components": "V, S, M",
-          "duration": "Concentrazione, 1 ora",
+          "duration": "Concentration, 1 hour",
           "concentration": true,
           "attack": "—",
           "defense": "—",
-          "effect": "+1d6 necrotici sugli attacchi al bersaglio; svantaggio a una caratteristica",
+          "effect": "+1d6 necrotic on attacks against the target; disadvantage on one ability",
           "notes": ""
         }
       ]
@@ -116,78 +116,78 @@
   "features": [
     {
       "id": "pact-of-the-tome",
-      "name": "Patto del Tomo",
+      "name": "Pact of the Tome",
       "source": "subclass",
       "level": 3,
       "link": "https://www.dndbeyond.com/sources/basic-rules/warlock#PactoftheTome",
-      "description": "Ottieni il Libro delle Ombre con tre trucchetti extra a tua scelta."
+      "description": "Gain the Book of Shadows with three extra cantrips of your choice."
     },
     {
       "id": "dark-ones-blessing",
-      "name": "Benedizione dell'Oscuro",
+      "name": "Dark One's Blessing",
       "source": "subclass",
       "level": 1,
-      "description": "Quando riduci a 0 PF una creatura ostile, ottieni PF temporanei pari a CAR + livello da warlock."
+      "description": "When you reduce a hostile creature to 0 HP, gain temp HP equal to Cha mod + warlock level."
     },
     {
       "id": "inv-agonizing-blast",
       "name": "Agonizing Blast",
       "source": "class",
       "link": "https://www.dndbeyond.com/sources/basic-rules/warlock#EldritchInvocations",
-      "description": "Invocazione Occulta: aggiungi il mod. CAR ai danni di ogni raggio di Eldritch Blast."
+      "description": "Eldritch Invocation: add your Cha mod to each beam of Eldritch Blast."
     },
     {
       "id": "inv-devils-sight",
       "name": "Devil's Sight",
       "source": "class",
-      "description": "Invocazione Occulta: vedi nell'oscurità (anche magica) entro 36 m."
+      "description": "Eldritch Invocation: see in darkness (even magical) within 120 ft."
     },
     {
       "id": "inv-book-of-ancient-secrets",
       "name": "Book of Ancient Secrets",
       "source": "class",
-      "description": "Invocazione Occulta: annota e lancia rituali nel Libro delle Ombre."
+      "description": "Eldritch Invocation: record and cast rituals in your Book of Shadows."
     }
   ],
   "inventory": {
     "items": [
-      { "id": "potion-healing", "name": "Pozione di guarigione", "link": "https://www.dndbeyond.com/magic-items/potion-of-healing", "quantity": 3, "category": "consumable", "equippable": false, "notes": "2d4+2 PF" },
-      { "id": "leather-armor", "name": "Armatura di cuoio", "category": "armor", "quantity": 1, "equipped": true,
-        "ac": { "base": 11, "addDex": true, "dexCap": null, "bonus": 0, "label": "cuoio" } },
-      { "id": "dagger", "name": "Pugnale", "link": "https://www.dndbeyond.com/equipment/dagger", "category": "weapon", "quantity": 2, "equipped": true,
+      { "id": "potion-healing", "name": "Potion of healing", "link": "https://www.dndbeyond.com/magic-items/potion-of-healing", "quantity": 3, "category": "consumable", "equippable": false, "notes": "2d4+2 HP" },
+      { "id": "leather-armor", "name": "Leather armor", "category": "armor", "quantity": 1, "equipped": true,
+        "ac": { "base": 11, "addDex": true, "dexCap": null, "bonus": 0, "label": "leather" } },
+      { "id": "dagger", "name": "Dagger", "link": "https://www.dndbeyond.com/equipment/dagger", "category": "weapon", "quantity": 2, "equipped": true,
         "attacks": [
-          { "label": "Mischia", "range": "Mischia", "attack": "1d20 +5", "effect": "1d4+3 perforanti" },
-          { "label": "Lancio", "range": "6/18 m", "attack": "1d20 +5", "effect": "1d4+3 perforanti", "notes": "Arma da lancio (finezza)" }
+          { "label": "Melee", "range": "Melee", "attack": "1d20 +5", "effect": "1d4+3 piercing" },
+          { "label": "Thrown", "range": "20/60 ft", "attack": "1d20 +5", "effect": "1d4+3 piercing", "notes": "Thrown weapon (finesse)" }
         ] },
-      { "id": "shortsword", "name": "Spada corta", "link": "https://www.dndbeyond.com/equipment/shortsword", "category": "weapon", "quantity": 1, "equipped": false,
-        "attacks": [ { "label": "Mischia", "range": "Mischia", "attack": "1d20 +5", "effect": "1d6+3 perforanti" } ] },
-      { "id": "book-of-shadows", "name": "Libro delle Ombre", "quantity": 1, "equipped": true }
+      { "id": "shortsword", "name": "Shortsword", "link": "https://www.dndbeyond.com/equipment/shortsword", "category": "weapon", "quantity": 1, "equipped": false,
+        "attacks": [ { "label": "Melee", "range": "Melee", "attack": "1d20 +5", "effect": "1d6+3 piercing" } ] },
+      { "id": "book-of-shadows", "name": "Book of Shadows", "quantity": 1, "equipped": true }
     ],
     "currencies": { "pp": 0, "gp": 120, "ep": 0, "sp": 5, "cp": 0 },
-    "notes": ["Focus arcano: il Libro delle Ombre."]
+    "notes": ["Arcane focus: the Book of Shadows."]
   },
   "origin": {
     "raceTraits": [
-      { "name": "Eredità Infernale", "description": "Conosci il trucchetto Thaumaturgy." }
+      { "name": "Infernal Legacy", "description": "You know the Thaumaturgy cantrip." }
     ],
-    "backgroundFeature": { "name": "Ricercatore", "description": "Sai dove e da chi ottenere informazioni." }
+    "backgroundFeature": { "name": "Researcher", "description": "You know where and from whom to get information." }
   },
   "narrative": {
-    "personality": ["Curioso fino all'incoscienza."],
-    "ideals": ["La conoscenza è potere."],
-    "bonds": ["Devo tutto al mio patrono."],
-    "flaws": ["Non resisto a un segreto."],
-    "appearance": ["Corna ricurve, occhi ambrati."],
-    "backstory": ["Ha stretto un patto in cambio di sapere proibito."],
+    "personality": ["Curious to the point of recklessness."],
+    "ideals": ["Knowledge is power."],
+    "bonds": ["I owe everything to my patron."],
+    "flaws": ["I can't resist a secret."],
+    "appearance": ["Curved horns, amber eyes."],
+    "backstory": ["Struck a pact in exchange for forbidden knowledge."],
     "notes": []
   },
   "customSections": [],
   "actions": [
     {
       "id": "spend-hit-die",
-      "label": "Spendi Dado Vita",
+      "label": "Spend Hit Die",
       "kind": "custom",
-      "info": "Recupera 1d8 + mod. Costituzione, consumando un Dado Vita.",
+      "info": "Regain 1d8 + Con mod, spending one Hit Die.",
       "formulas": [
         "combat.hp.current = combat.hp.current + 1d8 + abilities.con.mod",
         "combat.hp.hitDiceRemaining = combat.hp.hitDiceRemaining - 1"
@@ -195,9 +195,9 @@
     },
     {
       "id": "dark-blessing-temp",
-      "label": "Benedizione dell'Oscuro",
+      "label": "Dark One's Blessing",
       "kind": "custom",
-      "info": "PF temporanei = CAR + livello da warlock (quando abbatti un nemico).",
+      "info": "Temp HP = Cha mod + warlock level (when you down an enemy).",
       "formulas": ["combat.hp.temp = abilities.cha.mod + level"]
     }
   ],

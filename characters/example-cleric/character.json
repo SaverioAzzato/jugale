@@ -1,14 +1,14 @@
 {
   "schemaVersion": "2.0.0",
   "meta": {
-    "name": "Esempio Cleric",
-    "summary": "Nano Chierico (Dominio della Vita) — incantatore preparato, slot multipli, Channel Divinity.",
+    "name": "Example Cleric",
+    "summary": "Hill Dwarf Cleric (Life Domain) — prepared caster, multiple slot levels, Channel Divinity.",
     "tags": ["cleric", "example", "prepared-caster"]
   },
-  "identity": { "race": "Nano delle Colline", "background": "Acolyte", "alignment": "LB" },
+  "identity": { "race": "Hill Dwarf", "background": "Acolyte", "alignment": "LG" },
   "classes": [
     {
-      "name": "Chierico", "subclass": "Dominio della Vita", "level": 5, "hitDie": "d8",
+      "name": "Cleric", "subclass": "Life Domain", "level": 5, "hitDie": "d8",
       "link": "https://www.dndbeyond.com/classes/cleric",
       "spellcasting": { "ability": "wis", "type": "prepared", "slotProgression": "full" }
     }
@@ -27,62 +27,62 @@
       { "id": "religion", "proficient": true },
       { "id": "insight", "proficient": true }
     ],
-    "armor": ["Leggera", "Media", "Scudi"],
-    "weapons": ["Semplici"],
-    "languages": ["Comune", "Nanico", "Celestiale"]
+    "armor": ["Light", "Medium", "Shields"],
+    "weapons": ["Simple"],
+    "languages": ["Common", "Dwarvish", "Celestial"]
   },
   "combat": {
     "armorClass": 18,
     "speed": { "walk": 25 },
     "hp": { "max": 38, "current": 38, "temp": 0, "hitDiceRemaining": 5 },
     "attacks": [
-      { "name": "Mazza", "link": "https://www.dndbeyond.com/equipment/mace", "level": "Arma", "range": "Mischia", "attack": "+5 colpire", "defense": "CA", "effect": "1d6+2 contundenti" }
+      { "name": "Mace", "link": "https://www.dndbeyond.com/equipment/mace", "level": "Weapon", "range": "Melee", "attack": "+5 to hit", "defense": "AC", "effect": "1d6+2 bludgeoning" }
     ]
   },
   "resources": [
-    { "id": "spell-slots-1", "label": "Slot liv. 1", "category": "spellSlot", "level": 1, "max": 4, "current": 4, "resetOn": "longRest" },
-    { "id": "spell-slots-2", "label": "Slot liv. 2", "category": "spellSlot", "level": 2, "max": 3, "current": 3, "resetOn": "longRest" },
-    { "id": "spell-slots-3", "label": "Slot liv. 3", "category": "spellSlot", "level": 3, "max": 2, "current": 2, "resetOn": "longRest" },
+    { "id": "spell-slots-1", "label": "Level 1 slots", "category": "spellSlot", "level": 1, "max": 4, "current": 4, "resetOn": "longRest" },
+    { "id": "spell-slots-2", "label": "Level 2 slots", "category": "spellSlot", "level": 2, "max": 3, "current": 3, "resetOn": "longRest" },
+    { "id": "spell-slots-3", "label": "Level 3 slots", "category": "spellSlot", "level": 3, "max": 2, "current": 2, "resetOn": "longRest" },
     { "id": "channel-divinity", "label": "Channel Divinity", "category": "charges", "max": 1, "current": 1, "resetOn": "shortRest", "link": "https://www.dndbeyond.com/sources/basic-rules/cleric#ChannelDivinity" }
   ],
   "spellSections": [
     {
-      "id": "trucchetti", "title": "Trucchetti",
+      "id": "cantrips", "title": "Cantrips",
       "entries": [
-        { "name": "Sacred Flame", "link": "https://www.dndbeyond.com/spells/sacred-flame", "level": "0", "range": "60 ft", "attack": "—", "defense": "TS Destrezza", "effect": "1d8 radianti", "concentration": false },
-        { "name": "Guidance", "link": "https://www.dndbeyond.com/spells/guidance", "level": "0", "range": "Contatto", "concentration": true, "attack": "—", "defense": "—", "effect": "+1d4 a una prova di caratteristica" }
+        { "name": "Sacred Flame", "link": "https://www.dndbeyond.com/spells/sacred-flame", "level": "0", "range": "60 ft", "attack": "—", "defense": "Dex save", "effect": "1d8 radiant", "concentration": false },
+        { "name": "Guidance", "link": "https://www.dndbeyond.com/spells/guidance", "level": "0", "range": "Touch", "concentration": true, "attack": "—", "defense": "—", "effect": "+1d4 to one ability check" }
       ]
     },
     {
-      "id": "preparati", "title": "Preparati",
+      "id": "prepared", "title": "Prepared",
       "entries": [
-        { "name": "Cure Wounds", "link": "https://www.dndbeyond.com/spells/cure-wounds", "level": "1", "range": "Contatto", "concentration": false, "attack": "—", "defense": "—", "effect": "1d8 + mod incantatore PF (Disciple of Life: +2+livello slot)" },
-        { "name": "Bless", "link": "https://www.dndbeyond.com/spells/bless", "level": "1", "range": "30 ft", "concentration": true, "attack": "—", "defense": "—", "effect": "3 creature: +1d4 a colpire e TS" },
-        { "name": "Spiritual Weapon", "link": "https://www.dndbeyond.com/spells/spiritual-weapon", "level": "2", "range": "60 ft", "concentration": false, "attack": "Attacco con incantesimo", "defense": "—", "effect": "1d8 + mod forza" },
-        { "name": "Spirit Guardians", "link": "https://www.dndbeyond.com/spells/spirit-guardians", "level": "3", "range": "Sé (4,5 m)", "concentration": true, "attack": "—", "defense": "TS Saggezza", "effect": "3d8 radianti/necrotici, terreno difficile" }
+        { "name": "Cure Wounds", "link": "https://www.dndbeyond.com/spells/cure-wounds", "level": "1", "range": "Touch", "concentration": false, "attack": "—", "defense": "—", "effect": "1d8 + spellcasting mod HP (Disciple of Life: +2 + slot level)" },
+        { "name": "Bless", "link": "https://www.dndbeyond.com/spells/bless", "level": "1", "range": "30 ft", "concentration": true, "attack": "—", "defense": "—", "effect": "3 creatures: +1d4 to attack rolls and saves" },
+        { "name": "Spiritual Weapon", "link": "https://www.dndbeyond.com/spells/spiritual-weapon", "level": "2", "range": "60 ft", "concentration": false, "attack": "Spell attack", "defense": "—", "effect": "1d8 + Str mod" },
+        { "name": "Spirit Guardians", "link": "https://www.dndbeyond.com/spells/spirit-guardians", "level": "3", "range": "Self (15 ft)", "concentration": true, "attack": "—", "defense": "Wis save", "effect": "3d8 radiant/necrotic, difficult terrain" }
       ]
     }
   ],
   "features": [
-    { "id": "disciple-of-life", "name": "Disciple of Life", "source": "subclass", "level": 1, "description": "Gli incantesimi di cura ripristinano +2 + livello dello slot PF aggiuntivi." },
-    { "id": "channel-divinity-preserve", "name": "Channel Divinity: Preserve Life", "source": "subclass", "level": 2, "description": "Distribuisci 5×livello PF tra creature entro 9 m (max metà PF max).", "uses": { "resourceId": "channel-divinity", "amount": 1 } },
-    { "id": "destroy-undead", "name": "Destroy Undead (GS 1/2)", "source": "class", "level": 5, "description": "I non morti con GS basso che falliscono il TS contro Turn Undead vengono distrutti." }
+    { "id": "disciple-of-life", "name": "Disciple of Life", "source": "subclass", "level": 1, "description": "Healing spells restore +2 + the slot's level in extra HP." },
+    { "id": "channel-divinity-preserve", "name": "Channel Divinity: Preserve Life", "source": "subclass", "level": 2, "description": "Distribute 5 × cleric level HP among creatures within 30 ft (max half each one's HP max).", "uses": { "resourceId": "channel-divinity", "amount": 1 } },
+    { "id": "destroy-undead", "name": "Destroy Undead (CR 1/2)", "source": "class", "level": 5, "description": "Low-CR undead that fail the save against Turn Undead are destroyed instead." }
   ],
   "inventory": {
     "items": [
-      { "id": "mace", "name": "Mazza", "quantity": 1, "equipped": true },
-      { "id": "shield", "name": "Scudo", "quantity": 1, "equipped": true },
-      { "id": "holy-symbol", "name": "Simbolo sacro (amuleto)", "quantity": 1, "equipped": true }
+      { "id": "mace", "name": "Mace", "quantity": 1, "equipped": true },
+      { "id": "shield", "name": "Shield", "quantity": 1, "equipped": true },
+      { "id": "holy-symbol", "name": "Holy symbol (amulet)", "quantity": 1, "equipped": true }
     ],
     "currencies": { "gp": 25, "sp": 0, "cp": 0 }
   },
   "origin": {
-    "raceTraits": [{ "name": "Robustezza Nanica", "description": "+1 PF per livello; vantaggio TS contro veleno." }],
-    "backgroundFeature": { "name": "Rifugio dei Fedeli", "description": "Ricevi assistenza gratuita da templi affini." }
+    "raceTraits": [{ "name": "Dwarven Toughness", "description": "+1 HP per level; advantage on saves against poison." }],
+    "backgroundFeature": { "name": "Shelter of the Faithful", "description": "You receive free assistance from temples of your faith." }
   },
   "narrative": {
-    "personality": ["Calmo, parla poco e con peso."],
-    "ideals": ["La vita va protetta."],
-    "bonds": ["Il mio tempio è la mia famiglia."]
+    "personality": ["Calm; speaks little, and with weight."],
+    "ideals": ["Life must be protected."],
+    "bonds": ["My temple is my family."]
   }
 }

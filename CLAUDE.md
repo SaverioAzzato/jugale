@@ -58,6 +58,10 @@ Rules that matter when editing character data (also encoded in `.github/agents/*
 
 Tests are first-class — the schema/model layer is exhaustively unit-tested. CI (`.github/workflows/ci.yml`) runs typecheck + tests + build on every PR; keep it green. Add/adjust tests with any schema, derivation, or migration change.
 
+## Cutting a release
+
+Pushing a tag `v*` triggers the web deploy (`pages.yml`) and native builds (`release.yml`, a draft Release). **The app version lives in four files that must all match the tag — `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock` (or `cargo check --locked` fails CI). Run `scripts/set-version.sh <x.y.z>` to set all four at once** before tagging (don't bump them by hand and forget one). This is the *app* version (`1.x` line), independent of `character.json`'s `schemaVersion` (`2.0.0`). Full checklist: `docs/AUTOMATION.md` → "Cutting a release".
+
 ## Agents & automation
 
 `.github/agents/` holds two D&D 5e **end-user** prompt prototypes (`dnd-5e-character-expert`, `dnd-5e-warlock-tome-draconide`) — early sketches of chatbot guidance for building/leveling a character against `character.json`. They are **not** Claude Code subagents (Claude Code reads `.claude/agents/`); treat them as reference/seed material for the M3 prompts work.
