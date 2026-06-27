@@ -10,7 +10,7 @@
     {
       "name": "Chierico", "subclass": "Dominio della Vita", "level": 5, "hitDie": "d8",
       "link": "https://www.dndbeyond.com/classes/cleric",
-      "spellcasting": { "ability": "wis", "type": "prepared", "prepares": true, "slotProgression": "full" }
+      "spellcasting": { "ability": "wis", "type": "prepared", "slotProgression": "full" }
     }
   ],
   "abilities": {
@@ -45,7 +45,6 @@
     { "id": "spell-slots-3", "label": "Slot liv. 3", "category": "spellSlot", "level": 3, "max": 2, "current": 2, "resetOn": "longRest" },
     { "id": "channel-divinity", "label": "Channel Divinity", "category": "charges", "max": 1, "current": 1, "resetOn": "shortRest", "link": "https://www.dndbeyond.com/sources/basic-rules/cleric#ChannelDivinity" }
   ],
-  "spellcasting": { "summary": "Incantatore preparato basato su Saggezza; prepara WIS + livello chierico incantesimi al giorno." },
   "spellSections": [
     {
       "id": "trucchetti", "title": "Trucchetti",

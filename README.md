@@ -52,6 +52,41 @@ A character is a folder: `character.json` + `images/`. The JSON is structured en
 
 Rule of thumb: almost everything is **structural** (changes only on level-up/edit); a small enumerated set is **live** play-state (HP, resource `current`, item quantities, currencies, conditions). The UI only mutates the live fields continuously.
 
+### Where each 5e concept lives
+
+Every game concept has **one home** in the JSON and one place it's edited (in Edit mode — the toolbar pencil — every row below becomes an inline editor). Outputs the rules compute for you (modifiers, proficiency bonus, save DCs, spell attack, total level, passive Perception, attunement count, derived AC) are **never stored** — the app derives them at render time, so you only ever edit the inputs.
+
+| 5e concept | JSON home | Tab → section |
+|---|---|---|
+| Character name, player, summary, rules in scope | `meta` | header · Story |
+| Race, lineage, background, alignment, size, age | `identity` | Attributi → Identity (edit) · Story → Bio |
+| Class(es), level, subclass, hit die — multiclass = more entries | `classes[]` | Attributi → Identity |
+| Caster ability, known vs. prepared, slot progression | `classes[].spellcasting` | Attributi → Identity |
+| Ability scores + saving-throw proficiency | `abilities` | Attributi → Abilities |
+| Skill proficiency & expertise | `proficiencies.skills` | Attributi → Skills |
+| Armor / weapon / tool proficiencies, **languages** | `proficiencies` | Attributi → Proficiencies |
+| Special senses (darkvision, blindsight…) | `senses[]` | Attributi → Senses & defenses |
+| Damage resistances / immunities / vulnerabilities, condition immunities | `defenses` | Attributi → Senses & defenses |
+| Hit points (max / current / temp), hit dice | `combat.hp` | Gioco → Vitals |
+| Armor Class (summed from equipped armor/shield, or override) | `inventory.items[].ac` · `combat.armorClass*` | Gioco → Vitals · Inventario |
+| Initiative, speed | `combat.initiativeOverride` · `combat.speed` | Gioco → Vitals |
+| Weapon attacks (per mode: 1h / 2h / thrown) | `inventory.items[].attacks[]` | Inventario (edit) → Gioco → Attacks |
+| Innate attacks (natural weapons, unarmed, breath weapon) | `combat.attacks[]` | Gioco → Attacks |
+| Spell slots, pact magic, ki, rage, sorcery points, channel divinity, charges, ammo | `resources[]` (generic) | Gioco → Resources |
+| Spells, grouped into sections | `spellSections[]` | Gioco → Spells |
+| Class / subclass / race / background / feat features (invocations, metamagic, maneuvers, fighting styles…) | `features[]` (by `source`) | Attributi → Features |
+| Limited-use feature → its resource | `features[].uses` | Attributi → Features |
+| Items: quantity, weight, value, equipped, attuned, category | `inventory.items[]` | Inventario |
+| Currencies | `inventory.currencies` | Inventario |
+| Racial traits, background feature | `origin` | Story → Origin |
+| Personality, ideals, bonds, flaws, appearance, backstory | `narrative` | Story |
+| Portrait & gallery | the folder's `images/` (never in the JSON) | header · Story |
+| Conditions, inspiration, death saves, session notes (live) | `session` | Gioco → Status |
+| Rests & one-tap custom effects (formula-driven) | `actions[]` | Gioco → Actions |
+| Anything the schema doesn't anticipate (homebrew tables, checklists…) | `customSections[]` | Story → Custom |
+
+When you change the schema, see the checklist in [docs/SCHEMA.md](docs/SCHEMA.md#6-changing-the-schema) for every place that has to move together.
+
 ## GPT prompts
 
 Four copy-ready prompts — **base / create / level-up / validate** — let any external chatbot (ChatGPT, Claude, etc.) build, level up, and validate a character against this app's `character.json` contract. Available in-app (the book icon next to Settings, with a one-click JSON Schema download) and documented in **[docs/PROMPTS.md](docs/PROMPTS.md)**.

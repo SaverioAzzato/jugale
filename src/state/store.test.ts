@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { useCharacter } from "./store";
 import { useToast } from "../ui/useToast";
 import type { StorageProvider } from "../storage/provider";
+import { newResource, newSpellSection, newSpell } from "../model/factories";
 import multiclass from "../../characters/example-multiclass/character.json";
 
 const c = () => useCharacter.getState().character!;
@@ -107,5 +108,55 @@ describe("store — live sync failure falls back to read-only", () => {
     expect(useCharacter.getState().readOnly).toBe(true);
     expect(useCharacter.getState().liveSync).toBe(false);
     expect(useCharacter.getState().saveError).toBe(null); // known up front, not a failure
+  });
+});
+
+describe("store — edit mode structural edits", () => {
+  beforeEach(() => useCharacter.getState().loadRaw(multiclass, "test"));
+
+  it("toggleEditMode flips edit mode and a fresh load resets it", () => {
+    expect(useCharacter.getState().editMode).toBe(false);
+    useCharacter.getState().toggleEditMode();
+    expect(useCharacter.getState().editMode).toBe(true);
+    useCharacter.getState().loadRaw(multiclass, "test"); // reopening always starts in play mode
+    expect(useCharacter.getState().editMode).toBe(false);
+  });
+
+  it("editField sets any nested value and marks the character dirty", () => {
+    useCharacter.getState().editField(["meta", "name"], "Renamed Hero");
+    expect(useCharacter.getState().character!.meta.name).toBe("Renamed Hero");
+    expect(useCharacter.getState().dirty).toBe(true);
+  });
+
+  it("editField writes into an array entry by index", () => {
+    useCharacter.getState().editField(["classes", 0, "level"], 7);
+    expect(useCharacter.getState().character!.classes[0].level).toBe(7);
+  });
+
+  it("addItem and removeItem grow and shrink an array", () => {
+    const before = useCharacter.getState().character!.resources.length;
+    useCharacter.getState().addItem(["resources"], newResource());
+    expect(useCharacter.getState().character!.resources.length).toBe(before + 1);
+    useCharacter.getState().removeItem(["resources"], before);
+    expect(useCharacter.getState().character!.resources.length).toBe(before);
+  });
+
+  it("supports deeply-nested array add + edit (spell sections → entries)", () => {
+    useCharacter.getState().editField(["spellSections"], []); // start clean
+    useCharacter.getState().addItem(["spellSections"], newSpellSection());
+    useCharacter.getState().addItem(["spellSections", 0, "entries"], newSpell());
+    useCharacter.getState().editField(["spellSections", 0, "entries", 0, "name"], "Eldritch Blast");
+    expect(useCharacter.getState().character!.spellSections[0].entries[0].name).toBe("Eldritch Blast");
+  });
+
+  it("revalidates issues live after an edit that breaks a rule", async () => {
+    // Spend more than the max on the first resource → an overspent warning should surface.
+    const id = useCharacter.getState().character!.resources[0].id;
+    useCharacter.getState().editField(["resources", 0, "max"], 0);
+    useCharacter.getState().editField(["resources", 0, "current"], 5);
+    await new Promise((r) => setTimeout(r, 350)); // past the 300ms revalidate debounce
+    expect(
+      useCharacter.getState().issues.some((iss) => iss.code === "resourceOverspent" && iss.path.includes(id)),
+    ).toBe(true);
   });
 });

@@ -1926,3 +1926,343 @@ code {
     animation-duration: 0.01ms;
   }
 }
+
+/* ============================================================
+   Edit mode — inline structural editing of the character JSON
+   ============================================================ */
+
+/* Toolbar pencil toggle: gold + filled when editing is active. */
+.edit-toggle-btn.is-on {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: var(--accent-weak);
+}
+
+/* Shared input look for text/number/select editors. */
+.edit-input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 13px;
+  width: 100%;
+  min-width: 0;
+}
+.edit-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-weak);
+}
+.edit-textarea {
+  resize: vertical;
+  line-height: 1.4;
+}
+.edit-select {
+  cursor: pointer;
+}
+/* Number editors keep the global number look but stretch to the field width. */
+.edit-input.edit-number {
+  width: 100%;
+}
+/* The character-name editor sits in the H1, so it inherits the display face/size. */
+.edit-name {
+  font: inherit;
+  width: 100%;
+  max-width: 22ch;
+}
+
+/* A captioned editor: small label above its control. */
+.edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+}
+.edit-field-label {
+  color: var(--muted);
+  font-weight: 600;
+}
+/* Multiline fields (descriptions, notes) span the whole card row instead of
+   sitting in one grid cell with dead space beside them. */
+.edit-field:has(textarea) {
+  grid-column: 1 / -1;
+}
+
+/* A responsive grid of captioned fields (identity, combat, a resource row). */
+.edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px 12px;
+  margin-top: 8px;
+}
+
+/* A bordered sub-card grouping a related editor (e.g. one proficiency category). */
+.edit-subcard {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.edit-subhead {
+  margin: 16px 0 6px;
+  font-size: 13px;
+  color: var(--gold);
+}
+
+/* Checkbox + caption, inline. */
+.edit-toggle,
+.edit-optnum-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+}
+.edit-optnum {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.edit-optnum .edit-number {
+  width: 72px;
+}
+.ability-edit-extra {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+}
+/* Edit mode: "Forza -1" on one line, label/mod styling unchanged. */
+.ability-label-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+/* Smaller, centered score input instead of stretching the full card width. */
+.ability-card .edit-number {
+  width: 56px;
+  text-align: center;
+  margin: 2px 0;
+}
+
+/* A list editor: bordered rows + an add button. */
+.edit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.edit-entry {
+  position: relative;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.edit-entry-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px 10px;
+}
+.edit-add {
+  align-self: flex-start;
+  border-style: dashed;
+  font-size: 13px;
+}
+/* A small "×" badge straddling the card's top-right corner. Absolutely
+   positioned (and slightly outset) so it overlays the corner and reserves no
+   layout space, instead of pushing the fields into a narrower box. */
+.edit-entry-close {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 17px;
+  line-height: 1;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+}
+.edit-entry-close:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.edit-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  cursor: pointer;
+}
+.edit-remove:hover {
+  color: var(--error, var(--gold));
+  border-color: currentColor;
+}
+
+/* Edit mode — phase 2-4 controls (lists, tags, sub-editors). */
+.edit-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  grid-column: 1 / -1;
+}
+.edit-strrow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.edit-strrow .edit-input {
+  flex: 1 1 auto;
+}
+.edit-hint {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+/* Collapsible sub-editor (item attacks/AC, spell extra fields, feature uses). */
+.edit-sub {
+  grid-column: 1 / -1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  background: var(--surface-2);
+}
+.edit-sub > summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.edit-sub[open] > summary {
+  margin-bottom: 8px;
+}
+
+/* A titled sub-block inside a list (a spell section, a custom section). */
+.edit-section {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: var(--surface);
+}
+.edit-section-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.edit-section-head .edit-field {
+  flex: 1 1 160px;
+}
+
+/* Tag editor (string[] as chips). */
+.edit-taglist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.edit-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.edit-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--accent-weak);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 2px 6px 2px 10px;
+  font-size: 12px;
+}
+.edit-tag-remove {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.edit-tag-remove:hover {
+  color: var(--text);
+}
+.edit-tag-add {
+  display: flex;
+  gap: 8px;
+}
+/* flex-basis 0 (not "auto") so the input actually claims the free space in
+   the row instead of shrinking down to its unconstrained min-content size. */
+.edit-tag-add .edit-input {
+  flex: 1 1 0%;
+  min-width: 80px;
+}
+/* A compact square "+"-only button (no label) for tight add-a-tag rows. */
+.edit-add-icon {
+  flex: 0 0 auto;
+  width: 34px;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Currency rows in the inventory editor. */
+.edit-coinrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.edit-coin-code {
+  min-width: 48px;
+  font-weight: 600;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+
+/* Skill proficiency editor rows. */
+.edit-skill-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* 220px wasn't wide enough for a name + two checkbox/label toggles (e.g.
+     "Addestrare Animali"), so the row overflowed its column and bled into the
+     next one at certain widths instead of the grid dropping to fewer columns. */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 4px 16px;
+  align-items: start;
+}
+.edit-skill-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 3px 0;
+}
+.edit-skill-row .skill-name {
+  flex: 1 1 auto;
+}

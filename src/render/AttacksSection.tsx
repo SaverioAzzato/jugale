@@ -1,6 +1,9 @@
 import { useState } from "react";
 import type { Character, AttackProfile } from "../schema";
 import { Caret, Panel, WikiLink } from "./primitives";
+import { Field, TextInput, EntryList, EntryRow } from "./editControls";
+import { newInnateAttack } from "../model/factories";
+import { useCharacter } from "../state/store";
 import { useT } from "../i18n/useI18n";
 import { useSettings, type UnitSystem } from "../ui/useSettings";
 import { convertDistanceText } from "../model/units";
@@ -71,9 +74,59 @@ function AttackRow({ a }: { a: AttackView }) {
   );
 }
 
+/** Edit mode shows only the innate attacks (combat.attacks); weapon attacks are
+ *  edited on their inventory item, so they're not duplicated here. */
+function InnateAttacksEdit({ c }: { c: Character }) {
+  const t = useT();
+  const editField = useCharacter((s) => s.editField);
+  const addItem = useCharacter((s) => s.addItem);
+  const removeItem = useCharacter((s) => s.removeItem);
+
+  return (
+    <Panel title={t("attacks.title")} id="attacks">
+      <EntryList onAdd={() => addItem(["combat", "attacks"], newInnateAttack())} addLabel={t("attacks.addInnate")}>
+        {c.combat.attacks.map((a, i) => (
+          <EntryRow key={i} onRemove={() => removeItem(["combat", "attacks"], i)} removeLabel={t("edit.remove")}>
+            <Field label={t("attack.name")}>
+              <TextInput value={a.name} onChange={(v) => editField(["combat", "attacks", i, "name"], v)} label={t("attack.name")} />
+            </Field>
+            <Field label={t("header.level")}>
+              <TextInput value={a.level} onChange={(v) => editField(["combat", "attacks", i, "level"], v)} label={t("header.level")} />
+            </Field>
+            <Field label={t("detail.range")}>
+              <TextInput value={a.range} onChange={(v) => editField(["combat", "attacks", i, "range"], v)} label={t("detail.range")} />
+            </Field>
+            <Field label={t("detail.yourRoll")}>
+              <TextInput value={a.attack} onChange={(v) => editField(["combat", "attacks", i, "attack"], v)} label={t("detail.yourRoll")} />
+            </Field>
+            <Field label={t("detail.enemyRoll")}>
+              <TextInput value={a.defense} onChange={(v) => editField(["combat", "attacks", i, "defense"], v)} label={t("detail.enemyRoll")} />
+            </Field>
+            <Field label={t("detail.damageEffect")}>
+              <TextInput value={a.effect} onChange={(v) => editField(["combat", "attacks", i, "effect"], v)} label={t("detail.damageEffect")} />
+            </Field>
+            <Field label={t("detail.notes")}>
+              <TextInput value={a.notes} onChange={(v) => editField(["combat", "attacks", i, "notes"], v)} label={t("detail.notes")} />
+            </Field>
+            <Field label={t("resource.link")}>
+              <TextInput
+                value={a.link ?? ""}
+                onChange={(v) => editField(["combat", "attacks", i, "link"], v === "" ? null : v)}
+                label={t("resource.link")}
+              />
+            </Field>
+          </EntryRow>
+        ))}
+      </EntryList>
+    </Panel>
+  );
+}
+
 /** Weapon attacks (derived from inventory items) + innate attacks, in one list. */
 export function AttacksSection({ c }: { c: Character }) {
   const t = useT();
+  const editMode = useCharacter((s) => s.editMode);
+  if (editMode) return <InnateAttacksEdit c={c} />;
   const weapons: AttackView[] = c.inventory.items
     .filter((it) => it.attacks.length > 0)
     .map((it, i) => ({

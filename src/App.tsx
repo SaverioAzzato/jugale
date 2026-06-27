@@ -57,7 +57,7 @@ const SAMPLES = [
 ];
 
 export function App() {
-  const { character, sourceName, images, liveSync, dirty, saveError, readOnly, issues } = useCharacter(
+  const { character, sourceName, images, liveSync, dirty, saveError, readOnly, editMode, issues } = useCharacter(
     useShallow((s) => ({
       character: s.character,
       sourceName: s.sourceName,
@@ -66,9 +66,11 @@ export function App() {
       dirty: s.dirty,
       saveError: s.saveError,
       readOnly: s.readOnly,
+      editMode: s.editMode,
       issues: s.issues,
     })),
   );
+  const toggleEditMode = useCharacter((s) => s.toggleEditMode);
   const loadRaw = useCharacter((s) => s.loadRaw);
   const connect = useCharacter((s) => s.connect);
   const exportCharacter = useCharacter((s) => s.exportCharacter);
@@ -106,7 +108,7 @@ export function App() {
       document.querySelector<HTMLElement>(`[data-overlay-trigger="${overlay}"]`)?.focus();
     };
   }, [overlay]);
-  const tabs = character ? getVisibleTabs(character, images.length > 0) : [];
+  const tabs = character ? getVisibleTabs(character, images.length > 0, editMode) : [];
   const tab = tabs.some((t) => t.id === activeTab)
     ? activeTab
     : (tabs[0]?.id ?? "gioco");
@@ -252,6 +254,17 @@ export function App() {
                     {t("app.export")}
                   </button>
                 )}
+                {character && (
+                  <button
+                    className={editMode ? "btn btn-icon edit-toggle-btn is-on" : "btn btn-icon edit-toggle-btn"}
+                    onClick={toggleEditMode}
+                    aria-pressed={editMode}
+                    title={t("edit.toggle")}
+                    aria-label={t("edit.toggle")}
+                  >
+                    <PencilIcon />
+                  </button>
+                )}
                 {!character && <HelpButton onClick={() => setOverlay("help")} />}
                 <DicePalette />
                 <PromptsButton onClick={() => setOverlay("prompts")} />
@@ -340,6 +353,22 @@ export function App() {
       <DiceCanvas />
       <Toasts />
     </div>
+  );
+}
+
+/** Pencil glyph for the Edit-mode toggle. */
+function PencilIcon() {
+  return (
+    <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3z M13.5 6.5l3 3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 

@@ -15,9 +15,9 @@
 ## Two modes
 
 - **Play (default):** read + the live play-state mutations + *targeted* structural adds (add an item, add a spell individually).
-- **Edit (later milestone):** a global toggle that unlocks comprehensive structural editing — forms for every field (level-up, scores, features, full item/weapon/spell editors).
+- **Edit (toolbar pencil):** a global toggle that unlocks comprehensive **inline** structural editing — every field becomes an input/select in the same layout, and lists gain add/remove. Saving is unchanged (live sync if available, otherwise the read-only/export fallback). Shipped across all content sections (see ROADMAP M6: identity/classes/abilities/combat/resources, inventory/attacks, spells/features/proficiencies/actions, story/custom). The one deferred piece is drag/keyboard **reordering** of list entries.
 
-Build the hybrid first (play + individual adds). The global Edit mode comes after.
+Built the hybrid first (play + individual adds); the global Edit mode now sits on top of it.
 
 ## Live vs structural (unchanged contract)
 
@@ -30,7 +30,7 @@ Four tabs; each auto-hides if it would have no content.
 | Tab | Role | Blocks |
 |---|---|---|
 | **Gioco** | the table, in action | Vitals · Status (secondary) · Resources & slots + rests · Attacks · Spells · Consumables |
-| **Attributi** | who they are, what they can do | Abilities + saves · Skills + passive perception · Proficiencies · Features & feats (by source) · Senses |
+| **Attributi** | who they are, what they can do | Abilities + saves · Skills + passive perception · Proficiencies · Senses & defenses · Features & feats (by source) |
 | **Inventario** | what they carry | Equipped (top) · Category sections · Currencies · Attunement · (optional) Encumbrance |
 | **Storia** | where they come from | Bio · Personality · Background · Narrative · Portrait & gallery |
 
@@ -49,9 +49,9 @@ Four tabs; each auto-hides if it would have no content.
 
 - **Abilities** — 6 scores + modifiers + saving throws (proficient highlighted).
 - **Skills** — all 18 for reference (proficiency/expertise highlighted) + passive perception.
-- **Proficiencies** — weapons, armor, tools, languages.
+- **Proficiencies** — weapons, armor, tools, languages (`proficiencies.languages` is the single home for languages).
+- **Senses & defenses** — special senses (`senses[]`, free strings like "Darkvision 18 m") and damage resistances/immunities/vulnerabilities + condition immunities (`defenses`). Auto-hides when empty; editable in Edit mode. Passive Perception stays with Skills (it's derived).
 - **Features & feats** — grouped by `source` (class / subclass / race / background / feat). This is where Warlock invocations/suppliche, fighting styles, etc. live.
-- **Senses** — darkvision, etc.
 
 ### Inventario
 

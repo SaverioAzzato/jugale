@@ -22,7 +22,7 @@
       "level": 5,
       "hitDie": "d8",
       "link": "https://www.dndbeyond.com/classes/warlock",
-      "spellcasting": { "ability": "cha", "type": "known", "prepares": false, "slotProgression": "warlock" }
+      "spellcasting": { "ability": "cha", "type": "known", "slotProgression": "warlock" }
     }
   ],
   "abilities": {
@@ -43,6 +43,13 @@
     "armor": ["Leggera"],
     "weapons": ["Semplici"]
   },
+  "senses": ["Scurovisione 18 m"],
+  "defenses": {
+    "resistances": ["fuoco"],
+    "immunities": [],
+    "vulnerabilities": [],
+    "conditionImmunities": []
+  },
   "combat": {
     "armorClass": 13,
     "speed": { "walk": 30 },
@@ -61,7 +68,6 @@
       "link": "https://www.dndbeyond.com/sources/basic-rules/warlock#PactMagic"
     }
   ],
-  "spellcasting": { "summary": "Incantatore basato su Carisma; CD e bonus d'attacco derivati dal livello." },
   "spellSections": [
     {
       "id": "trucchetti",
@@ -162,11 +168,9 @@
   },
   "origin": {
     "raceTraits": [
-      { "name": "Resistenza Infernale", "description": "Resistenza ai danni da fuoco." },
       { "name": "Eredità Infernale", "description": "Conosci il trucchetto Thaumaturgy." }
     ],
-    "backgroundFeature": { "name": "Ricercatore", "description": "Sai dove e da chi ottenere informazioni." },
-    "languages": ["Comune", "Infernale", "Abissale"]
+    "backgroundFeature": { "name": "Ricercatore", "description": "Sai dove e da chi ottenere informazioni." }
   },
   "narrative": {
     "personality": ["Curioso fino all'incoscienza."],

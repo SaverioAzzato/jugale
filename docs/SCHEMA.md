@@ -31,14 +31,15 @@ The canonical, machine-readable schema is the Zod definition in `src/schema/` (i
   "identity":     { ... },   // who the character is: race, background, alignment, age...
   "classes":      [ ... ],   // one entry per class → multiclass is native
   "abilities":    { ... },   // the six scores + save proficiency
-  "proficiencies":{ ... },   // skills, saves, languages, tools, armor, weapons, prof. bonus override
+  "proficiencies":{ ... },   // skills, languages, tools, armor, weapons, prof. bonus override
+  "senses":       [ ... ],   // special senses as free strings ("Darkvision 18 m")
+  "defenses":     { ... },   // damage resistances/immunities/vulnerabilities, condition immunities
   "combat":       { ... },   // AC, speed, initiative, HP, attacks
   "resources":    [ ... ],   // GENERIC tracked resources (slots of any name, ki, rage, arrows...)
-  "spellcasting": { ... },   // caster summary (mostly derived) + per-class info
   "spellSections":[ ... ],   // the beloved spell tables, grouped freely
   "features":     [ ... ],   // class/race/background/feat features, with links
   "inventory":    { ... },   // items, currencies, attunement, notes
-  "origin":       { ... },   // race traits, background feature, languages
+  "origin":       { ... },   // race traits, background feature
   "narrative":    { ... },   // personality, appearance, backstory
   "customSections":[ ... ],  // user-defined sections rendered by a layout hint
   "session":      { ... }    // purely ephemeral play-state
@@ -79,12 +80,12 @@ Free-but-typed key facts. Known keys get UI affordances; extra keys are kept and
 [
   { "name": "Warlock", "subclass": "The Fiend", "level": 5,
     "hitDie": "d8", "link": "https://...",
-    "spellcasting": { "ability": "cha", "type": "known", "prepares": false,
+    "spellcasting": { "ability": "cha", "type": "known",
                       "slotProgression": "warlock" } }
 ]
 ```
-- `type`: `known | prepared | none`. `slotProgression`: `full | half | third | warlock | none` — drives multiclass slot math.
-- **Total level**, **proficiency bonus**, and the **multiclass spell-slot table** are derived from this array.
+- `type`: `known | prepared | none` (there is no separate `prepares` flag — `prepared` says it all). `slotProgression`: `full | half | third | warlock | none`.
+- **Total level** and **proficiency bonus** are derived from this array. **Spell slots are NOT auto-computed**: model them as `resources[]` (category `spellSlot`, one entry per level). `slotProgression` is a hint for tools/GPTs building those resources, not a value the app calculates.
 
 ### `abilities`
 ```jsonc
@@ -104,12 +105,24 @@ Modifiers and save bonuses are derived. `modifierOverride` is the homebrew escap
 {
   "proficiencyBonusOverride": null,            // else derived from total level
   "skills": [ { "id": "arcana", "proficient": true, "expertise": false } ],
-  "languages": ["Comune", "Infernale"],
+  "languages": ["Comune", "Infernale"],   // the ONE home for languages (not origin)
   "tools": ["Strumenti da calligrafo"],
   "armor": ["Leggera"],
   "weapons": ["Semplici"]
 }
 ```
+
+### `senses` + `defenses`
+```jsonc
+"senses": ["Scurovisione 18 m"],          // special senses as free strings (range included)
+"defenses": {
+  "resistances":         ["fuoco"],       // damage types
+  "immunities":          [],
+  "vulnerabilities":     [],
+  "conditionImmunities": ["spaventato"]
+}
+```
+These give two 5e concepts a single, explicit home instead of burying them in prose. `senses` is for special senses only — **passive Perception is derived** from the Perception skill and shown with the skills, not here. Anything the app shouldn't reason about (a sense or a resistance with a rules caveat) can still be written as a `features[]` entry too; these fields are for the at-a-glance mechanical list.
 
 ### `combat`
 ```jsonc
@@ -147,9 +160,8 @@ The single model for **anything you spend and recover**: spell slots (any name/l
 - `resetOn`: `shortRest | longRest | dawn | manual | none` — powers the rest buttons.
 - `max` is structural; **`current` is live**. Keeping them together (like inventory quantity) avoids cross-section joins and is easy for GPTs.
 
-### `spellcasting` + `spellSections[]`
+### `spellSections[]`
 ```jsonc
-"spellcasting": { "summary": "Cha · CD/attacco derivati dal livello incantatore" },
 "spellSections": [
   { "id": "cantrips", "title": "Trucchetti", "entries": [
     { "name": "Eldritch Blast", "link": "https://...", "level": "0",
@@ -162,7 +174,7 @@ The single model for **anything you spend and recover**: spell slots (any name/l
       "notes": "Scala a più raggi ai livelli 5/11/17", "prepared": true } ] }
 ]
 ```
-CD incantesimi and bonus d'attacco are **derived** from `classes[].spellcasting.ability` + level. Keeps the table the user loves (what *you* roll vs what the *enemy* rolls + the wiki link), with optional richer `description`.
+CD incantesimi and bonus d'attacco are **derived** from `classes[].spellcasting.ability` + level (there is no top-level `spellcasting` field — it was a dead summary string and is gone). Keeps the table the user loves (what *you* roll vs what the *enemy* rolls + the wiki link), with optional richer `description`.
 
 ### `features[]`
 ```jsonc
@@ -203,12 +215,12 @@ CD incantesimi and bonus d'attacco are **derived** from `classes[].spellcasting.
 
 ### `origin`, `narrative`
 ```jsonc
-"origin": { "raceTraits": [ {"name":"Resistenza infernale","description":"...","link":"..."} ],
-            "backgroundFeature": {"name":"Ricercatore","description":"...","link":"..."},
-            "languages": ["Comune","Infernale"] },
+"origin": { "raceTraits": [ {"name":"Eredità infernale","description":"...","link":"..."} ],
+            "backgroundFeature": {"name":"Ricercatore","description":"...","link":"..."} },
 "narrative": { "personality": [...], "ideals": [...], "bonds": [...], "flaws": [...],
                "appearance": [...], "backstory": [...], "notes": [...] }
 ```
+Languages are **not** here — they live in `proficiencies.languages` (their single home). A purely mechanical racial defense (resistance, darkvision) is better expressed in `defenses`/`senses`; keep `raceTraits` for narrative/feature-style traits.
 
 ### `customSections[]` — the freedom escape hatch
 Anything the schema didn't anticipate, rendered by a layout hint.
@@ -259,10 +271,29 @@ The app validates on load but **never refuses to render**:
 `src/schema/migrations/` upgrades older files in memory on load (persisted only on a real save). Key mappings from v1:
 - `build.baseStats`/`abilities` (string scores, `"+0"` modifiers) → `abilities` object (numeric, derived modifiers).
 - `session.resources.slots` dict (`{total, used}`) → `resources[]` entries (`{max, current}`, `category:"spellSlot"`), with `arrows` → a `category:"ammo"` resource.
-- `combat.spellcasting` summary string → derived; `spellSections` entries gain optional `school/castingTime/components/duration/description`.
+- `combat.spellcasting` summary string → if non-empty, kept losslessly as a `customSections` text block (the dead root `spellcasting` field is gone); `spellSections` entries gain optional `school/castingTime/components/duration/description`.
+- v1 `origin.languages` → `proficiencies.languages` (languages' single home).
 - `features.items` + `features.levelChecklist` → `features[]` (+ a `customSections` checklist if needed).
 - `identity[]` label/value pairs → `identity` object + `classes[]`.
 - Unknown fields preserved under the nearest section or `customSections`.
 
 ## 5. Worked example
 The canonical v2 template is `characters/example-warlock/character.json` (it supersedes the prototype's `pg.example/` template). Additional fixtures — a non-caster (Fighter), a prepared caster (Cleric), a points caster (Sorcerer), and a multiclass — land in **M1**, each exercising a different mechanic and doubling as a test fixture.
+
+## 6. Changing the schema
+
+The Zod schema in `src/schema/character.ts` is the source of truth, but a field never lives there alone. When you add, rename, or remove one, walk this checklist so the JSON, the UI, the docs, and the prompts stay in lockstep — they drift silently otherwise (the JSON Schema export and `meta`/derived values are the only things that update themselves).
+
+- **`src/schema/character.ts`** — the Zod field itself (with a default, so a minimal character still validates). The JSON Schema (`jsonSchema.ts`) and the `Character` type regenerate from it automatically.
+- **`src/schema/derive.ts`** — if the value is *computed* (don't also store it), add/adjust the derivation here instead of a stored field.
+- **`src/schema/validate.ts`** — add an `IssueCode` + rule check if the field has a 5e consistency rule worth flagging.
+- **`src/schema/migrate.ts`** (+ `migrate.test.ts`) — map the field from v1 and from any older v2 shape; keep it lossless. Add an assertion.
+- **`src/model/factories.ts`** (+ `factories.test.ts`) — if it's (or lives in) an add-able list entry, the blank-entry factory must include it so a freshly-added row validates clean.
+- **UI** — the read view and the Edit-mode editor in the relevant `src/render/*Section.tsx`; wire a brand-new section into `src/render/tabs.tsx` (and `getVisibleTabs`/`TabContent` if it can be empty).
+- **`src/i18n/useI18n.ts`** — EN **and** IT keys for every new label/placeholder (UI chrome is never hardcoded).
+- **Example characters** — `characters/example-*/character.json`; showcase a non-trivial field in `example-warlock` (the canonical template). `characters.test.ts` loads them all and asserts zero issues.
+- **Docs** — this file (§1 top-level list, §2 the section, §4 migration note), `docs/UI.md` (tab/section), and the README "Where each 5e concept lives" table.
+- **Prompts** — the data-contract bullets in `src/prompts/prompts.ts` **and** their mirror in `docs/PROMPTS.md`, plus `src/ui/HelpPage.tsx` (EN+IT) and the `.github/agents/*.agent.md` seed prompts.
+- **Verify** — `npm run typecheck && npm test && npm run build`, then exercise the field in the live preview in both Play and Edit modes.
+
+Keep it SRD-only: never bake a commercial sourcebook's content into schema defaults, examples, prompts, or docs (generic 5e mechanics terminology is fine; proprietary creative content is not).

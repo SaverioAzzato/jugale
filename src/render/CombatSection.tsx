@@ -3,6 +3,7 @@ import type { Character } from "../schema";
 import { abilityModifierFor, derivedArmorClass, maxHitDice } from "../schema";
 import { Panel, fmtMod } from "./primitives";
 import { Stepper, useHoldRepeat } from "./controls";
+import { Field, NumberInput, OptionalNumber } from "./editControls";
 import { useCharacter } from "../state/store";
 import { useT } from "../i18n/useI18n";
 import { useSettings } from "../ui/useSettings";
@@ -139,9 +140,55 @@ function HpControl({ c }: { c: Character }) {
   );
 }
 
+/** Edit form for the combat inputs (HP pools, AC, speed, overrides). The derived
+ *  AC/initiative still show in the stat row above, recomputing as you type. */
+function CombatEdit({ c }: { c: Character }) {
+  const t = useT();
+  const editField = useCharacter((s) => s.editField);
+  const hp = c.combat.hp;
+  return (
+    <div className="edit-grid">
+      <Field label={t("vitals.hpMax")}>
+        <NumberInput value={hp.max} min={0} label={t("vitals.hpMax")} onChange={(v) => editField(["combat", "hp", "max"], v)} />
+      </Field>
+      <Field label={t("vitals.hpCurrent")}>
+        <NumberInput value={hp.current} label={t("vitals.hpCurrent")} onChange={(v) => editField(["combat", "hp", "current"], v)} />
+      </Field>
+      <Field label={t("vitals.temp")}>
+        <NumberInput value={hp.temp} min={0} label={t("vitals.temp")} onChange={(v) => editField(["combat", "hp", "temp"], v)} />
+      </Field>
+      <Field label={t("vitals.hitDice")}>
+        <NumberInput
+          value={hp.hitDiceRemaining}
+          min={0}
+          label={t("vitals.hitDice")}
+          onChange={(v) => editField(["combat", "hp", "hitDiceRemaining"], v)}
+        />
+      </Field>
+      <Field label={t("vitals.acValue")}>
+        <NumberInput value={c.combat.armorClass} label={t("vitals.acValue")} onChange={(v) => editField(["combat", "armorClass"], v)} />
+      </Field>
+      <Field label={t("vitals.speed")}>
+        <NumberInput value={c.combat.speed.walk} min={0} label={t("vitals.speed")} onChange={(v) => editField(["combat", "speed", "walk"], v)} />
+      </Field>
+      <OptionalNumber
+        value={c.combat.armorClassOverride}
+        label={t("vitals.acOverride")}
+        onChange={(v) => editField(["combat", "armorClassOverride"], v)}
+      />
+      <OptionalNumber
+        value={c.combat.initiativeOverride}
+        label={t("vitals.initiativeOverride")}
+        onChange={(v) => editField(["combat", "initiativeOverride"], v)}
+      />
+    </div>
+  );
+}
+
 export function CombatSection({ c }: { c: Character }) {
   const t = useT();
   const units = useSettings((s) => s.units);
+  const editMode = useCharacter((s) => s.editMode);
   const initiative = c.combat.initiativeOverride ?? abilityModifierFor(c, "dex");
   const ac = derivedArmorClass(c);
 
@@ -153,7 +200,7 @@ export function CombatSection({ c }: { c: Character }) {
         <Stat label={t("vitals.speed")} value={formatDistance(c.combat.speed.walk, units)} />
       </div>
 
-      <HpControl c={c} />
+      {editMode ? <CombatEdit c={c} /> : <HpControl c={c} />}
     </Panel>
   );
 }

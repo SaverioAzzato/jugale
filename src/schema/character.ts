@@ -85,8 +85,9 @@ const Identity = z
 const ClassSpellcasting = z
   .object({
     ability: AbilityId.nullable().default(null),
+    // known = spells known (sorcerer/bard/warlock…), prepared = prepares a daily list
+    // (cleric/druid/wizard…), none = non-caster. There is no separate `prepares` flag.
     type: z.enum(["known", "prepared", "none"]).default("none"),
-    prepares: z.boolean().default(false),
     slotProgression: z.enum(["full", "half", "third", "warlock", "none"]).default("none"),
   })
   .passthrough()
@@ -120,6 +121,28 @@ const Proficiencies = z
     tools: strings,
     armor: strings,
     weapons: strings,
+  })
+  .passthrough()
+  .default({});
+
+/**
+ * Special senses (darkvision, blindsight, tremorsense, truesight…). Free strings so a range
+ * fits naturally, e.g. "Darkvision 18 m". Passive Perception is NOT here — it's derived from
+ * the Perception skill (see derive.ts) and shown with the skills.
+ */
+const Senses = strings;
+
+/**
+ * Damage/condition defenses, kept out of features[] so they have one clear home. Each is a
+ * free string list, e.g. defenses.resistances = ["fire", "poison"]. The app never computes
+ * them — it just displays them in the Attributes tab.
+ */
+const Defenses = z
+  .object({
+    resistances: strings,
+    immunities: strings,
+    vulnerabilities: strings,
+    conditionImmunities: strings,
   })
   .passthrough()
   .default({});
@@ -315,7 +338,7 @@ const Origin = z
   .object({
     raceTraits: z.array(NamedDesc).default([]),
     backgroundFeature: NamedDesc.nullable().default(null),
-    languages: strings,
+    // Languages are a proficiency: they live in `proficiencies.languages`, not here.
   })
   .passthrough()
   .default({});
@@ -391,9 +414,10 @@ export const CharacterSchema = z
     classes: z.array(ClassEntry).default([]),
     abilities: Abilities,
     proficiencies: Proficiencies,
+    senses: Senses,
+    defenses: Defenses,
     combat: Combat,
     resources: z.array(Resource).default([]),
-    spellcasting: z.object({ summary: z.string().default("") }).passthrough().default({}),
     spellSections: z.array(SpellSection).default([]),
     features: z.array(Feature).default([]),
     inventory: Inventory,
