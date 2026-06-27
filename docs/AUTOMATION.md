@@ -35,9 +35,17 @@ Generate the keystore once (`keytool -genkeypair -v -keystore jugale-release.jks
 
 ## Cutting a release
 
-The app's version number lives in **`package.json` (`version`)** — the single source of truth. It's baked into the bundle at build time (`vite.config.ts` `define: __APP_VERSION__`) and shown in the welcome-screen footer, so it must match the release tag. Keep them in lockstep **by hand**:
+The app version lives in **three files that don't read from each other**, and all must match the release tag:
 
-1. Bump `package.json` `version` to the new number (no `v` prefix, e.g. `1.3.0`), following SemVer — patch for fixes, minor for features, major for breaking changes. **Bump `src-tauri/tauri.conf.json` `version` to the same number** — that's the version stamped into the installed desktop/Android app (the "About" / package version), and it does *not* read from `package.json`. Commit both (typically as part of, or just before, the release PR).
+| File | Why it has a version |
+| --- | --- |
+| `package.json` | baked into the web bundle at build time (`vite.config.ts` `define: __APP_VERSION__`) and shown in the welcome-screen footer |
+| `src-tauri/tauri.conf.json` | the version stamped into the installed desktop/Android app (the "About" / package version) |
+| `src-tauri/Cargo.toml` | the Rust crate version (metadata) |
+
+Keep them in lockstep:
+
+1. **Run `scripts/set-version.sh <x.y.z>`** (no `v` prefix, e.g. `1.4.0`) — it sets all three at once. Follow SemVer: patch for fixes, minor for features, major for breaking changes. Commit the result (typically as part of, or just before, the release PR). *(Doing it by hand instead? Edit all three — forgetting `tauri.conf.json` ships installers labelled with the wrong version.)*
 2. After merging to `main`, create and push the matching tag **`v<version>`** (e.g. `v1.3.0`). The tag is what triggers `pages.yml` (web deploy) and `release.yml` (native draft).
 3. Publish the drafted GitHub Release once the native assets are attached.
 
