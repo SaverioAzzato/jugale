@@ -42,10 +42,11 @@ The app version lives in **three files that don't read from each other**, and al
 | `package.json` | baked into the web bundle at build time (`vite.config.ts` `define: __APP_VERSION__`) and shown in the welcome-screen footer |
 | `src-tauri/tauri.conf.json` | the version stamped into the installed desktop/Android app (the "About" / package version) |
 | `src-tauri/Cargo.toml` | the Rust crate version (metadata) |
+| `src-tauri/Cargo.lock` | must match `Cargo.toml`, or `tauri-check.yml`'s `cargo check --locked` fails |
 
 Keep them in lockstep:
 
-1. **Run `scripts/set-version.sh <x.y.z>`** (no `v` prefix, e.g. `1.4.0`) — it sets all three at once. Follow SemVer: patch for fixes, minor for features, major for breaking changes. Commit the result (typically as part of, or just before, the release PR). *(Doing it by hand instead? Edit all three — forgetting `tauri.conf.json` ships installers labelled with the wrong version.)*
+1. **Run `scripts/set-version.sh <x.y.z>`** (no `v` prefix, e.g. `1.4.0`) — it sets all four at once, **including `Cargo.lock`** (skip that and `cargo check --locked` fails CI). Follow SemVer: patch for fixes, minor for features, major for breaking changes. Commit the result (typically as part of, or just before, the release PR). *(Doing it by hand instead? Edit all four — forgetting `tauri.conf.json` ships installers labelled with the wrong version, and forgetting `Cargo.lock` breaks CI.)*
 2. After merging to `main`, create and push the matching tag **`v<version>`** (e.g. `v1.3.0`). The tag is what triggers `pages.yml` (web deploy) and `release.yml` (native draft).
 3. Publish the drafted GitHub Release once the native assets are attached.
 
