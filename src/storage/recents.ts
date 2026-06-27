@@ -9,8 +9,8 @@
  * read-only import fallback (Firefox/Safari, plain JSON drops) has no re-openable reference,
  * so it isn't tracked.
  */
-import type { RecentRef, LoadedCharacter } from "./provider";
-import { reopenWebHandle, isFileAccessSupported } from "./provider";
+import type { RecentRef, LoadedCharacter, GalleryImage } from "./provider";
+import { reopenWebHandle } from "./provider";
 import { isTauri, reopenTauriPath } from "./tauriProvider";
 
 export interface RecentEntry extends RecentRef {
@@ -19,20 +19,34 @@ export interface RecentEntry extends RecentRef {
   lastOpenedAt: number;
 }
 
+/** What a reopen yields: a live (writable) provider, or a read-only snapshot copy. */
+export type ReopenResult =
+  | ({ mode: "live" } & LoadedCharacter)
+  | { mode: "snapshot"; raw: unknown; images: GalleryImage[]; sourceName: string };
+
 const MAX = 8;
 const DB_NAME = "jugale";
 const STORE = "kv";
 const RECENTS_KEY = "recents";
 
-/** True when this platform can both persist and re-resolve a reference. */
+/** Recents work wherever there's IndexedDB: live refs on Chromium/native, read-only
+ *  snapshots everywhere else. So support tracks IndexedDB presence alone. */
 export function recentsSupported(): boolean {
-  if (typeof indexedDB === "undefined") return false;
-  return isTauri() || isFileAccessSupported();
+  return typeof indexedDB !== "undefined";
 }
 
 /** A synchronous de-dup key. Web folders with the same name collide (rare); acceptable here. */
 export function refKey(ref: RecentRef): string {
-  return ref.platform === "tauri" ? `tauri:${ref.kind}:${ref.path}` : `web:${ref.kind}:${ref.name}`;
+  if (ref.platform === "tauri") return `tauri:${ref.kind}:${ref.path}`;
+  if (ref.platform === "snapshot") return `snapshot:${ref.kind}:${ref.name}`;
+  return `web:${ref.kind}:${ref.name}`;
+}
+
+/** Whether a stored entry can be re-resolved on the current host (a tauri path is useless in
+ *  a browser; a web handle is useless in the native shell; a snapshot works anywhere). */
+function resolvableHere(e: RecentEntry): boolean {
+  if (e.platform === "snapshot") return true;
+  return isTauri() ? e.platform === "tauri" : e.platform === "web";
 }
 
 /** Pure: insert/refresh `entry`, drop any same-key duplicate, newest first, capped at `max`. */
@@ -80,14 +94,13 @@ async function idbSet(key: string, value: unknown): Promise<void> {
 }
 
 const readAll = async (): Promise<RecentEntry[]> => (await idbGet<RecentEntry[]>(RECENTS_KEY)) ?? [];
-const platformNow = (): RecentRef["platform"] => (isTauri() ? "tauri" : "web");
 
-/** Recents for the current platform, newest first. Returns [] if unsupported or on any error. */
+/** Recents re-resolvable on this host, newest first. Returns [] if unsupported or on any error. */
 export async function listRecents(): Promise<RecentEntry[]> {
   if (!recentsSupported()) return [];
   try {
     const all = await readAll();
-    return all.filter((e) => e.platform === platformNow()).sort((a, b) => b.lastOpenedAt - a.lastOpenedAt);
+    return all.filter(resolvableHere).sort((a, b) => b.lastOpenedAt - a.lastOpenedAt);
   } catch {
     return [];
   }
@@ -113,16 +126,25 @@ export async function removeRecent(key: string): Promise<void> {
   }
 }
 
-/** Clear the current platform's recents (leaves other platforms' entries untouched). */
+/** Clear every recent (a browser/app only ever sees its own local list). */
 export async function clearRecents(): Promise<void> {
   try {
-    await idbSet(RECENTS_KEY, (await readAll()).filter((e) => e.platform !== platformNow()));
+    await idbSet(RECENTS_KEY, []);
   } catch {
     /* ignore */
   }
 }
 
-/** Re-resolve a recent into a live character. Throws (NO_CHARACTER_JSON / permission denied). */
-export function reopenRecent(entry: RecentEntry): Promise<LoadedCharacter> {
-  return entry.platform === "tauri" ? reopenTauriPath(entry) : reopenWebHandle(entry);
+/** Re-resolve a recent: live (writable) for handle/path entries, read-only for snapshots.
+ *  Throws (NO_CHARACTER_JSON / permission denied) for live entries that can't be reopened. */
+export async function reopenRecent(entry: RecentEntry): Promise<ReopenResult> {
+  if (entry.platform === "snapshot") {
+    const images: GalleryImage[] = (entry.images ?? []).map((im) => ({
+      name: im.name,
+      url: URL.createObjectURL(im.blob),
+    }));
+    return { mode: "snapshot", raw: entry.raw, images, sourceName: entry.name };
+  }
+  const loaded = entry.platform === "tauri" ? await reopenTauriPath(entry) : await reopenWebHandle(entry);
+  return { mode: "live", ...loaded };
 }

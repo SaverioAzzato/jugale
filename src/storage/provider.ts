@@ -24,17 +24,29 @@ export interface GalleryImage {
   url: string;
 }
 
+/** An image kept inside a read-only snapshot: the blob is structured-cloneable (IndexedDB). */
+export interface SnapshotImage {
+  name: string;
+  blob: Blob;
+}
+
 /**
  * A serializable reference to a previously-opened character, persisted for the "Recents"
- * list. The web variant stores the live `FileSystemHandle` (structured-cloneable, kept in
- * IndexedDB); the native variant stores the absolute `path`. `name` is the display label.
+ * list. Three flavours, one per host capability:
+ * - `web`: a live `FileSystemHandle` (Chromium) — reopens writable.
+ * - `tauri`: an absolute `path` (desktop/mobile) — reopens writable.
+ * - `snapshot`: an inlined read-only copy (`raw` + image blobs) for hosts that can't persist a
+ *   live reference (Firefox/Safari, or any plain JSON/folder import) — reopens read-only.
+ * All structured-cloneable, kept in IndexedDB; nothing is ever sent anywhere.
  */
 export interface RecentRef {
-  platform: "web" | "tauri";
+  platform: "web" | "tauri" | "snapshot";
   kind: "file" | "folder";
   name: string;
   path?: string; // tauri
   handle?: unknown; // web: FileSystemFileHandle | directory handle (cast on reopen)
+  raw?: unknown; // snapshot: the character JSON
+  images?: SnapshotImage[]; // snapshot: gallery blobs
 }
 
 /** A character re-resolved from a RecentRef or a fresh pick: ready to hand to the store. */
@@ -181,6 +193,8 @@ export async function openCharacterFolder(): Promise<{
 export async function importCharacterFolder(files: FileList | File[]): Promise<{
   raw: unknown;
   images: GalleryImage[];
+  /** The same images as persistable blobs, for a Recents snapshot. */
+  imageBlobs: SnapshotImage[];
   sourceName: string;
 }> {
   const list = Array.from(files);
@@ -194,16 +208,23 @@ export async function importCharacterFolder(files: FileList | File[]): Promise<{
 
   const baseDir = rel(jsonFile).split("/").slice(0, -1).join("/"); // folder holding character.json
   const imagesPrefix = baseDir ? `${baseDir}/images/` : "images/";
-  const images: GalleryImage[] = list
+  const imageFiles = list
     .filter((f) => {
       const p = rel(f);
       return p.startsWith(imagesPrefix) && !p.slice(imagesPrefix.length).includes("/") && IMAGE_RE.test(p);
     })
-    .sort((a, b) => rel(a).localeCompare(rel(b)))
-    .map((f) => ({ name: `images/${rel(f).slice(imagesPrefix.length)}`, url: URL.createObjectURL(f) }));
+    .sort((a, b) => rel(a).localeCompare(rel(b)));
+  const images: GalleryImage[] = imageFiles.map((f) => ({
+    name: `images/${rel(f).slice(imagesPrefix.length)}`,
+    url: URL.createObjectURL(f),
+  }));
+  const imageBlobs: SnapshotImage[] = imageFiles.map((f) => ({
+    name: `images/${rel(f).slice(imagesPrefix.length)}`,
+    blob: f,
+  }));
 
   const sourceName = baseDir.split("/").pop() || jsonFile.name;
-  return { raw: JSON.parse(await jsonFile.text()), images, sourceName };
+  return { raw: JSON.parse(await jsonFile.text()), images, imageBlobs, sourceName };
 }
 
 /** Fallback load for browsers without live file access: parse a JSON file chosen via <input type="file">. */

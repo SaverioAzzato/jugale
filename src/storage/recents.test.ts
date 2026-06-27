@@ -15,6 +15,10 @@ describe("refKey", () => {
     expect(refKey({ platform: "tauri", kind: "folder", name: "alpha", path: "/p/alpha" })).toBe("tauri:folder:/p/alpha");
     expect(refKey({ platform: "web", kind: "file", name: "character.json" })).toBe("web:file:character.json");
   });
+
+  it("keys snapshot refs by name (distinct from live refs)", () => {
+    expect(refKey({ platform: "snapshot", kind: "folder", name: "alpha" })).toBe("snapshot:folder:alpha");
+  });
 });
 
 describe("mergeRecent", () => {

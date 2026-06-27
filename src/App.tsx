@@ -183,7 +183,10 @@ export function App() {
     e.target.value = "";
     if (!file) return;
     try {
-      loadRaw(await importJsonFile(file), file.name, [], true);
+      const raw = await importJsonFile(file);
+      loadRaw(raw, file.name, [], true);
+      // Read-only host: keep a snapshot so it can still appear in (and reopen from) Recents.
+      void recordRecent({ platform: "snapshot", kind: "file", name: file.name, raw, images: [] });
     } catch {
       useToast.getState().push("error", t("app.invalidJson"));
     }
@@ -198,6 +201,13 @@ export function App() {
     try {
       const result = await importCharacterFolder(files);
       loadRaw(result.raw, result.sourceName, result.images, true);
+      void recordRecent({
+        platform: "snapshot",
+        kind: "folder",
+        name: result.sourceName,
+        raw: result.raw,
+        images: result.imageBlobs,
+      });
     } catch (err) {
       const key = err instanceof Error && err.message === NO_CHARACTER_JSON ? "app.noCharacterJson" : "app.invalidJson";
       useToast.getState().push("error", t(key));
@@ -218,7 +228,11 @@ export function App() {
   async function handleReopenRecent(entry: RecentEntry) {
     try {
       const result = await reopenRecent(entry);
-      connect(result.provider, result.raw, result.sourceName, result.images);
+      if (result.mode === "live") {
+        connect(result.provider, result.raw, result.sourceName, result.images);
+      } else {
+        loadRaw(result.raw, result.sourceName, result.images, true); // snapshot → read-only
+      }
       void recordRecent(entry); // bump it to the top
     } catch (e) {
       if (e instanceof Error && e.message === RECENT_PERMISSION_DENIED) {
