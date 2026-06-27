@@ -24,6 +24,30 @@ export interface GalleryImage {
   url: string;
 }
 
+/**
+ * A serializable reference to a previously-opened character, persisted for the "Recents"
+ * list. The web variant stores the live `FileSystemHandle` (structured-cloneable, kept in
+ * IndexedDB); the native variant stores the absolute `path`. `name` is the display label.
+ */
+export interface RecentRef {
+  platform: "web" | "tauri";
+  kind: "file" | "folder";
+  name: string;
+  path?: string; // tauri
+  handle?: unknown; // web: FileSystemFileHandle | directory handle (cast on reopen)
+}
+
+/** A character re-resolved from a RecentRef or a fresh pick: ready to hand to the store. */
+export interface LoadedCharacter {
+  provider: StorageProvider;
+  raw: unknown;
+  images: GalleryImage[];
+  sourceName: string;
+}
+
+/** Thrown by reopenWebHandle when the user declines the browser's re-permission prompt. */
+export const RECENT_PERMISSION_DENIED = "recent-permission-denied";
+
 const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
 
 /** Async-iterable directory handle (File System Access API; not yet in every TS lib). */
@@ -66,7 +90,11 @@ class FileHandleProvider implements StorageProvider {
 }
 
 /** Opens a character.json for live read/write. Returns null if unsupported or cancelled. */
-export async function openCharacterFile(): Promise<{ provider: StorageProvider; raw: unknown } | null> {
+export async function openCharacterFile(): Promise<{
+  provider: StorageProvider;
+  raw: unknown;
+  ref: RecentRef;
+} | null> {
   const picker = (window as PickerWindow).showOpenFilePicker;
   if (!picker) return null;
   let handles: FileSystemFileHandle[];
@@ -77,8 +105,13 @@ export async function openCharacterFile(): Promise<{ provider: StorageProvider; 
   } catch {
     return null; // user dismissed the picker
   }
-  const provider = new FileHandleProvider(handles[0]);
-  return { provider, raw: await provider.read() };
+  const handle = handles[0];
+  const provider = new FileHandleProvider(handle);
+  return {
+    provider,
+    raw: await provider.read(),
+    ref: { platform: "web", kind: "file", name: handle.name, handle },
+  };
 }
 
 /** Thrown by the folder loaders when the chosen folder has no character.json at its root. */
@@ -114,6 +147,7 @@ export async function openCharacterFolder(): Promise<{
   raw: unknown;
   images: GalleryImage[];
   sourceName: string;
+  ref: RecentRef;
 } | null> {
   const picker = (window as PickerWindow).showDirectoryPicker;
   if (!picker) return null;
@@ -130,7 +164,13 @@ export async function openCharacterFolder(): Promise<{
     throw new Error(NO_CHARACTER_JSON);
   }
   const provider = new FileHandleProvider(fileHandle);
-  return { provider, raw: await provider.read(), images: await readImagesDir(dir), sourceName: dir.name };
+  return {
+    provider,
+    raw: await provider.read(),
+    images: await readImagesDir(dir),
+    sourceName: dir.name,
+    ref: { platform: "web", kind: "folder", name: dir.name, handle: dir },
+  };
 }
 
 /**
@@ -182,4 +222,41 @@ export function exportJson(data: unknown, filename: string): void {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+/** A persisted FileSystemHandle with the permission methods TS's lib doesn't always type. */
+interface PermHandle {
+  queryPermission?(d: { mode: "read" | "readwrite" }): Promise<PermissionState>;
+  requestPermission?(d: { mode: "read" | "readwrite" }): Promise<PermissionState>;
+}
+
+/** Regain read/write access to a stored handle, prompting once if needed (needs a user gesture,
+ *  which the click on a recent provides). Throws RECENT_PERMISSION_DENIED if the user declines. */
+async function ensurePermission(handle: unknown): Promise<void> {
+  const h = handle as PermHandle;
+  const opts = { mode: "readwrite" as const };
+  if (!h.queryPermission) return; // older impl without the permission API: assume usable
+  if ((await h.queryPermission(opts)) === "granted") return;
+  if ((await h.requestPermission?.(opts)) === "granted") return;
+  throw new Error(RECENT_PERMISSION_DENIED);
+}
+
+/** Re-resolve a web RecentRef (stored FileSystemHandle) into a live, writable character.
+ *  Throws RECENT_PERMISSION_DENIED if access is declined, NO_CHARACTER_JSON if the folder's
+ *  character.json is gone. */
+export async function reopenWebHandle(ref: RecentRef): Promise<LoadedCharacter> {
+  await ensurePermission(ref.handle);
+  if (ref.kind === "folder") {
+    const dir = ref.handle as DirHandle;
+    let fileHandle: FileSystemFileHandle;
+    try {
+      fileHandle = await dir.getFileHandle("character.json");
+    } catch {
+      throw new Error(NO_CHARACTER_JSON);
+    }
+    const provider = new FileHandleProvider(fileHandle);
+    return { provider, raw: await provider.read(), images: await readImagesDir(dir), sourceName: dir.name };
+  }
+  const provider = new FileHandleProvider(ref.handle as FileSystemFileHandle);
+  return { provider, raw: await provider.read(), images: [], sourceName: ref.name };
 }

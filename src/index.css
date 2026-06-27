@@ -1193,6 +1193,71 @@ a {
   gap: 10px;
   margin: 20px 0 8px;
 }
+/* Recents — last-opened characters, between the central card and the samples. */
+.empty-recents {
+  max-width: 520px;
+  width: 100%;
+  margin-top: 22px;
+}
+.empty-recents-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.empty-recents-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+.empty-recents-clear {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--dim);
+  cursor: pointer;
+}
+.empty-recents-clear:hover {
+  color: var(--muted);
+}
+.empty-recents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.recent-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+.recent-item:hover {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+.recent-icon {
+  flex: 0 0 auto;
+  font-size: 15px;
+  line-height: 1;
+}
+.recent-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .empty-samples-disclosure {
   max-width: 520px;
   width: 100%;

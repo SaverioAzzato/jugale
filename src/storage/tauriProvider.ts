@@ -7,7 +7,7 @@
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { exists, readDir, readFile, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { join, basename } from "@tauri-apps/api/path";
-import type { StorageProvider, GalleryImage } from "./provider";
+import type { StorageProvider, GalleryImage, RecentRef, LoadedCharacter } from "./provider";
 import { NO_CHARACTER_JSON } from "./provider";
 
 const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
@@ -60,14 +60,22 @@ async function readImagesDirTauri(dirPath: string): Promise<GalleryImage[]> {
 }
 
 /** Opens a character.json for live read/write via the native file dialog. Null if cancelled. */
-export async function openCharacterFileTauri(): Promise<{ provider: StorageProvider; raw: unknown } | null> {
+export async function openCharacterFileTauri(): Promise<{
+  provider: StorageProvider;
+  raw: unknown;
+  ref: RecentRef;
+} | null> {
   const path = await openDialog({
     multiple: false,
     filters: [{ name: "character.json", extensions: ["json"] }],
   });
   if (!path) return null;
   const provider = new TauriFileProvider(path);
-  return { provider, raw: await provider.read() };
+  return {
+    provider,
+    raw: await provider.read(),
+    ref: { platform: "tauri", kind: "file", name: await basename(path), path },
+  };
 }
 
 /**
@@ -79,6 +87,7 @@ export async function openCharacterFolderTauri(): Promise<{
   raw: unknown;
   images: GalleryImage[];
   sourceName: string;
+  ref: RecentRef;
 } | null> {
   const dirPath = await openDialog({ directory: true, multiple: false, recursive: true });
   if (!dirPath) return null;
@@ -90,5 +99,27 @@ export async function openCharacterFolderTauri(): Promise<{
     raw: await provider.read(),
     images: await readImagesDirTauri(dirPath),
     sourceName: await basename(dirPath),
+    ref: { platform: "tauri", kind: "folder", name: await basename(dirPath), path: dirPath },
   };
+}
+
+/** Re-resolve a native RecentRef (stored absolute path) into a live character.
+ *  Throws NO_CHARACTER_JSON if the file/folder is gone (moved or deleted). */
+export async function reopenTauriPath(ref: RecentRef): Promise<LoadedCharacter> {
+  if (ref.kind === "folder") {
+    const dirPath = ref.path!;
+    const jsonPath = await join(dirPath, "character.json");
+    if (!(await exists(jsonPath))) throw new Error(NO_CHARACTER_JSON);
+    const provider = new TauriFileProvider(jsonPath);
+    return {
+      provider,
+      raw: await provider.read(),
+      images: await readImagesDirTauri(dirPath),
+      sourceName: await basename(dirPath),
+    };
+  }
+  const path = ref.path!;
+  if (!(await exists(path))) throw new Error(NO_CHARACTER_JSON);
+  const provider = new TauriFileProvider(path);
+  return { provider, raw: await provider.read(), images: [], sourceName: await basename(path) };
 }
