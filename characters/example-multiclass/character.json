@@ -1,19 +1,19 @@
 {
   "schemaVersion": "2.0.0",
   "meta": {
-    "name": "Esempio Multiclasse",
-    "summary": "Paladino 3 / Stregone 2 — prova multiclasse: due incantatori, due CD, slot condivisi.",
+    "name": "Example Multiclass",
+    "summary": "Paladin 3 / Sorcerer 2 — multiclass test: two casters, two save DCs, shared slots.",
     "tags": ["paladin", "sorcerer", "multiclass", "example"]
   },
-  "identity": { "race": "Mezzelfo", "background": "Noble", "alignment": "LG" },
+  "identity": { "race": "Half-Elf", "background": "Noble", "alignment": "LG" },
   "classes": [
     {
-      "name": "Paladino", "subclass": "Giuramento di Devozione", "level": 3, "hitDie": "d10",
+      "name": "Paladin", "subclass": "Oath of Devotion", "level": 3, "hitDie": "d10",
       "link": "https://www.dndbeyond.com/classes/paladin",
       "spellcasting": { "ability": "cha", "type": "prepared", "slotProgression": "half" }
     },
     {
-      "name": "Stregone", "subclass": "Stirpe Draconica", "level": 2, "hitDie": "d6",
+      "name": "Sorcerer", "subclass": "Draconic Bloodline", "level": 2, "hitDie": "d6",
       "link": "https://www.dndbeyond.com/classes/sorcerer",
       "spellcasting": { "ability": "cha", "type": "known", "slotProgression": "full" }
     }
@@ -32,61 +32,61 @@
       { "id": "religion", "proficient": true },
       { "id": "intimidation", "proficient": true }
     ],
-    "armor": ["Tutte", "Scudi"],
-    "weapons": ["Semplici", "Da guerra"],
-    "languages": ["Comune", "Elfico", "Draconico"]
+    "armor": ["All", "Shields"],
+    "weapons": ["Simple", "Martial"],
+    "languages": ["Common", "Elvish", "Draconic"]
   },
   "combat": {
     "armorClass": 18,
     "speed": { "walk": 30 },
     "hp": { "max": 42, "current": 42, "temp": 0, "hitDiceRemaining": 5 },
     "attacks": [
-      { "name": "Spada lunga", "link": "https://www.dndbeyond.com/equipment/longsword", "level": "Arma", "range": "Mischia", "attack": "+5 colpire", "defense": "CA", "effect": "1d8+2 taglienti" },
-      { "name": "Divine Smite", "level": "1+", "range": "Mischia", "attack": "—", "defense": "—", "effect": "+2d8 radianti (slot liv.1), +1d8 per livello slot", "notes": "Consuma uno slot a colpo andato a segno" }
+      { "name": "Longsword", "link": "https://www.dndbeyond.com/equipment/longsword", "level": "Weapon", "range": "Melee", "attack": "+5 to hit", "defense": "AC", "effect": "1d8+2 slashing" },
+      { "name": "Divine Smite", "level": "1+", "range": "Melee", "attack": "—", "defense": "—", "effect": "+2d8 radiant (level 1 slot), +1d8 per slot level", "notes": "Spends a slot on a hit" }
     ]
   },
   "resources": [
-    { "id": "spell-slots-1", "label": "Slot incantesimo liv. 1", "category": "spellSlot", "level": 1, "max": 4, "current": 4, "resetOn": "longRest" },
-    { "id": "sorcery-points", "label": "Punti Stregoneria", "category": "points", "max": 2, "current": 2, "resetOn": "longRest", "link": "https://www.dndbeyond.com/sources/basic-rules/sorcerer#FontofMagic" },
-    { "id": "channel-divinity", "label": "Incanalare Divinità", "category": "charges", "max": 1, "current": 1, "resetOn": "shortRest" },
-    { "id": "lay-on-hands", "label": "Imposizione delle Mani (pool)", "category": "points", "max": 15, "current": 15, "resetOn": "longRest" }
+    { "id": "spell-slots-1", "label": "Level 1 spell slots", "category": "spellSlot", "level": 1, "max": 4, "current": 4, "resetOn": "longRest" },
+    { "id": "sorcery-points", "label": "Sorcery Points", "category": "points", "max": 2, "current": 2, "resetOn": "longRest", "link": "https://www.dndbeyond.com/sources/basic-rules/sorcerer#FontofMagic" },
+    { "id": "channel-divinity", "label": "Channel Divinity", "category": "charges", "max": 1, "current": 1, "resetOn": "shortRest" },
+    { "id": "lay-on-hands", "label": "Lay on Hands (pool)", "category": "points", "max": 15, "current": 15, "resetOn": "longRest" }
   ],
   "spellSections": [
     {
-      "id": "paladino-prep", "title": "Paladino — preparati",
+      "id": "paladin-prepared", "title": "Paladin — prepared",
       "entries": [
-        { "name": "Bless", "link": "https://www.dndbeyond.com/spells/bless", "level": "1", "castingTime": "1 azione", "range": "30 ft", "components": "V, S, M", "duration": "Conc. 1 min", "concentration": true, "attack": "—", "defense": "—", "effect": "Fino a 3 creature: +1d4 a tiri per colpire e TS" },
-        { "name": "Shield of Faith", "link": "https://www.dndbeyond.com/spells/shield-of-faith", "level": "1", "range": "60 ft", "concentration": true, "attack": "—", "defense": "—", "effect": "+2 CA a un alleato" }
+        { "name": "Bless", "link": "https://www.dndbeyond.com/spells/bless", "level": "1", "castingTime": "1 action", "range": "30 ft", "components": "V, S, M", "duration": "Conc. 1 min", "concentration": true, "attack": "—", "defense": "—", "effect": "Up to 3 creatures: +1d4 to attack rolls and saves" },
+        { "name": "Shield of Faith", "link": "https://www.dndbeyond.com/spells/shield-of-faith", "level": "1", "range": "60 ft", "concentration": true, "attack": "—", "defense": "—", "effect": "+2 AC to one ally" }
       ]
     },
     {
-      "id": "stregone-noti", "title": "Stregone — conosciuti",
+      "id": "sorcerer-known", "title": "Sorcerer — known",
       "entries": [
-        { "name": "Chromatic Orb", "link": "https://www.dndbeyond.com/spells/chromatic-orb", "level": "1", "range": "90 ft", "components": "V, S, M", "concentration": false, "attack": "Attacco con incantesimo a distanza", "defense": "—", "effect": "3d8 danni di tipo a scelta (acido/freddo/fuoco/fulmine/veleno/tuono); +1d8 per slot superiore" },
-        { "name": "Fire Bolt", "link": "https://www.dndbeyond.com/spells/fire-bolt", "level": "0", "range": "120 ft", "concentration": false, "attack": "Attacco con incantesimo a distanza", "defense": "—", "effect": "1d10 da fuoco" }
+        { "name": "Chromatic Orb", "link": "https://www.dndbeyond.com/spells/chromatic-orb", "level": "1", "range": "90 ft", "components": "V, S, M", "concentration": false, "attack": "Ranged spell attack", "defense": "—", "effect": "3d8 damage of a chosen type (acid/cold/fire/lightning/poison/thunder); +1d8 per higher slot" },
+        { "name": "Fire Bolt", "link": "https://www.dndbeyond.com/spells/fire-bolt", "level": "0", "range": "120 ft", "concentration": false, "attack": "Ranged spell attack", "defense": "—", "effect": "1d10 fire" }
       ]
     }
   ],
   "features": [
-    { "id": "divine-smite", "name": "Divine Smite", "source": "class", "level": 2, "link": "https://www.dndbeyond.com/sources/basic-rules/paladin#DivineSmite", "description": "Spendi uno slot per infliggere danni radianti extra a un colpo in mischia." },
-    { "id": "sacred-oath", "name": "Giuramento Sacro (Devozione)", "source": "subclass", "level": 3, "description": "Channel Divinity: Sacred Weapon / Turn the Unholy." },
-    { "id": "font-of-magic", "name": "Fonte di Magia", "source": "class", "level": 2, "description": "Converti slot in punti stregoneria e viceversa.", "uses": { "resourceId": "sorcery-points", "amount": 1 } },
-    { "id": "draconic-resilience", "name": "Resilienza Draconica", "source": "subclass", "level": 1, "description": "+1 PF per livello da stregone; CA base 13 + DES senza armatura." }
+    { "id": "divine-smite", "name": "Divine Smite", "source": "class", "level": 2, "link": "https://www.dndbeyond.com/sources/basic-rules/paladin#DivineSmite", "description": "Spend a slot to deal extra radiant damage on a melee hit." },
+    { "id": "sacred-oath", "name": "Sacred Oath (Devotion)", "source": "subclass", "level": 3, "description": "Channel Divinity: Sacred Weapon / Turn the Unholy." },
+    { "id": "font-of-magic", "name": "Font of Magic", "source": "class", "level": 2, "description": "Convert slots into sorcery points and back.", "uses": { "resourceId": "sorcery-points", "amount": 1 } },
+    { "id": "draconic-resilience", "name": "Draconic Resilience", "source": "subclass", "level": 1, "description": "+1 HP per sorcerer level; base AC 13 + Dex while unarmored." }
   ],
   "inventory": {
     "items": [
-      { "id": "longsword", "name": "Spada lunga", "quantity": 1, "equipped": true },
-      { "id": "shield", "name": "Scudo", "quantity": 1, "equipped": true },
-      { "id": "holy-symbol", "name": "Simbolo sacro", "quantity": 1 }
+      { "id": "longsword", "name": "Longsword", "quantity": 1, "equipped": true },
+      { "id": "shield", "name": "Shield", "quantity": 1, "equipped": true },
+      { "id": "holy-symbol", "name": "Holy symbol", "quantity": 1 }
     ],
     "currencies": { "gp": 40, "sp": 10 }
   },
   "customSections": [
     {
-      "id": "regole-multiclasse", "title": "Promemoria multiclasse", "layout": "checklist",
+      "id": "multiclass-rules", "title": "Multiclass reminders", "layout": "checklist",
       "items": [
-        { "label": "Slot da tabella multiclasse (liv. incantatore = Pal/2 + Sorc)", "done": true },
-        { "label": "Incantesimi noti/preparati restano per classe", "done": true }
+        { "label": "Slots from the multiclass table (caster level = Pal/2 + Sorc)", "done": true },
+        { "label": "Spells known/prepared stay per class", "done": true }
       ]
     }
   ]

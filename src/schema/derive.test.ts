@@ -75,17 +75,17 @@ describe("derivedArmorClass", () => {
   it("an explicit override always wins", () => {
     const c = make({
       combat: { armorClass: 10, armorClassOverride: 18 },
-      inventory: { items: [{ name: "Cuoio", equipped: true, ac: { base: 11, addDex: true, label: "cuoio" } }] },
+      inventory: { items: [{ name: "Leather", equipped: true, ac: { base: 11, addDex: true, label: "leather" } }] },
     });
-    expect(derivedArmorClass(c)).toEqual({ value: 18, breakdown: "manuale" });
+    expect(derivedArmorClass(c)).toEqual({ value: 18, breakdown: "manual" });
   });
 
   it("sums equipped light armor base + uncapped Dex, with a provenance breakdown", () => {
     const c = make({
       abilities: { dex: { score: 16 } }, // +3
-      inventory: { items: [{ name: "Cuoio borchiato", equipped: true, ac: { base: 12, addDex: true, label: "cuoio" } }] },
+      inventory: { items: [{ name: "Studded leather", equipped: true, ac: { base: 12, addDex: true, label: "leather" } }] },
     });
-    expect(derivedArmorClass(c)).toEqual({ value: 15, breakdown: "cuoio 12 + des 3" });
+    expect(derivedArmorClass(c)).toEqual({ value: 15, breakdown: "leather 12 + dex 3" });
   });
 
   it("caps Dex for medium armor and adds a shield bonus", () => {
@@ -93,12 +93,12 @@ describe("derivedArmorClass", () => {
       abilities: { dex: { score: 18 } }, // +4, capped to +2
       inventory: {
         items: [
-          { name: "Cotta", equipped: true, ac: { base: 14, addDex: true, dexCap: 2, label: "cotta" } },
-          { name: "Scudo", equipped: true, ac: { bonus: 2, label: "scudo" } },
+          { name: "Chain mail", equipped: true, ac: { base: 14, addDex: true, dexCap: 2, label: "chain" } },
+          { name: "Shield", equipped: true, ac: { bonus: 2, label: "shield" } },
         ],
       },
     });
-    expect(derivedArmorClass(c)).toEqual({ value: 18, breakdown: "cotta 14 + des 2 + scudo +2" });
+    expect(derivedArmorClass(c)).toEqual({ value: 18, breakdown: "chain 14 + dex 2 + shield +2" });
   });
 
   it("ignores unequipped armor", () => {

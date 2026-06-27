@@ -44,14 +44,14 @@ export function maxHitDice(character: Character): number {
 /**
  * Armor Class, derived without hardcoding 5e armor rules: each equipped armor/shield item
  * declares its own contribution (see character.ts → ArmorAc) and we sum them, exposing a
- * provenance breakdown (e.g. "cuoio 11 + des 3 + scudo 2"). Precedence:
- *   1. an explicit `combat.armorClassOverride` always wins ("manuale");
+ * provenance breakdown (e.g. "leather 11 + dex 3 + shield 2"). Precedence:
+ *   1. an explicit `combat.armorClassOverride` always wins ("manual");
  *   2. else, if any equipped item declares an `ac`, derive from those;
  *   3. else, fall back to the stored `combat.armorClass` (legacy / hand-set value).
  */
 export function derivedArmorClass(character: Character): { value: number; breakdown: string } {
   const override = character.combat.armorClassOverride;
-  if (override != null) return { value: override, breakdown: "manuale" };
+  if (override != null) return { value: override, breakdown: "manual" };
 
   const dex = abilityModifierFor(character, "dex");
   const equipped = character.inventory.items.filter((it) => it.equipped && it.ac != null);
@@ -65,14 +65,14 @@ export function derivedArmorClass(character: Character): { value: number; breakd
 
   for (const it of equipped) {
     const ac = it.ac!;
-    const label = ac.label || it.name || "armatura";
+    const label = ac.label || it.name || "armor";
     if (ac.base != null) {
       total += ac.base;
       parts.push(`${label} ${ac.base}`);
       if (ac.addDex) {
         const applied = ac.dexCap != null ? Math.min(dex, ac.dexCap) : dex;
         total += applied;
-        parts.push(`des ${applied}`);
+        parts.push(`dex ${applied}`);
       }
     }
     if (ac.bonus) {
