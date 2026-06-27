@@ -1,8 +1,20 @@
 # :JUGALE — "D&D, but Digital"
 
-*Si legge "iugale".*
+*Pronounced /juˈɡaːle/ — "yoo-GAH-leh".*
 
 A character-sheet platform for tabletop RPGs (D&D 5e in practice) where **the JSON is the character** and the app is a beautiful, stateless lens over it. Build and edit characters with any chatbot (or by hand), then view and *play* them — track HP, resources, spell slots, currencies — with the app kept in sync with a plain, open `character.json`.
+
+## Use it
+
+No install, no account, no subscription:
+
+- **Web** — open the live app: **[saverioazzato.github.io/jugale](https://saverioazzato.github.io/jugale/)**. Works in any modern browser; Chromium browsers also save your changes live.
+- **Desktop & mobile** — download an installer (Mac / Windows / Linux) or the Android APK from **[Releases](https://github.com/SaverioAzzato/jugale/releases)**.
+
+Then, on the welcome screen:
+
+1. **Have a character already?** Open its `character.json` (or its folder, to get the portrait too). Recently-opened characters are one click away.
+2. **Starting fresh?** Build one with any chatbot using the in-app **Prompts** (the book icon) — they walk you through 5e rules one decision at a time — or turn on **Edit mode** (the pencil) and fill the sheet in by hand. New to the format? See the in-app **Help** (the **?**) or [docs/SCHEMA.md](docs/SCHEMA.md).
 
 > **Status:** mid-rewrite. The generalized v2 engine lives at the repo root (React + Vite + TypeScript). The original vanilla-JS prototype was retired when the rewrite began — it's tagged [`prototype-v1`](https://github.com/SaverioAzzato/jugale/releases/tag/prototype-v1) in git if you need it. See the [roadmap](docs/ROADMAP.md).
 
@@ -10,7 +22,9 @@ A character-sheet platform for tabletop RPGs (D&D 5e in practice) where **the JS
 
 Existing tools lock your character behind their UI and account. Here the source of truth is a human- and GPT-readable `character.json` + an `images/` folder. You can edit it in the app, by hand, or with any external chatbot — no subscription, no lock-in. The same app ships everywhere: **web** (GitHub Pages), **desktop**, and **mobile**, all from one codebase.
 
-## Quick start
+## Run from source
+
+For development or building it yourself (end users don't need any of this — just use the [links above](#use-it)):
 
 ```bash
 npm install
@@ -97,7 +111,7 @@ By default, characters ship with `meta.ruleset: ["SRD"]` — the freely-licensed
 
 ## Distribution
 
-Free and open: the **web app is the GitHub Pages site** ([live](https://saverioazzato.github.io/jugale/)); desktop and Android binaries are attached to **GitHub Releases**. Both are built and shipped by GitHub Actions, and both happen on the same trigger: **pushing a version tag** (`v*`) — [`pages.yml`](.github/workflows/pages.yml) redeploys the web app, [`release.yml`](.github/workflows/release.yml) builds Mac/Win/Linux installers plus an Android APK and attaches them to a (draft) GitHub Release. The Android APK is debug-signed (Android's own auto-generated debug keystore) — no Play Store signing key yet, so it's a sideload-and-install file, not a Play Store upload. Merging PRs to `main` doesn't ship anything by itself; tag when you want a release. No app stores, no hosting bills.
+Free and open: the **web app is the GitHub Pages site** ([live](https://saverioazzato.github.io/jugale/)); desktop and Android binaries are attached to **GitHub Releases**. Both are built and shipped by GitHub Actions, and both happen on the same trigger: **pushing a version tag** (`v*`) — [`pages.yml`](.github/workflows/pages.yml) redeploys the web app, [`release.yml`](.github/workflows/release.yml) builds Mac/Win/Linux installers plus an Android APK and attaches them to a (draft) GitHub Release. The Android APK is debug-signed (Android's own auto-generated debug keystore) — no Play Store signing key yet, so it's a sideload-and-install file, not a Play Store upload. Merging PRs to `main` doesn't ship anything by itself; tag when you want a release — **bump `package.json`'s `version` to match the tag** (it's the app version shown in-app; see [Cutting a release](docs/AUTOMATION.md#cutting-a-release)). No app stores, no hosting bills.
 
 ## Contributing & automation
 
