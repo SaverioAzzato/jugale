@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useCharacter } from "./state/store";
 import { Sheet } from "./render/Sheet";
@@ -12,9 +12,19 @@ import {
   importJsonFile,
   importCharacterFolder,
   NO_CHARACTER_JSON,
+  RECENT_PERMISSION_DENIED,
   type GalleryImage,
 } from "./storage/provider";
 import { isTauri, openCharacterFileTauri, openCharacterFolderTauri } from "./storage/tauriProvider";
+import {
+  recentsSupported,
+  listRecents,
+  recordRecent,
+  removeRecent,
+  clearRecents,
+  reopenRecent,
+  type RecentEntry,
+} from "./storage/recents";
 import { useT, type TFn } from "./i18n/useI18n";
 import { SettingsButton, SettingsPage } from "./ui/SettingsMenu";
 import { PromptsButton, PromptsPage } from "./ui/PromptsPage";
@@ -128,13 +138,19 @@ export function App() {
 
   async function handleOpen() {
     const result = isTauri() ? await openCharacterFileTauri() : await openCharacterFile();
-    if (result) connect(result.provider, result.raw, "file");
+    if (result) {
+      connect(result.provider, result.raw, result.ref.name);
+      void recordRecent(result.ref);
+    }
   }
 
   async function handleOpenFolderPicker() {
     try {
       const result = isTauri() ? await openCharacterFolderTauri() : await openCharacterFolder();
-      if (result) connect(result.provider, result.raw, result.sourceName, result.images);
+      if (result) {
+        connect(result.provider, result.raw, result.sourceName, result.images);
+        void recordRecent(result.ref);
+      }
     } catch (e) {
       const key = e instanceof Error && e.message === NO_CHARACTER_JSON ? "app.noCharacterJson" : "app.invalidJson";
       useToast.getState().push("error", t(key));
@@ -167,7 +183,10 @@ export function App() {
     e.target.value = "";
     if (!file) return;
     try {
-      loadRaw(await importJsonFile(file), file.name, [], true);
+      const raw = await importJsonFile(file);
+      loadRaw(raw, file.name, [], true);
+      // Read-only host: keep a snapshot so it can still appear in (and reopen from) Recents.
+      void recordRecent({ platform: "snapshot", kind: "file", name: file.name, raw, images: [] });
     } catch {
       useToast.getState().push("error", t("app.invalidJson"));
     }
@@ -182,12 +201,53 @@ export function App() {
     try {
       const result = await importCharacterFolder(files);
       loadRaw(result.raw, result.sourceName, result.images, true);
+      void recordRecent({
+        platform: "snapshot",
+        kind: "folder",
+        name: result.sourceName,
+        raw: result.raw,
+        images: result.imageBlobs,
+      });
     } catch (err) {
       const key = err instanceof Error && err.message === NO_CHARACTER_JSON ? "app.noCharacterJson" : "app.invalidJson";
       useToast.getState().push("error", t(key));
     } finally {
       e.target.value = "";
     }
+  }
+
+  // ---- Recents (welcome screen): last-opened characters, reopenable in one click ----
+  const [recents, setRecents] = useState<RecentEntry[]>([]);
+  const refreshRecents = useCallback(() => {
+    if (recentsSupported()) listRecents().then(setRecents).catch(() => setRecents([]));
+  }, []);
+  useEffect(() => {
+    if (!character) refreshRecents(); // (re)load whenever we're on the welcome screen
+  }, [character, refreshRecents]);
+
+  async function handleReopenRecent(entry: RecentEntry) {
+    try {
+      const result = await reopenRecent(entry);
+      if (result.mode === "live") {
+        connect(result.provider, result.raw, result.sourceName, result.images);
+      } else {
+        loadRaw(result.raw, result.sourceName, result.images, true); // snapshot → read-only
+      }
+      void recordRecent(entry); // bump it to the top
+    } catch (e) {
+      if (e instanceof Error && e.message === RECENT_PERMISSION_DENIED) {
+        useToast.getState().push("error", t("recents.permissionDenied"));
+        return; // keep the entry — the file is fine, the user just declined access
+      }
+      useToast.getState().push("error", t("recents.reopenFailed"));
+      await removeRecent(entry.key); // stale (moved/deleted) — prune it from the list
+      refreshRecents();
+    }
+  }
+
+  async function handleClearRecents() {
+    await clearRecents();
+    refreshRecents();
   }
 
   return (
@@ -315,6 +375,9 @@ export function App() {
           onOpenJson={handleOpenJson}
           onOpenFolder={handleOpenFolder}
           onSample={(d, l, imgs) => loadRaw(d, l, imgs)}
+          recents={recents}
+          onReopenRecent={handleReopenRecent}
+          onClearRecents={handleClearRecents}
           t={t}
         />
       )}
@@ -376,11 +439,17 @@ function EmptyState({
   onOpenJson,
   onOpenFolder,
   onSample,
+  recents,
+  onReopenRecent,
+  onClearRecents,
   t,
 }: {
   onOpenJson: () => void;
   onOpenFolder: () => void;
   onSample: (data: unknown, label: string, images: GalleryImage[]) => void;
+  recents: RecentEntry[];
+  onReopenRecent: (entry: RecentEntry) => void;
+  onClearRecents: () => void;
   t: TFn;
 }) {
   return (
@@ -397,6 +466,32 @@ function EmptyState({
           </button>
         </div>
       </div>
+      {recents.length > 0 && (
+        <div className="empty-recents">
+          <div className="empty-recents-head">
+            <span className="empty-recents-title">{t("recents.title")}</span>
+            <button type="button" className="empty-recents-clear" onClick={onClearRecents}>
+              {t("recents.clear")}
+            </button>
+          </div>
+          <div className="empty-recents-list">
+            {recents.map((e) => (
+              <button
+                key={e.key}
+                type="button"
+                className="recent-item"
+                onClick={() => onReopenRecent(e)}
+                title={e.path ?? e.name}
+              >
+                <span className="recent-icon" aria-hidden>
+                  {e.kind === "folder" ? "🗂" : "📄"}
+                </span>
+                <span className="recent-name">{e.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <details className="empty-samples-disclosure">
         <summary>
           <Caret open={false} />
