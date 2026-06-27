@@ -14,6 +14,26 @@ describe("loadCharacter", () => {
     expect(character.abilities.str.score).toBe(10);
     expect(character.inventory.currencies.gp).toBe(0);
     expect(character.combat.armorClass).toBe(10);
+    expect(character.senses).toEqual([]);
+    expect(character.defenses).toEqual({
+      resistances: [],
+      immunities: [],
+      vulnerabilities: [],
+      conditionImmunities: [],
+    });
+  });
+
+  it("accepts populated senses and defenses", () => {
+    const { character, issues } = loadCharacter({
+      meta: { name: "Tav" },
+      senses: ["Darkvision 18 m"],
+      defenses: { resistances: ["fire"], conditionImmunities: ["frightened"] },
+    });
+    expect(issues).toHaveLength(0);
+    expect(character.senses).toEqual(["Darkvision 18 m"]);
+    expect(character.defenses.resistances).toEqual(["fire"]);
+    expect(character.defenses.vulnerabilities).toEqual([]); // missing keys still default
+    expect(character.defenses.conditionImmunities).toEqual(["frightened"]);
   });
 
   it("never throws and stays renderable on invalid input (missing name)", () => {

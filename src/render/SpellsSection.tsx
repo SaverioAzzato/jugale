@@ -2,6 +2,9 @@ import { useState } from "react";
 import { type AbilityId, type Character, type SpellEntry } from "../schema";
 import { spellSaveDc, spellAttackBonus } from "../schema";
 import { Caret, Panel, WikiLink, fmtMod } from "./primitives";
+import { Field, TextInput, Toggle, EntryList, EntryRow } from "./editControls";
+import { newSpell, newSpellSection } from "../model/factories";
+import { useCharacter } from "../state/store";
 import { useT } from "../i18n/useI18n";
 import { useSettings, type UnitSystem } from "../ui/useSettings";
 import { convertDistanceText } from "../model/units";
@@ -66,8 +69,106 @@ function SpellRow({ s }: { s: SpellEntry }) {
   );
 }
 
+/** Editor for one spell entry: a few key fields, the rest under a disclosure. */
+function SpellEditor({ s, path }: { s: SpellEntry; path: (string | number)[] }) {
+  const t = useT();
+  const editField = useCharacter((st) => st.editField);
+  const set = (field: keyof SpellEntry, v: unknown) => editField([...path, field], v);
+  const text = (field: keyof SpellEntry, label: string, multiline?: boolean) => (
+    <Field label={label}>
+      <TextInput value={String(s[field] ?? "")} multiline={multiline} onChange={(v) => set(field, v)} label={label} />
+    </Field>
+  );
+  return (
+    <>
+      {text("name", t("item.name"))}
+      {text("level", t("header.level"))}
+      {text("range", t("detail.range"))}
+      {text("attack", t("detail.yourRoll"))}
+      {text("defense", t("detail.enemyRoll"))}
+      {text("effect", t("detail.damageEffect"))}
+      <div className="edit-checks">
+        <Toggle checked={s.concentration} label={t("spell.concentration")} onChange={(v) => set("concentration", v)} />
+        <Toggle checked={s.prepared} label={t("spell.prepared")} onChange={(v) => set("prepared", v)} />
+      </div>
+      <details className="edit-sub">
+        <summary>{t("edit.description")}…</summary>
+        <div className="edit-grid">
+          {text("school", t("spells.school"))}
+          {text("castingTime", t("spells.castingTime"))}
+          {text("area", t("spells.area"))}
+          {text("duration", t("spells.duration"))}
+          {text("components", t("spells.components"))}
+          <Field label={t("resource.link")}>
+            <TextInput
+              value={s.link ?? ""}
+              onChange={(v) => set("link", v === "" ? null : v)}
+              label={t("resource.link")}
+            />
+          </Field>
+        </div>
+        {text("description", t("edit.description"), true)}
+        {text("notes", t("detail.notes"), true)}
+      </details>
+    </>
+  );
+}
+
+/** Full CRUD for spell sections and their spells. */
+function SpellsEdit({ c }: { c: Character }) {
+  const t = useT();
+  const editField = useCharacter((s) => s.editField);
+  const addItem = useCharacter((s) => s.addItem);
+  const removeItem = useCharacter((s) => s.removeItem);
+
+  return (
+    <Panel title={t("spells.title")} id="spells">
+      <EntryList onAdd={() => addItem(["spellSections"], newSpellSection())} addLabel={t("spells.addSection")}>
+        {c.spellSections.map((sec, si) => (
+          <div key={sec.id || si} className="edit-section">
+            <button
+              type="button"
+              className="edit-entry-close"
+              onClick={() => removeItem(["spellSections"], si)}
+              aria-label={t("edit.remove")}
+              title={t("edit.remove")}
+            >
+              ×
+            </button>
+            <div className="edit-section-head">
+              <Field label={t("spells.sectionTitle")}>
+                <TextInput
+                  value={sec.title}
+                  onChange={(v) => editField(["spellSections", si, "title"], v)}
+                  label={t("spells.sectionTitle")}
+                />
+              </Field>
+            </div>
+            <EntryList
+              onAdd={() => addItem(["spellSections", si, "entries"], newSpell())}
+              addLabel={t("spells.addSpell")}
+            >
+              {sec.entries.map((s, ei) => (
+                <EntryRow
+                  key={ei}
+                  onRemove={() => removeItem(["spellSections", si, "entries"], ei)}
+                  removeLabel={t("edit.remove")}
+                >
+                  <SpellEditor s={s} path={["spellSections", si, "entries", ei]} />
+                </EntryRow>
+              ))}
+            </EntryList>
+          </div>
+        ))}
+      </EntryList>
+    </Panel>
+  );
+}
+
 export function SpellsSection({ c }: { c: Character }) {
   const t = useT();
+  const editMode = useCharacter((s) => s.editMode);
+  if (editMode) return <SpellsEdit c={c} />;
   if (c.spellSections.length === 0) return null;
   const casters = c.classes.filter((cl) => cl.spellcasting.ability);
 

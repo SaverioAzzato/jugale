@@ -57,7 +57,7 @@ const CONTENT: Record<Locale, HelpContent> = {
       },
       {
         key: "classes",
-        body: "One entry per class — multiclassing just means more entries. Each has a name, level, optional subclass, hit die, and, for casters, a spellcasting block (ability, known vs. prepared, slot progression). Total level, proficiency bonus, and the multiclass spell-slot table are all calculated from this list — never set those by hand.",
+        body: "One entry per class — multiclassing just means more entries. Each has a name, level, optional subclass, hit die, and, for casters, a spellcasting block (ability, known vs. prepared, slot progression). Total level and proficiency bonus are calculated from this list — never set those by hand. Spell slots, though, aren't auto-calculated: you track them as resources (see below), one per slot level.",
       },
       {
         key: "abilities",
@@ -65,7 +65,11 @@ const CONTENT: Record<Locale, HelpContent> = {
       },
       {
         key: "proficiencies",
-        body: "Skill proficiencies and expertise, languages, tools, armor and weapon proficiencies, and an optional manual override for proficiency bonus (normally derived from total level).",
+        body: "Skill proficiencies and expertise, languages, tools, armor and weapon proficiencies, and an optional manual override for proficiency bonus (normally derived from total level). Languages live only here — not under origin.",
+      },
+      {
+        key: "senses / defenses",
+        body: "Special senses (darkvision, blindsight…) as free strings with their range, plus damage resistances, immunities and vulnerabilities and condition immunities. Their own clear home instead of being buried in a feature's text. Passive Perception isn't here — it's worked out from your Perception skill.",
       },
       {
         key: "combat",
@@ -106,6 +110,7 @@ const CONTENT: Record<Locale, HelpContent> = {
     ],
     miscTitle: "A few other things worth knowing",
     miscItems: [
+      "The pencil icon (top bar) toggles Edit mode: the whole sheet becomes editable — change any field (including maximums), and add or remove entries (classes, resources, items, spells, features, sections…). Saving works exactly as in play (live sync if possible, otherwise Export). Turn it off to go back to playing.",
       "Live sync vs. export: if your browser or device can keep writing to your chosen folder live, changes save themselves; otherwise (or with a single JSON file) hit Export JSON to keep what you changed.",
       "If live sync isn't possible — or it was working and a save then fails — the status bar switches to a yellow \"Read-only · Export to save\" notice. Nothing is lost: just hit Export to download your latest changes as JSON.",
       "Switch theme, language, or units anytime from Settings (the gear icon).",
@@ -135,7 +140,7 @@ const CONTENT: Record<Locale, HelpContent> = {
       },
       {
         key: "classes",
-        body: "Una voce per classe — il multiclasse significa solo più voci. Ognuna ha nome, livello, sottoclasse opzionale, dado vita, e, per gli incantatori, un blocco spellcasting (caratteristica, conosciuti vs preparati, progressione slot). Livello totale, bonus competenza e la tabella slot multiclasse sono tutti calcolati da questa lista — non vanno mai impostati a mano.",
+        body: "Una voce per classe — il multiclasse significa solo più voci. Ognuna ha nome, livello, sottoclasse opzionale, dado vita, e, per gli incantatori, un blocco spellcasting (caratteristica, conosciuti vs preparati, progressione slot). Livello totale e bonus competenza sono calcolati da questa lista — non vanno mai impostati a mano. Gli slot incantesimo invece non sono auto-calcolati: si tracciano come risorse (vedi sotto), uno per livello di slot.",
       },
       {
         key: "abilities",
@@ -143,7 +148,11 @@ const CONTENT: Record<Locale, HelpContent> = {
       },
       {
         key: "proficiencies",
-        body: "Competenze e expertise nelle abilità, lingue, strumenti, competenze in armature e armi, e un override manuale opzionale per il bonus competenza (normalmente derivato dal livello totale).",
+        body: "Competenze e expertise nelle abilità, lingue, strumenti, competenze in armature e armi, e un override manuale opzionale per il bonus competenza (normalmente derivato dal livello totale). Le lingue vivono solo qui — non sotto origin.",
+      },
+      {
+        key: "senses / defenses",
+        body: "Sensi speciali (scurovisione, vista cieca…) come stringhe libere con la loro gittata, più resistenze, immunità e vulnerabilità ai danni e immunità alle condizioni. Una casa chiara invece di nasconderli nel testo di un privilegio. La Percezione passiva non è qui — si ricava dalla tua abilità di Percezione.",
       },
       {
         key: "combat",
@@ -184,6 +193,7 @@ const CONTENT: Record<Locale, HelpContent> = {
     ],
     miscTitle: "Qualche altra cosa utile da sapere",
     miscItems: [
+      "L'icona della matita (barra in alto) attiva la modalità Modifica: l'intera scheda diventa modificabile — cambi qualsiasi campo (anche i massimi) e aggiungi o rimuovi voci (classi, risorse, oggetti, incantesimi, privilegi, sezioni…). Il salvataggio funziona come in gioco (sync live se possibile, altrimenti Esporta). Disattivala per tornare a giocare.",
       "Sync live vs esportazione: se il tuo browser o dispositivo può continuare a scrivere nella cartella scelta, le modifiche si salvano da sole; altrimenti (o con un singolo file JSON) usa Esporta JSON per non perdere quello che hai cambiato.",
       "Se la sync live non è possibile — o era attiva e un salvataggio poi fallisce — la status bar passa all'avviso giallo \"Solo lettura · Esporta per salvare\". Non perdi nulla: basta premere Esporta per scaricare le ultime modifiche come JSON.",
       "Cambia tema, lingua o unità in qualsiasi momento da Impostazioni (l'icona dell'ingranaggio).",

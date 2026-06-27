@@ -167,7 +167,8 @@ function migrateV1toV2(v1: Json): Json {
     const id = SKILL_BY_IT[String(s?.name ?? "").toLowerCase().trim()];
     if (id && isCompetent(s?.note)) skills.push({ id, proficient: true });
   }
-  out.proficiencies = { skills };
+  // Languages live in proficiencies (their one home), not origin.
+  out.proficiencies = { skills, languages: v1.origin?.languages ?? [] };
   if (Array.isArray(v1.build?.proficiencies) && v1.build.proficiencies.length > 0) {
     custom.push({ id: "competenze-migrato", title: "Competenze (migrato)", layout: "list", items: v1.build.proficiencies });
   }
@@ -219,8 +220,12 @@ function migrateV1toV2(v1: Json): Json {
   }
   out.resources = resources;
 
-  // spellcasting summary + spell sections
-  out.spellcasting = { summary: typeof v1.combat?.spellcasting?.slots === "string" ? v1.combat.spellcasting.slots : "" };
+  // spell sections (the old root spellcasting.summary is no longer a field; if v1 carried a
+  // freeform slot summary, keep it losslessly as a custom section rather than dropping it).
+  const slotSummary = typeof v1.combat?.spellcasting?.slots === "string" ? v1.combat.spellcasting.slots.trim() : "";
+  if (slotSummary) {
+    custom.push({ id: "incantesimi-migrato", title: "Incantesimi (migrato)", layout: "text", content: slotSummary });
+  }
   out.spellSections = (v1.spellSections ?? []).map((s: Json) => ({
     id: slugify(s?.title),
     title: s?.title ?? "",
@@ -254,9 +259,8 @@ function migrateV1toV2(v1: Json): Json {
     notes: v1.inventory?.notes ?? [],
   };
 
-  // origin
+  // origin (languages moved to proficiencies.languages above)
   out.origin = {
-    languages: v1.origin?.languages ?? [],
     raceTraits: (v1.origin?.raceNotes ?? []).map((s: string) => ({ name: "", description: s })),
     backgroundFeature:
       (v1.origin?.backgroundFeature ?? []).length > 0

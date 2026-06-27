@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { loadCharacter, maxHitDice, type Character, type Issue } from "../schema";
 import { applyAction, getByPath, makeRng, type FormulaChange } from "../model/formula";
+import { setIn, insertAt, removeAt, type Path } from "../model/edit";
 import { translate, useI18n, type StringKey } from "../i18n/useI18n";
 import { useToast } from "../ui/useToast";
 import { exportJson, type GalleryImage, type StorageProvider } from "../storage/provider";
@@ -92,6 +93,9 @@ interface CharacterState {
   /** A live-synced file/folder whose last write failed: sync is given up so we don't keep
    *  failing silently — surfaced as a read-only badge, with Export as the way to keep changes. */
   readOnly: boolean;
+  /** Edit mode: the whole sheet becomes an interactive editor of the JSON. Transient —
+   *  always starts off on a fresh load, so a session never opens in an editable state. */
+  editMode: boolean;
 
   /** Load into memory only (sample / import) — edits are kept until exported. `readOnly`
    *  flags a real file/folder that this host simply can't write back to live (the no-write
@@ -108,6 +112,16 @@ interface CharacterState {
   exportCharacter: () => void;
   /** Return to welcome state (no loaded character). */
   clear: () => void;
+
+  // ---- edit mode (structural editing of the JSON) ----
+  /** Flip in/out of edit mode. */
+  toggleEditMode: () => void;
+  /** Set any field at a path (text/number/boolean/enum). */
+  editField: (path: Path, value: unknown) => void;
+  /** Append a new entry to the array at `path` (use a factory for the entry). */
+  addItem: (path: Path, item: unknown) => void;
+  /** Remove the entry at `index` from the array at `path`. */
+  removeItem: (path: Path, index: number) => void;
 
   // ---- live play-state mutations (the only fields the UI changes continuously) ----
   setCurrentHp: (n: number) => void;
@@ -137,6 +151,27 @@ function revokeImages(images: GalleryImage[]): void {
 
 export const useCharacter = create<CharacterState>((set, get) => {
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
+  let validateTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // Re-run validation after a structural edit so the issues chip stays live. Only `issues`
+  // is updated — never `character`, or Zod's defaults/coercions would clobber whatever the
+  // user is mid-typing (e.g. a temporarily-empty name). Derived values (AC, PB, mod) need
+  // nothing: they recompute at render time.
+  const scheduleRevalidate = () => {
+    if (validateTimer) clearTimeout(validateTimer);
+    validateTimer = setTimeout(() => {
+      const c = get().character;
+      if (!c) return;
+      set({ issues: loadCharacter(c).issues });
+    }, 300);
+  };
+
+  /** Apply a structural edit, mark dirty, schedule a save + a revalidate. */
+  const applyEdit = (next: Character) => {
+    set({ character: next, dirty: true });
+    scheduleSave();
+    scheduleRevalidate();
+  };
 
   const scheduleSave = () => {
     if (saveTimer) clearTimeout(saveTimer);
@@ -225,6 +260,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
     dirty: false,
     saveError: null,
     readOnly: false,
+    editMode: false,
 
     loadRaw: (raw, sourceName = "", images = [], readOnly = false) => {
       const r = loadCharacter(raw);
@@ -238,6 +274,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
         dirty: false,
         saveError: null,
         readOnly,
+        editMode: false,
       });
     },
 
@@ -253,6 +290,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
         dirty: false,
         saveError: null,
         readOnly: false,
+        editMode: false,
       });
     },
 
@@ -277,7 +315,28 @@ export const useCharacter = create<CharacterState>((set, get) => {
         dirty: false,
         saveError: null,
         readOnly: false,
+        editMode: false,
       });
+    },
+
+    toggleEditMode: () => set({ editMode: !get().editMode }),
+
+    editField: (path, value) => {
+      const c = get().character;
+      if (!c) return;
+      applyEdit(setIn(c, path, value));
+    },
+
+    addItem: (path, item) => {
+      const c = get().character;
+      if (!c) return;
+      applyEdit(insertAt(c, path, item));
+    },
+
+    removeItem: (path, index) => {
+      const c = get().character;
+      if (!c) return;
+      applyEdit(removeAt(c, path, index));
     },
 
     setCurrentHp: (n) =>

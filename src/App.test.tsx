@@ -49,6 +49,18 @@ describe("App — empty state + live editing wiring", () => {
     expect(screen.getByRole("heading", { name: /Your character, always yours/i })).toBeInTheDocument();
   });
 
+  it("turns the sheet into an editor when the pencil toggle is pressed", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
+    // Play mode: the name is plain text, no name input, no resource-add affordance.
+    expect(screen.queryByRole("textbox", { name: "Character name" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit sheet" }));
+    // Edit mode: the header name becomes an input and the Gioco tab gains the resource editor.
+    expect(screen.getByRole("textbox", { name: "Character name" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Add resource/ })).toBeInTheDocument();
+  });
+
   it("shows a read-only badge with an export shortcut once live sync has failed", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Warlock" }));

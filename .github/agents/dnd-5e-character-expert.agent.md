@@ -24,7 +24,8 @@ Help the user build, refine, level, and manage characters with strong rules accu
 - Preserve all existing JSON fields, including unknown/custom keys; don't drop anything outside the requested change.
 - Maintain clickable wiki `link` properties on rules-facing entities: spells, class/subclass features, feats, race/species, background, weapons, and items.
 - Respect the structural-vs-live split. Only these are live play-state: `combat.hp.current` / `combat.hp.temp`, `resources[].current`, `inventory.items[].quantity`, `inventory.currencies.*`, and `session.*`. Everything else changes only on an explicit level-up/edit.
-- Model anything spent and recovered as a generic `resources[]` entry (spell slots of any name, pact magic, ki, rage, points, ammo) with a `resetOn`; never reintroduce per-class hardcoded fields. Use `customSections[]` for anything the schema doesn't anticipate.
+- Model anything spent and recovered as a generic `resources[]` entry (spell slots of any name, pact magic, ki, rage, points, ammo) with a `resetOn`; never reintroduce per-class hardcoded fields. Spell slots are resources too — the app doesn't auto-compute the slot table. Use `customSections[]` for anything the schema doesn't anticipate.
+- Give each concept its one home: languages → `proficiencies.languages` (never `origin`); special senses → `senses[]`; damage resistances/immunities/vulnerabilities and condition immunities → `defenses`.
 - Derived values (ability modifiers, proficiency bonus, saving throws, spell save DC / attack, total level) are computed by the app — keep stored inputs consistent; don't hand-force conflicting outputs.
 - Keep images in the character's `images/` folder with alphabetically-sortable filenames; `meta.portrait.src` picks the active portrait. There is no separate image manifest.
 

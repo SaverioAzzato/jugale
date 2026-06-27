@@ -10,10 +10,13 @@ import { ConsumablesSection } from "./ConsumablesSection";
 import { ResourcesSection } from "./ResourcesSection";
 import { SpellsSection } from "./SpellsSection";
 import { FeaturesSection } from "./FeaturesSection";
+import { SensesSection } from "./SensesSection";
 import { InventorySection } from "./InventorySection";
 import { PortraitSection } from "./PortraitSection";
 import { DescriptionSection, BioSection, ProficienciesSection, OriginSection, NarrativeSection } from "./TextSections";
 import { CustomSections } from "./CustomSection";
+import { IdentitySection } from "./IdentitySection";
+import { useCharacter } from "../state/store";
 
 import type { StringKey } from "../i18n/useI18n";
 
@@ -42,14 +45,15 @@ const hasStory = (c: Character): boolean =>
   ].some((a) => a.length > 0);
 
 /** Tabs are data-driven: Inventario/Storia appear only when they'd have content
- *  (Storia also shows when a loaded folder supplied images, even with no prose). */
-export function getVisibleTabs(c: Character, hasImages = false): TabDef[] {
+ *  (Storia also shows when a loaded folder supplied images, even with no prose).
+ *  In edit mode every tab is shown so empty sections can be filled in. */
+export function getVisibleTabs(c: Character, hasImages = false, editMode = false): TabDef[] {
   const tabs: TabDef[] = [
     { id: "gioco", labelKey: "tab.gioco" },
     { id: "scheda", labelKey: "tab.scheda" },
   ];
-  if (hasInventory(c)) tabs.push({ id: "inventario", labelKey: "tab.inventario" });
-  if (hasImages || hasStory(c)) tabs.push({ id: "storia", labelKey: "tab.storia" });
+  if (editMode || hasInventory(c)) tabs.push({ id: "inventario", labelKey: "tab.inventario" });
+  if (editMode || hasImages || hasStory(c)) tabs.push({ id: "storia", labelKey: "tab.storia" });
   return tabs;
 }
 
@@ -165,6 +169,7 @@ function BalancedCols({ items }: { items: Section[] }) {
 /** Renders one tab's sections into two height-balanced columns (priority order is the input
  *  order; the balancer decides which side each lands on). Inventory stays a single column. */
 export function TabContent({ c, tab }: { c: Character; tab: string }) {
+  const editMode = useCharacter((s) => s.editMode);
   switch (tab) {
     case "gioco": {
       const hasAttacks = c.inventory.items.some((it) => it.attacks.length > 0) || c.combat.attacks.length > 0;
@@ -175,10 +180,10 @@ export function TabContent({ c, tab }: { c: Character; tab: string }) {
             { key: "vitals", node: <CombatSection c={c} /> },
             { key: "actions", node: <ActionsSection c={c} /> },
             { key: "status", node: <StatusSection c={c} /> },
-            c.resources.length > 0 && { key: "resources", node: <ResourcesSection c={c} /> },
+            (editMode || c.resources.length > 0) && { key: "resources", node: <ResourcesSection c={c} /> },
             hasConsumables && { key: "consumables", node: <ConsumablesSection c={c} /> },
-            hasAttacks && { key: "attacks", node: <AttacksSection c={c} /> },
-            c.spellSections.length > 0 && { key: "spells", node: <SpellsSection c={c} /> },
+            (editMode || hasAttacks) && { key: "attacks", node: <AttacksSection c={c} /> },
+            (editMode || c.spellSections.length > 0) && { key: "spells", node: <SpellsSection c={c} /> },
           ])}
         />
       );
@@ -187,9 +192,11 @@ export function TabContent({ c, tab }: { c: Character; tab: string }) {
       return (
         <BalancedCols
           items={sections([
+            editMode && { key: "identity", node: <IdentitySection c={c} /> },
             { key: "abilities", node: <AbilitiesSection c={c} /> },
             { key: "prof", node: <ProficienciesSection c={c} /> },
             { key: "skills", node: <SkillsSection c={c} /> },
+            { key: "senses", node: <SensesSection c={c} /> },
             { key: "features", node: <FeaturesSection c={c} /> },
           ])}
         />
@@ -200,9 +207,11 @@ export function TabContent({ c, tab }: { c: Character; tab: string }) {
       return (
         <BalancedCols
           items={sections([
-            { key: "portrait", node: <PortraitSection c={c} /> },
+            // Portrait is folder-derived (not editable) and Bio is edited under Identity,
+            // so both drop out in edit mode to avoid empty/duplicate cards.
+            !editMode && { key: "portrait", node: <PortraitSection c={c} /> },
             { key: "description", node: <DescriptionSection c={c} /> },
-            { key: "bio", node: <BioSection c={c} /> },
+            !editMode && { key: "bio", node: <BioSection c={c} /> },
             { key: "narrative", node: <NarrativeSection c={c} /> },
             { key: "origin", node: <OriginSection c={c} /> },
             { key: "custom", node: <CustomSections c={c} /> },

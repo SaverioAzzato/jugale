@@ -1,6 +1,19 @@
+import { useState } from "react";
 import type { Character, Item } from "../schema";
 import { Panel, WikiLink } from "./primitives";
 import { Stepper } from "./controls";
+import {
+  Field,
+  TextInput,
+  NumberInput,
+  OptionalNumber,
+  Toggle,
+  EntryList,
+  EntryRow,
+  RemoveButton,
+  StringListEditor,
+} from "./editControls";
+import { newItem, newAttackProfile } from "../model/factories";
 import { useCharacter } from "../state/store";
 import { useT, type StringKey, type TFn } from "../i18n/useI18n";
 import { useSettings, type UnitSystem } from "../ui/useSettings";
@@ -87,10 +100,184 @@ function categoryLabel(cat: string, t: TFn): string {
   return cat ? cat.charAt(0).toUpperCase() + cat.slice(1) : t("cat.other");
 }
 
+/** Per-item editor: core fields + optional attack profiles + optional armor AC. */
+function ItemEditor({ it, index }: { it: Item; index: number }) {
+  const t = useT();
+  const editField = useCharacter((s) => s.editField);
+  const addItem = useCharacter((s) => s.addItem);
+  const removeItem = useCharacter((s) => s.removeItem);
+  const base = ["inventory", "items", index] as const;
+
+  return (
+    <EntryRow onRemove={() => removeItem(["inventory", "items"], index)} removeLabel={t("edit.remove")}>
+      <Field label={t("item.name")}>
+        <TextInput value={it.name} onChange={(v) => editField([...base, "name"], v)} label={t("item.name")} />
+      </Field>
+      <Field label={t("item.category")}>
+        <TextInput value={it.category} onChange={(v) => editField([...base, "category"], v)} label={t("item.category")} />
+      </Field>
+      <Field label={t("item.quantity")}>
+        <NumberInput value={it.quantity} min={0} onChange={(v) => editField([...base, "quantity"], v)} label={t("item.quantity")} />
+      </Field>
+      <Field label={t("inv.weight")}>
+        <NumberInput value={it.weight} min={0} onChange={(v) => editField([...base, "weight"], v)} label={t("inv.weight")} />
+      </Field>
+      <OptionalNumber value={it.value} min={0} label={t("item.value")} onChange={(v) => editField([...base, "value"], v)} />
+      <Field label={t("resource.link")}>
+        <TextInput
+          value={it.link ?? ""}
+          onChange={(v) => editField([...base, "link"], v === "" ? null : v)}
+          label={t("resource.link")}
+        />
+      </Field>
+      <Field label={t("edit.description")}>
+        <TextInput value={it.notes} multiline onChange={(v) => editField([...base, "notes"], v)} label={t("edit.description")} />
+      </Field>
+
+      <div className="edit-checks">
+        <Toggle checked={it.equipped} label={t("inv.equipped")} onChange={(v) => editField([...base, "equipped"], v)} />
+        <Toggle checked={it.equippable} label={t("item.equippable")} onChange={(v) => editField([...base, "equippable"], v)} />
+        <Toggle checked={it.attuned} label={t("item.attuned")} onChange={(v) => editField([...base, "attuned"], v)} />
+      </div>
+
+      <details className="edit-sub">
+        <summary>{t("item.attacks")}</summary>
+        <EntryList onAdd={() => addItem([...base, "attacks"], newAttackProfile())} addLabel={t("item.addAttack")}>
+          {it.attacks.map((p, j) => (
+            <EntryRow key={j} onRemove={() => removeItem([...base, "attacks"], j)} removeLabel={t("edit.remove")}>
+              <Field label={t("attack.label")}>
+                <TextInput value={p.label} onChange={(v) => editField([...base, "attacks", j, "label"], v)} label={t("attack.label")} />
+              </Field>
+              <Field label={t("detail.range")}>
+                <TextInput value={p.range} onChange={(v) => editField([...base, "attacks", j, "range"], v)} label={t("detail.range")} />
+              </Field>
+              <Field label={t("detail.yourRoll")}>
+                <TextInput value={p.attack} onChange={(v) => editField([...base, "attacks", j, "attack"], v)} label={t("detail.yourRoll")} />
+              </Field>
+              <Field label={t("detail.enemyRoll")}>
+                <TextInput value={p.defense} onChange={(v) => editField([...base, "attacks", j, "defense"], v)} label={t("detail.enemyRoll")} />
+              </Field>
+              <Field label={t("detail.damageEffect")}>
+                <TextInput value={p.effect} onChange={(v) => editField([...base, "attacks", j, "effect"], v)} label={t("detail.damageEffect")} />
+              </Field>
+              <Field label={t("detail.notes")}>
+                <TextInput value={p.notes} onChange={(v) => editField([...base, "attacks", j, "notes"], v)} label={t("detail.notes")} />
+              </Field>
+            </EntryRow>
+          ))}
+        </EntryList>
+      </details>
+
+      <details className="edit-sub">
+        <summary>{t("item.acTitle")}</summary>
+        <Toggle
+          checked={it.ac != null}
+          label={t("ac.enable")}
+          onChange={(v) => editField([...base, "ac"], v ? { base: null, addDex: false, dexCap: null, bonus: 0, label: "" } : null)}
+        />
+        {it.ac && (
+          <div className="edit-grid">
+            <OptionalNumber value={it.ac.base} label={t("ac.base")} onChange={(v) => editField([...base, "ac", "base"], v)} />
+            <Field label={t("ac.bonus")}>
+              <NumberInput value={it.ac.bonus} onChange={(v) => editField([...base, "ac", "bonus"], v)} label={t("ac.bonus")} />
+            </Field>
+            <Toggle checked={it.ac.addDex} label={t("ac.addDex")} onChange={(v) => editField([...base, "ac", "addDex"], v)} />
+            <OptionalNumber value={it.ac.dexCap} label={t("ac.dexCap")} onChange={(v) => editField([...base, "ac", "dexCap"], v)} />
+            <Field label={t("ac.label")}>
+              <TextInput value={it.ac.label} onChange={(v) => editField([...base, "ac", "label"], v)} label={t("ac.label")} />
+            </Field>
+          </div>
+        )}
+      </details>
+    </EntryRow>
+  );
+}
+
+/** Edit layout for the whole inventory: flat item list (array order) + currencies + notes. */
+function InventoryEdit({ c }: { c: Character }) {
+  const t = useT();
+  const editField = useCharacter((s) => s.editField);
+  const addItem = useCharacter((s) => s.addItem);
+  const currencyCodes = Object.keys(c.inventory.currencies);
+  const [draftCoin, setDraftCoin] = useState("");
+
+  const addCurrency = () => {
+    const code = draftCoin.trim().toLowerCase();
+    if (!code || code in c.inventory.currencies) return;
+    editField(["inventory", "currencies", code], 0);
+    setDraftCoin("");
+  };
+  const removeCurrency = (code: string) => {
+    const next = { ...c.inventory.currencies };
+    delete next[code];
+    editField(["inventory", "currencies"], next);
+  };
+
+  return (
+    <>
+      <Panel title={t("inv.title")} id="inventory">
+        <EntryList onAdd={() => addItem(["inventory", "items"], newItem())} addLabel={t("inv.addItem")}>
+          {c.inventory.items.map((it, index) => (
+            <ItemEditor key={it.id || index} it={it} index={index} />
+          ))}
+        </EntryList>
+      </Panel>
+
+      <Panel title={t("inv.currency")}>
+        <div className="edit-list">
+          {currencyCodes.map((code) => (
+            <div key={code} className="edit-coinrow">
+              <span className="edit-coin-code">{code}</span>
+              <NumberInput
+                value={c.inventory.currencies[code]}
+                min={0}
+                label={code}
+                onChange={(v) => editField(["inventory", "currencies", code], v)}
+              />
+              <RemoveButton onClick={() => removeCurrency(code)} label={t("edit.remove")} />
+            </div>
+          ))}
+          <div className="edit-tag-add">
+            <input
+              type="text"
+              className="edit-input"
+              value={draftCoin}
+              aria-label={t("inv.currencyCode")}
+              placeholder={t("inv.currencyCode")}
+              onChange={(e) => setDraftCoin(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addCurrency();
+                }
+              }}
+            />
+            <button type="button" className="btn edit-add" onClick={addCurrency}>
+              ＋ {t("inv.addCurrency")}
+            </button>
+          </div>
+        </div>
+      </Panel>
+
+      <Panel title={t("inv.notesTitle")}>
+        <StringListEditor
+          values={c.inventory.notes}
+          onChange={(next) => editField(["inventory", "notes"], next)}
+          label={t("inv.notesTitle")}
+          addLabel={t("inv.addNote")}
+          multiline
+        />
+      </Panel>
+    </>
+  );
+}
+
 export function InventorySection({ c }: { c: Character }) {
   const t = useT();
   const units = useSettings((s) => s.units);
+  const editMode = useCharacter((s) => s.editMode);
   const setCurrency = useCharacter((s) => s.setCurrency);
+  if (editMode) return <InventoryEdit c={c} />;
 
   const indexed: Indexed[] = c.inventory.items.map((it, index) => ({ it, index }));
   const currencyCodes = [

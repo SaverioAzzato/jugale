@@ -10,12 +10,12 @@
     {
       "name": "Paladino", "subclass": "Giuramento di Devozione", "level": 3, "hitDie": "d10",
       "link": "https://www.dndbeyond.com/classes/paladin",
-      "spellcasting": { "ability": "cha", "type": "prepared", "prepares": true, "slotProgression": "half" }
+      "spellcasting": { "ability": "cha", "type": "prepared", "slotProgression": "half" }
     },
     {
       "name": "Stregone", "subclass": "Stirpe Draconica", "level": 2, "hitDie": "d6",
       "link": "https://www.dndbeyond.com/classes/sorcerer",
-      "spellcasting": { "ability": "cha", "type": "known", "prepares": false, "slotProgression": "full" }
+      "spellcasting": { "ability": "cha", "type": "known", "slotProgression": "full" }
     }
   ],
   "abilities": {
@@ -51,7 +51,6 @@
     { "id": "channel-divinity", "label": "Incanalare Divinità", "category": "charges", "max": 1, "current": 1, "resetOn": "shortRest" },
     { "id": "lay-on-hands", "label": "Imposizione delle Mani (pool)", "category": "points", "max": 15, "current": 15, "resetOn": "longRest" }
   ],
-  "spellcasting": { "summary": "Due incantatori basati su Carisma; gli slot multiclasse sono condivisi." },
   "spellSections": [
     {
       "id": "paladino-prep", "title": "Paladino — preparati",

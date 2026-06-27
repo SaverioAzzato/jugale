@@ -132,6 +132,14 @@ describe("v1 → v2 migration", () => {
     );
     expect((parsed.session as Record<string, unknown>).lastSavedAt).toBe("2026-06-13T22:48:10.433Z");
   });
+
+  it("routes v1 languages to proficiencies and keeps race notes as traits", () => {
+    expect(parsed.proficiencies.languages).toEqual(["Comune", "Draconico"]);
+    expect((parsed.origin as Record<string, unknown>).languages).toBeUndefined();
+    expect(parsed.origin.raceTraits).toContainEqual(
+      expect.objectContaining({ description: "Scurovisione 18 m" }),
+    );
+  });
 });
 
 describe("loadCharacter on v1 input", () => {
