@@ -1,7 +1,7 @@
 name: Release
 
-# Push a tag (e.g. v1.0.0) from GitHub to build the desktop app for Mac/Win/Linux plus an
-# Android debug APK, and attach them all to a (draft) GitHub Release on that tag. All four
+# Push a tag (e.g. v1.0.0) from GitHub to build the desktop app for Mac/Win/Linux plus a
+# release-signed Android APK, and attach them all to a (draft) GitHub Release on that tag. All four
 # jobs run in parallel and each finds-or-creates the same draft release before attaching its
 # own asset to it — none of them wait on each other. Pages deploys separately, also on tag
 # (pages.yml). Everyday PRs only get the fast Rust cargo-check (tauri-check.yml) — full builds
@@ -91,11 +91,25 @@ jobs:
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ env.NDK_VERSION }}
 
-      - name: Build debug APK
-        # Debug-signed (Android's auto-generated debug keystore): no secrets needed,
-        # installable by sideloading. Play Store-grade release signing is a separate,
-        # opt-in follow-up once we actually want Play Store distribution.
-        run: npx tauri android build --apk --debug --ci
+      - name: Brand the generated icons
+        # gen/android is scaffolded fresh each run and can come up with Tauri's default icon,
+        # so regenerate all icons from our committed source into the new project.
+        run: npx tauri icon src-tauri/icons/icon.png
+
+      - name: Configure release signing
+        # Injects a release signingConfig into the freshly-generated Gradle project from the
+        # repo secrets. Fails loudly if the secrets are missing (see scripts/android-sign-setup.sh).
+        run: bash scripts/android-sign-setup.sh
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Build release APK
+        # Release-signed with our keystore (configured above): a real, installable build, not the
+        # debug-signed APK Android auto-generates. Sideload from the GitHub Release.
+        run: npx tauri android build --apk --ci
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ env.NDK_VERSION }}
 
@@ -118,6 +132,9 @@ jobs:
               -R "${{ github.repository }}" || true
           fi
 
-          apk=$(find src-tauri/gen/android -name "*.apk" -path "*debug*" | head -n1)
-          cp "$apk" "JUGALE-${safe_tag}-android-debug.apk"
-          gh release upload "$tag" "JUGALE-${safe_tag}-android-debug.apk" --clobber -R "${{ github.repository }}"
+          # Prefer the universal release APK; fall back to any release-signed APK.
+          apk=$(find src-tauri/gen/android -name "*.apk" -path "*release*" -path "*universal*" | head -n1)
+          [ -n "$apk" ] || apk=$(find src-tauri/gen/android -name "*.apk" -path "*release*" | head -n1)
+          [ -n "$apk" ] || { echo "::error::no release APK found"; exit 1; }
+          cp "$apk" "JUGALE-${safe_tag}-android.apk"
+          gh release upload "$tag" "JUGALE-${safe_tag}-android.apk" --clobber -R "${{ github.repository }}"
