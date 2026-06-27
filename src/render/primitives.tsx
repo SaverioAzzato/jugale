@@ -1,10 +1,32 @@
 import type { ReactNode } from "react";
 
-/** Renders a wiki link when present, otherwise plain content. Links are the soul of the sheet. */
+/** Schemes safe to turn an untrusted character.json string into a real <a href>. */
+const SAFE_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
+
+/**
+ * Sanitize an untrusted URL from character.json. The JSON can come from anywhere
+ * (downloaded, shared, AI-generated), so a `link` of `javascript:…`, `data:text/html,…`,
+ * `vbscript:…`, etc. would be an XSS vector when clicked. We parse with no base — so only an
+ * **absolute** URL with an allowed scheme survives; bare/relative strings and protocol-relative
+ * `//host` (which could point off-origin) are rejected. Returns the normalized href, or null so
+ * the caller renders inert text.
+ */
+export function safeHref(link: string): string | null {
+  try {
+    const url = new URL(link.trim()); // no base ⇒ relative/bare/protocol-relative throws
+    return SAFE_PROTOCOLS.has(url.protocol) ? url.href : null;
+  } catch {
+    return null; // not an absolute, parseable URL
+  }
+}
+
+/** Renders a wiki link when the URL is present and safe, otherwise plain content.
+ *  Links are the soul of the sheet — but only http(s)/mailto ones (see safeHref). */
 export function WikiLink({ link, children }: { link?: string | null; children: ReactNode }) {
-  if (!link) return <>{children}</>;
+  const href = link ? safeHref(link) : null;
+  if (!href) return <>{children}</>;
   return (
-    <a className="wikilink" href={link} target="_blank" rel="noopener noreferrer">
+    <a className="wikilink" href={href} target="_blank" rel="noopener noreferrer">
       {children}
     </a>
   );

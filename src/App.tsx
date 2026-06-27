@@ -509,6 +509,36 @@ function EmptyState({
           ))}
         </div>
       </details>
+      <footer className="empty-footer">
+        <a
+          className="empty-footer-link"
+          href="https://github.com/SaverioAzzato/jugale"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          GitHub
+        </a>
+        {/* "Get the app" is a web-only path to native downloads — pointless inside the app. */}
+        {!isTauri() && (
+          <>
+            <span className="empty-footer-sep" aria-hidden>
+              ·
+            </span>
+            <a
+              className="empty-footer-link"
+              href="https://github.com/SaverioAzzato/jugale/releases/latest"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t("empty.getApp")}
+            </a>
+          </>
+        )}
+        <span className="empty-footer-sep" aria-hidden>
+          ·
+        </span>
+        <span className="empty-footer-version">{__APP_VERSION__}</span>
+      </footer>
     </div>
   );
 }
