@@ -42,10 +42,17 @@ EOF
 #    The Tauri template ships a `buildTypes { ... getByName("release") { ... } }` block with no
 #    signing — we splice a release signingConfig in front of buildTypes and wire it into the
 #    release type. Anchors ("buildTypes {", 'getByName("release") {') are stable Tauri template text.
+#    NB: in Gradle's Kotlin DSL, fully-qualified `java.util.Properties()` / `java.io.FileInputStream`
+#    fail to resolve in expression position, so we add imports and use simple names. `getProperty()`
+#    returns a platform `String!`, which assigns cleanly without an `as String` cast (the cast would
+#    trip "no cast needed", which Gradle's strict script compilation treats as an error).
 if grep -q 'signingConfigs.getByName("release")' "$gradle"; then
   echo "Signing config already present in $gradle — skipping injection."
 else
-  perl -0777 -i -pe 's/(\n(\s*)buildTypes\s*\{)/\n${2}val keystorePropertiesFile = rootProject.file("keystore.properties")\n${2}val keystoreProperties = java.util.Properties()\n${2}if (keystorePropertiesFile.exists()) {\n${2}    keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))\n${2}}\n${2}signingConfigs {\n${2}    create("release") {\n${2}        keyAlias = keystoreProperties["keyAlias"] as String\n${2}        keyPassword = keystoreProperties["keyPassword"] as String\n${2}        storeFile = file(keystoreProperties["storeFile"] as String)\n${2}        storePassword = keystoreProperties["storePassword"] as String\n${2}    }\n${2}}\n$1/' "$gradle"
+  grep -q '^import java\.io\.FileInputStream' "$gradle" || perl -0777 -i -pe 's/\A/import java.io.FileInputStream\n/' "$gradle"
+  grep -q '^import java\.util\.Properties' "$gradle" || perl -0777 -i -pe 's/\A/import java.util.Properties\n/' "$gradle"
+
+  perl -0777 -i -pe 's/(\n(\s*)buildTypes\s*\{)/\n${2}val keystorePropertiesFile = rootProject.file("keystore.properties")\n${2}val keystoreProperties = Properties()\n${2}if (keystorePropertiesFile.exists()) {\n${2}    keystoreProperties.load(FileInputStream(keystorePropertiesFile))\n${2}}\n${2}signingConfigs {\n${2}    create("release") {\n${2}        keyAlias = keystoreProperties.getProperty("keyAlias")\n${2}        keyPassword = keystoreProperties.getProperty("keyPassword")\n${2}        storeFile = file(keystoreProperties.getProperty("storeFile"))\n${2}        storePassword = keystoreProperties.getProperty("storePassword")\n${2}    }\n${2}}\n$1/' "$gradle"
 
   perl -0777 -i -pe 's/(getByName\("release"\)\s*\{)/$1\n            signingConfig = signingConfigs.getByName("release")/' "$gradle"
 fi
