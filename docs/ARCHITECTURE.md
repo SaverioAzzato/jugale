@@ -98,3 +98,13 @@ Both implement the same interface; the rest of the app never knows which host it
 - Exact schema shape — see `SCHEMA.md`, reviewed iteratively.
 - Tailwind vs hand-rolled CSS modules for the bespoke look (leaning Tailwind + tokens).
 - Whether desktop also keeps an Electron fallback during the Tauri transition (default: no, go straight to Tauri).
+
+## 9. Security: Content-Security-Policy
+The app renders untrusted `character.json` (downloaded, shared, AI-generated), so it ships a CSP as defence-in-depth on top of React's escaping and the `safeHref` link allowlist. There are **two CSPs kept in sync**:
+
+- **Web** — injected as a `<meta http-equiv>` **only into the production build** by a Vite plugin (`vite.config.ts` → `cspMeta`). It is deliberately *not* applied in dev, where Vite's HMR needs inline scripts and a websocket. (GitHub Pages can't set HTTP headers, so `frame-ancestors`/clickjacking protection isn't available there — accepted gap.)
+- **Tauri** — `src-tauri/tauri.conf.json` → `app.security.csp`, a superset that also allows the `asset:`/`ipc:` protocols the webview needs.
+
+The policy is strict: `default-src 'self'`, no `unsafe-eval` (the app never evals — the formula engine is a hand-rolled parser), images limited to `'self'`/`blob:`/`data:` (portraits are `blob:` object URLs), and the only relaxation is `'unsafe-inline'` for `style-src` (inline `style={{}}` attributes).
+
+> **The Tauri CSP can only be verified on a real native build** (no webview in CI/preview), like Android signing. If a release build shows a blank window, the rollback is one line: set `csp` back to `null` in `tauri.conf.json`. The web CSP is verified against the production build in the preview.
