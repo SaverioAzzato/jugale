@@ -33,6 +33,8 @@ So the draft step is a feature, not friction. The right way to *remove* it later
 
 Generate the keystore once (`keytool -genkeypair -v -keystore jugale-release.jks -alias jugale -keyalg RSA -keysize 2048 -validity 10000`), base64 it into the secret, and **back up the keystore + passwords outside GitHub** — lose them and you can't ship same-app updates (Android rejects an APK signed with a different key). The script exits non-zero if the secrets are missing, so a release won't silently fall back to an unsigned build. The same step also regenerates the app icons from `src-tauri/icons/icon.png` so the APK ships the JUGALE icon, not Tauri's default.
 
+After the build, a `apksigner verify` step proves the signing actually took effect — it fails the job if the APK is unsigned, debug-signed (`CN=Android Debug`), or missing the v2 signature scheme, so a mis-applied `signingConfig` can never reach a published release.
+
 ## Cutting a release
 
 The app version lives in **three files that don't read from each other**, and all must match the release tag:
