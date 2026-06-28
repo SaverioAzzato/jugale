@@ -113,6 +113,28 @@ jobs:
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ env.NDK_VERSION }}
 
+      - name: Verify the APK is release-signed
+        # Defence in depth: prove the signingConfig actually took effect before we publish.
+        # apksigner verify exits non-zero on an unsigned/broken APK; we additionally refuse a
+        # debug-signed one (CN=Android Debug) and require the v2 signature scheme.
+        run: |
+          set -euo pipefail
+          apk=$(find src-tauri/gen/android -name "*.apk" -path "*release*" -path "*universal*" | head -n1)
+          [ -n "$apk" ] || apk=$(find src-tauri/gen/android -name "*.apk" -path "*release*" | head -n1)
+          [ -n "$apk" ] || { echo "::error::no release APK found to verify"; exit 1; }
+          apksigner=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n1)
+          [ -n "$apksigner" ] || { echo "::error::apksigner not found under $ANDROID_HOME/build-tools"; exit 1; }
+          echo "Verifying $apk"
+          out=$("$apksigner" verify --verbose --print-certs "$apk") \
+            || { echo "$out"; echo "::error::apksigner verify failed — APK is not properly signed"; exit 1; }
+          echo "$out"
+          if echo "$out" | grep -qi "CN=Android Debug"; then
+            echo "::error::APK is debug-signed (CN=Android Debug) — the release keystore did not apply"; exit 1
+          fi
+          echo "$out" | grep -Eqi "v2 scheme.*: *true" \
+            || { echo "::error::APK is not signed with the v2 scheme"; exit 1; }
+          echo "OK: release-signed, v2 scheme, not the debug key."
+
       - name: Attach APK to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
