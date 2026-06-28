@@ -180,7 +180,8 @@ function buildD4(result: number, theme: ThemeColors): DieObject {
   ].map((v) => v.normalize().multiplyScalar(SIZE));
 
   const faces = [0, 1, 2, 3].map((omit) => {
-    let [a, b, c] = [0, 1, 2, 3].filter((i) => i !== omit);
+    const [a, ...bc] = [0, 1, 2, 3].filter((i) => i !== omit);
+    let [b, c] = bc; // b/c may swap below to fix winding; a never changes
     const A = verts[a];
     const B = verts[b];
     const C = verts[c];
