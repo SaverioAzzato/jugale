@@ -15,6 +15,12 @@ import { abilityModifierFor, proficiencyBonus, totalLevel, maxHitDice } from "..
 
 export type Rng = () => number;
 
+/** One physical die rolled by a formula — enough to replay it as a 3D die on screen. */
+export interface RolledFace {
+  sides: number;
+  result: number;
+}
+
 /** Deterministic PRNG (mulberry32). Seed with a timestamp for effectively-random rolls. */
 export function makeRng(seed: number): Rng {
   let a = seed >>> 0;
@@ -68,16 +74,27 @@ export function setByPath(c: Character, path: string, value: number): Character 
   return walk(c, 0) as Character;
 }
 
-function evalTerm(c: Character, term: string, rng: Rng, errors?: string[], rolls?: string[]): number {
+function evalTerm(
+  c: Character,
+  term: string,
+  rng: Rng,
+  errors?: string[],
+  rolls?: string[],
+  faces?: RolledFace[],
+): number {
   if (/^\d+$/.test(term)) return Number(term);
   const dice = term.match(/^(\d*)d(\d+)$/i);
   if (dice) {
     const n = Number(dice[1] || "1");
     const sides = Number(dice[2]);
-    const faces: number[] = [];
-    for (let i = 0; i < n; i++) faces.push(1 + Math.floor(rng() * sides));
-    const sum = faces.reduce((a, b) => a + b, 0);
-    rolls?.push(`${n > 1 ? n : ""}d${sides} → ${faces.join("+")}${n > 1 ? ` = ${sum}` : ""}`);
+    const rolled: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const face = 1 + Math.floor(rng() * sides);
+      rolled.push(face);
+      faces?.push({ sides, result: face });
+    }
+    const sum = rolled.reduce((a, b) => a + b, 0);
+    rolls?.push(`${n > 1 ? n : ""}d${sides} → ${rolled.join("+")}${n > 1 ? ` = ${sum}` : ""}`);
     return sum;
   }
   const v = getByPath(c, term);
@@ -96,6 +113,7 @@ export function evalExpression(
   rng: Rng,
   errors?: string[],
   rolls?: string[],
+  faces?: RolledFace[],
 ): number {
   const tokens = expr.match(/[+-]?\s*[^+-]+/g) ?? [];
   let total = 0;
@@ -107,7 +125,7 @@ export function evalExpression(
       sign = -1;
       tk = tk.slice(1).trim();
     }
-    if (tk) total += sign * evalTerm(c, tk, rng, errors, rolls);
+    if (tk) total += sign * evalTerm(c, tk, rng, errors, rolls, faces);
   }
   return total;
 }
@@ -152,26 +170,29 @@ export interface FormulaResult {
   change?: FormulaChange;
   error?: string;
   rolls: string[];
+  /** The individual dice rolled (one entry per physical die), for the 3D dice layer. */
+  faces: RolledFace[];
 }
 
 /** Strict single-formula apply: reports what changed, the dice rolled, or why it couldn't. */
 export function evaluateFormula(c: Character, formula: string, rng: Rng): FormulaResult {
   const eq = formula.indexOf("=");
-  if (eq < 0) return { character: c, error: `malformed formula "${formula}"`, rolls: [] };
+  if (eq < 0) return { character: c, error: `malformed formula "${formula}"`, rolls: [], faces: [] };
   const lhs = formula.slice(0, eq).trim();
   const rhs = formula.slice(eq + 1).trim();
-  if (!lhs || !rhs) return { character: c, error: `incomplete formula "${formula}"`, rolls: [] };
+  if (!lhs || !rhs) return { character: c, error: `incomplete formula "${formula}"`, rolls: [], faces: [] };
 
-  if (isVirtual(lhs)) return { character: c, error: `cannot write to derived value "${lhs}"`, rolls: [] };
+  if (isVirtual(lhs)) return { character: c, error: `cannot write to derived value "${lhs}"`, rolls: [], faces: [] };
   const before = getByPath(c, lhs);
-  if (typeof before !== "number") return { character: c, error: `cannot write to "${lhs}"`, rolls: [] };
+  if (typeof before !== "number") return { character: c, error: `cannot write to "${lhs}"`, rolls: [], faces: [] };
 
   const errors: string[] = [];
   const rolls: string[] = [];
-  const value = clampForPath(c, lhs, Math.round(evalExpression(c, rhs, rng, errors, rolls)));
-  if (errors.length > 0) return { character: c, error: errors[0], rolls };
+  const faces: RolledFace[] = [];
+  const value = clampForPath(c, lhs, Math.round(evalExpression(c, rhs, rng, errors, rolls, faces)));
+  if (errors.length > 0) return { character: c, error: errors[0], rolls, faces };
 
-  return { character: setByPath(c, lhs, value), change: { path: lhs, before, after: value }, rolls };
+  return { character: setByPath(c, lhs, value), change: { path: lhs, before, after: value }, rolls, faces };
 }
 
 /** Run an action's formulae, collecting the changes, the dice rolled, and any errors. */
@@ -179,11 +200,12 @@ export function applyAction(
   c: Character,
   formulas: string[],
   rng: Rng,
-): { character: Character; changes: FormulaChange[]; errors: string[]; rolls: string[] } {
+): { character: Character; changes: FormulaChange[]; errors: string[]; rolls: string[]; faces: RolledFace[] } {
   let cur = c;
   const changes: FormulaChange[] = [];
   const errors: string[] = [];
   const rolls: string[] = [];
+  const faces: RolledFace[] = [];
   for (const f of formulas) {
     const r = evaluateFormula(cur, f, rng);
     if (r.error) errors.push(r.error);
@@ -192,6 +214,7 @@ export function applyAction(
       changes.push(r.change);
     }
     rolls.push(...r.rolls);
+    faces.push(...r.faces);
   }
-  return { character: cur, changes, errors, rolls };
+  return { character: cur, changes, errors, rolls, faces };
 }

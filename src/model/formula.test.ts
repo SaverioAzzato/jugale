@@ -123,4 +123,16 @@ describe("applyAction", () => {
     const { rolls } = applyAction(c, ["combat.hp.temp = 2d6"], hi);
     expect(rolls).toEqual(["2d6 → 6+6 = 12"]);
   });
+  it("surfaces one face per physical die for the 3D layer", () => {
+    const { faces } = applyAction(c, ["combat.hp.current = combat.hp.current + 1d8 + abilities.con.mod", "combat.hp.temp = 2d6"], hi);
+    expect(faces).toEqual([
+      { sides: 8, result: 8 },
+      { sides: 6, result: 6 },
+      { sides: 6, result: 6 },
+    ]);
+  });
+  it("reports no faces when a formula rolls no dice", () => {
+    const { faces } = applyAction(c, ["combat.hp.temp = abilities.con.mod + 2"], hi);
+    expect(faces).toEqual([]);
+  });
 });

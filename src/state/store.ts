@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import { loadCharacter, maxHitDice, type Character, type Issue } from "../schema";
-import { applyAction, getByPath, makeRng, type FormulaChange } from "../model/formula";
+import { applyAction, getByPath, makeRng, type FormulaChange, type RolledFace } from "../model/formula";
 import { setIn, insertAt, removeAt, type Path } from "../model/edit";
 import { translate, useI18n, type StringKey } from "../i18n/useI18n";
 import { useToast } from "../ui/useToast";
+import { useDice } from "../ui/useDice";
 import { exportJson, type GalleryImage, type StorageProvider } from "../storage/provider";
 
 const FIELD_LABEL: Record<string, StringKey> = {
@@ -235,15 +236,18 @@ export const useCharacter = create<CharacterState>((set, get) => {
     let cur = rested;
     const errors: string[] = [];
     const rolls: string[] = [];
+    const faces: RolledFace[] = [];
     for (const a of c.actions.filter((x) => x.kind === kind)) {
       const r = applyAction(cur, a.formulas, rng);
       cur = r.character;
       errors.push(...r.errors);
       rolls.push(...r.rolls);
+      faces.push(...r.faces);
     }
 
     const label = translate(useI18n.getState().locale, kind === "shortRest" ? "vitals.shortRest" : "vitals.longRest");
     notify(label, c, diffLiveFields(c, cur), rolls, errors);
+    if (faces.length) useDice.getState().present(faces);
     set({ character: clearDeathOnRevive(c, cur), dirty: true });
     scheduleSave();
   };
@@ -382,8 +386,9 @@ export const useCharacter = create<CharacterState>((set, get) => {
       if (!c) return;
       const action = c.actions.find((a) => a.id === id);
       if (!action) return;
-      const { character, changes, errors, rolls } = applyAction(c, action.formulas, makeRng(Date.now()));
+      const { character, changes, errors, rolls, faces } = applyAction(c, action.formulas, makeRng(Date.now()));
       notify(action.label || action.id, c, changes, rolls, errors);
+      if (faces.length) useDice.getState().present(faces);
       if (changes.length > 0) {
         set({ character: clearDeathOnRevive(c, character), dirty: true });
         scheduleSave();

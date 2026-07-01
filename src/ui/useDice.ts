@@ -11,6 +11,8 @@ interface DiceState {
   dice: RolledDie[];
   /** Roll one die of `sides` and drop it on the screen. The 3D layer picks where. */
   roll: (sides: number) => void;
+  /** Drop dice showing already-decided results — e.g. the exact dice an action just rolled. */
+  present: (faces: { sides: number; result: number }[]) => void;
   /** Remove a die (the scene plays its exit animation first). */
   dismiss: (id: string) => void;
   clear: () => void;
@@ -35,6 +37,10 @@ export const useDice = create<DiceState>((set) => ({
   roll: (sides) =>
     set((s) => ({
       dice: [...s.dice, { id: `die-${++counter}`, sides, result: randomResult(sides) }],
+    })),
+  present: (faces) =>
+    set((s) => ({
+      dice: [...s.dice, ...faces.map((f) => ({ id: `die-${++counter}`, sides: f.sides, result: f.result }))],
     })),
   dismiss: (id) => set((s) => ({ dice: s.dice.filter((d) => d.id !== id) })),
   clear: () => set({ dice: [] }),
