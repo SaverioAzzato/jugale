@@ -2033,6 +2033,39 @@ code {
   font-size: 0;
 }
 
+/* Update banner: slim bar pinned to the top, above everything, shown only when a newer
+ * release is found (desktop: install in place; Android: open the APK). */
+.update-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem max(0.75rem, env(safe-area-inset-right)) 0.5rem max(0.75rem, env(safe-area-inset-left));
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+  background: var(--surface-2, #1e1e2b);
+  border-bottom: 1px solid var(--accent, #8a7bf0);
+  font-size: 0.9rem;
+}
+.update-banner-text {
+  flex: 1;
+}
+.update-banner-action {
+  padding: 0.25rem 0.75rem;
+}
+.update-banner-dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+
 /* Thrown 3D dice: a full-viewport WebGL layer. pointer-events stays none on the
  * container so the sheet underneath is always clickable; DiceScene picks dice via
  * its own global pointer listeners + raycasting. */

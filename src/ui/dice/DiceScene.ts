@@ -88,6 +88,12 @@ export class DiceScene {
 
     window.addEventListener("resize", this.onResize);
     window.addEventListener("pointerdown", this.onPointerDown, true);
+    // Touch needs its own capture listener: on touch devices the canvas is pointer-events:none,
+    // so a tap on a die also lands on whatever button sits underneath. stopPropagation on the
+    // pointer stream isn't enough — the button still activates via the touch→click compatibility
+    // event. Swallowing touchstart (non-passive) when a die is under the finger cancels that
+    // click and keeps the gesture ours, while pointer events still drive the drag.
+    window.addEventListener("touchstart", this.onTouchStart, { passive: false, capture: true });
     this.renderOnce();
   }
 
@@ -114,6 +120,7 @@ export class DiceScene {
     cancelAnimationFrame(this.raf);
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("pointerdown", this.onPointerDown, true);
+    window.removeEventListener("touchstart", this.onTouchStart, true);
     window.removeEventListener("pointermove", this.onPointerMove, true);
     window.removeEventListener("pointerup", this.onPointerUp, true);
     window.removeEventListener("touchmove", this.onTouchMove, true);
@@ -275,6 +282,17 @@ export class DiceScene {
   /** While a die is being dragged, keep touch gestures from scrolling the sheet underneath. */
   private onTouchMove = (e: TouchEvent): void => {
     if (this.drag) e.preventDefault();
+  };
+
+  /** Swallow a touch that lands on a die so the button/sheet underneath doesn't also fire.
+   *  preventDefault here cancels the touch→click compatibility event; the pointer stream still
+   *  drives the drag. A touch that misses every die falls through to the UI untouched. */
+  private onTouchStart = (e: TouchEvent): void => {
+    const t = e.touches[0];
+    if (!t) return;
+    if (!this.pick(t.clientX, t.clientY)) return; // miss → let it reach the sheet
+    e.preventDefault();
+    e.stopPropagation();
   };
 
   private onPointerMove = (e: PointerEvent): void => {

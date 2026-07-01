@@ -12,6 +12,7 @@
 import type { RecentRef, LoadedCharacter, GalleryImage } from "./provider";
 import { reopenWebHandle } from "./provider";
 import { isTauri, reopenTauriPath } from "./tauriProvider";
+import { isAndroid, reopenAndroid } from "./androidProvider";
 
 export interface RecentEntry extends RecentRef {
   /** Stable de-dup key (platform + kind + path/name). */
@@ -38,15 +39,19 @@ export function recentsSupported(): boolean {
 /** A synchronous de-dup key. Web folders with the same name collide (rare); acceptable here. */
 export function refKey(ref: RecentRef): string {
   if (ref.platform === "tauri") return `tauri:${ref.kind}:${ref.path}`;
+  if (ref.platform === "android") return `android:${ref.kind}:${(ref.uri as { uri?: string } | undefined)?.uri}`;
   if (ref.platform === "snapshot") return `snapshot:${ref.kind}:${ref.name}`;
   return `web:${ref.kind}:${ref.name}`;
 }
 
-/** Whether a stored entry can be re-resolved on the current host (a tauri path is useless in
- *  a browser; a web handle is useless in the native shell; a snapshot works anywhere). */
+/** Whether a stored entry can be re-resolved on the current host: a tauri path is useless in a
+ *  browser, a web handle in the native shell, an Android SAF URI anywhere but Android; a snapshot
+ *  works anywhere. Android is a Tauri host too, so it's checked before the desktop-Tauri case. */
 function resolvableHere(e: RecentEntry): boolean {
   if (e.platform === "snapshot") return true;
-  return isTauri() ? e.platform === "tauri" : e.platform === "web";
+  if (isAndroid()) return e.platform === "android";
+  if (isTauri()) return e.platform === "tauri";
+  return e.platform === "web";
 }
 
 /** Pure: insert/refresh `entry`, drop any same-key duplicate, newest first, capped at `max`. */
@@ -145,6 +150,11 @@ export async function reopenRecent(entry: RecentEntry): Promise<ReopenResult> {
     }));
     return { mode: "snapshot", raw: entry.raw, images, sourceName: entry.name };
   }
-  const loaded = entry.platform === "tauri" ? await reopenTauriPath(entry) : await reopenWebHandle(entry);
+  const loaded =
+    entry.platform === "android"
+      ? await reopenAndroid(entry)
+      : entry.platform === "tauri"
+        ? await reopenTauriPath(entry)
+        : await reopenWebHandle(entry);
   return { mode: "live", ...loaded };
 }

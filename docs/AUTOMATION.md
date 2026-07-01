@@ -11,6 +11,21 @@
 
 There is intentionally **no `claude.yml`** — see "ticket → PR" below for why.
 
+## Repository secrets (the whole list)
+
+Every secret CI relies on, in one place. All are **one-time setup** (create once, reuse for every release) and only used by `release.yml`; `ci.yml`/`pages.yml`/`tauri-check.yml` need none. **Back up each value outside GitHub** — GitHub won't show it again, and losing the signing ones means you can't ship compatible updates. Set them at *Repo → Settings → Secrets and variables → Actions*.
+
+| Secret | Purpose | Consumed by | Details |
+|---|---|---|---|
+| `ANDROID_KEYSTORE_BASE64` | base64 of the release keystore (`.jks`) | `release-android` → `scripts/android-sign-setup.sh` | [Android signing](#android-signing) |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore (store) password | ″ | ″ |
+| `ANDROID_KEY_ALIAS` | key alias inside the keystore | ″ | ″ |
+| `ANDROID_KEY_PASSWORD` | password for that alias | ″ | ″ |
+| `TAURI_SIGNING_PRIVATE_KEY` | updater private key (`tauri signer generate`) | `release` (desktop matrix) → `tauri-action` | [Desktop auto-update](#desktop-auto-update-updater-signing) |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | its password | ″ | ″ |
+
+Not a secret (safe to commit): the updater **public** key lives in `tauri.conf.json` → `plugins.updater.pubkey`; the macOS ad-hoc identity is the literal `"-"` in `release.yml`, no secret needed. `GITHUB_TOKEN` is provided automatically by Actions. The subsections below explain how each group is used.
+
 ## Release policy: web auto-deploys, native is gated (deliberate)
 
 Both web and native ship on the **same trigger** (a `v*` tag), but they reach users differently, and that asymmetry is on purpose — not an oversight:
@@ -34,6 +49,21 @@ So the draft step is a feature, not friction. The right way to *remove* it later
 Generate the keystore once (`keytool -genkeypair -v -keystore jugale-release.jks -alias jugale -keyalg RSA -keysize 2048 -validity 10000`), base64 it into the secret, and **back up the keystore + passwords outside GitHub** — lose them and you can't ship same-app updates (Android rejects an APK signed with a different key). The script exits non-zero if the secrets are missing, so a release won't silently fall back to an unsigned build. The same step also regenerates the app icons from `src-tauri/icons/icon.png` so the APK ships the JUGALE icon, not Tauri's default.
 
 After the build, a `apksigner verify` step proves the signing actually took effect — it fails the job if the APK is unsigned, debug-signed (`CN=Android Debug`), or missing the v2 signature scheme, so a mis-applied `signingConfig` can never reach a published release.
+
+### macOS launch (ad-hoc signing)
+
+`release.yml` passes `APPLE_SIGNING_IDENTITY: "-"` to `tauri-action` on the macOS leg so the app is **ad-hoc signed**. Without any signature, a downloaded (quarantined) app is rejected by Apple Silicon as "damaged and can't be opened"; ad-hoc signing gives it a valid signature so it launches (a one-time "unidentified developer" prompt remains — right-click → Open). Full notarization would remove that too but needs a paid Apple Developer account ($99/yr) — deferred.
+
+### Desktop auto-update (updater signing)
+
+Desktop builds self-update from GitHub Releases via Tauri's `updater` plugin. `release.yml` passes two secrets to `tauri-action`; with them + `plugins.updater` configured in `tauri.conf.json`, the action signs the updater artifacts and generates + uploads `latest.json` to the release, which installed apps poll.
+
+| Secret | What |
+| --- | --- |
+| `TAURI_SIGNING_PRIVATE_KEY` | contents of the updater private key (`tauri signer generate`) |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | its password |
+
+The **public** key lives in `tauri.conf.json` → `plugins.updater.pubkey` (safe to commit). **Back up the private key + password outside GitHub** — losing them means installed apps can no longer verify updates. Two caveats: the endpoint (`.../releases/latest/download/latest.json`) only resolves once a release is **published** (not left as a draft); and auto-update only kicks in from the *next* release onward — a version that predates the updater has no client to check. **Android** can't use this (Tauri's updater is desktop-only), so it does a lightweight in-app GitHub-API version check that offers to open the newer APK (`src/update/`); this needs `https://api.github.com` in the Tauri CSP `connect-src`.
 
 ## Cutting a release
 

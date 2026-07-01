@@ -32,19 +32,21 @@ export interface SnapshotImage {
 
 /**
  * A serializable reference to a previously-opened character, persisted for the "Recents"
- * list. Three flavours, one per host capability:
+ * list. Four flavours, one per host capability:
  * - `web`: a live `FileSystemHandle` (Chromium) — reopens writable.
- * - `tauri`: an absolute `path` (desktop/mobile) — reopens writable.
+ * - `tauri`: an absolute `path` (desktop) — reopens writable.
+ * - `android`: a SAF `content://` URI with a persisted read+write grant — reopens writable in place.
  * - `snapshot`: an inlined read-only copy (`raw` + image blobs) for hosts that can't persist a
  *   live reference (Firefox/Safari, or any plain JSON/folder import) — reopens read-only.
  * All structured-cloneable, kept in IndexedDB; nothing is ever sent anywhere.
  */
 export interface RecentRef {
-  platform: "web" | "tauri" | "snapshot";
+  platform: "web" | "tauri" | "android" | "snapshot";
   kind: "file" | "folder";
   name: string;
   path?: string; // tauri
   handle?: unknown; // web: FileSystemFileHandle | directory handle (cast on reopen)
+  uri?: unknown; // android: AndroidFsUri (cast on reopen); tree URI for folders, file URI for files
   raw?: unknown; // snapshot: the character JSON
   images?: SnapshotImage[]; // snapshot: gallery blobs
 }

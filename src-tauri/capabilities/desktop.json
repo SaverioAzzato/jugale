@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "desktop-updater",
+  "description": "Self-update from GitHub Releases + relaunch. Desktop-only: the updater/process plugins are registered under #[cfg(desktop)] in lib.rs, so this capability must not apply on mobile.",
+  "platforms": ["linux", "macOS", "windows"],
+  "windows": ["main"],
+  "permissions": ["updater:default", "process:default"]
+}
