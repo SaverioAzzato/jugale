@@ -11,7 +11,7 @@ No install, no account, no subscription:
 - **Web** — open the live app: **[saverioazzato.github.io/jugale](https://saverioazzato.github.io/jugale/)**. Works in any modern browser; Chromium browsers also save your changes live.
 - **Desktop & mobile** — download an installer (Mac / Windows / Linux) or the Android APK from **[Releases](https://github.com/SaverioAzzato/jugale/releases)**.
 
-> **First launch on macOS:** the app isn't notarized yet (that needs a paid Apple account), so Gatekeeper shows a one-time warning. **Right-click the app → Open → Open**, or run `xattr -dr com.apple.quarantine /Applications/JUGALE.app`. On **Android**, allow "install unknown apps" for your browser/file manager to sideload the APK.
+> **First launch on macOS:** the app isn't notarized yet (that needs a paid Apple account), so Gatekeeper blocks it once with *"Apple could not verify JUGALE.app is free of malware."* On **macOS 15 (Sequoia)** the old right-click → Open trick no longer bypasses this — instead: try to open it, then go to **System Settings → Privacy & Security → scroll down → "Open Anyway"** (one time, then it's remembered). Or, from Terminal: `xattr -dr com.apple.quarantine /Applications/JUGALE.app` (adjust the path if it's elsewhere). On older macOS, right-click → Open → Open still works. On **Android**, allow "install unknown apps" for your browser/file manager to sideload the APK.
 
 Then, on the welcome screen:
 
