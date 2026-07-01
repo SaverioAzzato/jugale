@@ -11,6 +11,8 @@ No install, no account, no subscription:
 - **Web** — open the live app: **[saverioazzato.github.io/jugale](https://saverioazzato.github.io/jugale/)**. Works in any modern browser; Chromium browsers also save your changes live.
 - **Desktop & mobile** — download an installer (Mac / Windows / Linux) or the Android APK from **[Releases](https://github.com/SaverioAzzato/jugale/releases)**.
 
+> **First launch on macOS:** the app isn't notarized yet (that needs a paid Apple account), so Gatekeeper shows a one-time warning. **Right-click the app → Open → Open**, or run `xattr -dr com.apple.quarantine /Applications/JUGALE.app`. On **Android**, allow "install unknown apps" for your browser/file manager to sideload the APK.
+
 Then, on the welcome screen:
 
 1. **Have a character already?** Open its `character.json` (or its folder, to get the portrait too). Recently-opened characters are one click away.

@@ -45,6 +45,19 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Ad-hoc sign the macOS bundle (identity "-"). Without any signature, an unsigned app
+          # downloaded from the browser is quarantined and Apple Silicon rejects it outright as
+          # "damaged and can't be opened". Ad-hoc signing gives it a valid (if unauthenticated)
+          # signature so it launches — the user still gets a one-time "unidentified developer"
+          # prompt (right-click → Open), which real notarization ($99/yr Apple account) would
+          # remove. Ignored by the Linux/Windows matrix legs. See docs/RELEASE-TESTING.md.
+          APPLE_SIGNING_IDENTITY: "-"
+          # Updater signing: with these set and `plugins.updater` configured, tauri-action builds
+          # the updater artifacts (.sig), signs them, and generates + uploads `latest.json` to the
+          # release — which the desktop app polls to self-update. Generated with `tauri signer
+          # generate`; the public half lives in tauri.conf.json. See docs/AUTOMATION.md.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "JUGALE ${{ github.ref_name }}"

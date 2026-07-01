@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "android-fs",
+  "description": "SAF file access for Android (tauri-plugin-android-fs). Android-only: the plugin crate is target-gated in Cargo.toml, so this capability must not apply on desktop.",
+  "platforms": ["android"],
+  "windows": ["main"],
+  "permissions": ["android-fs:default"]
+}

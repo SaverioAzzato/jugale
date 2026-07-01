@@ -14,6 +14,7 @@ import {
   RECENT_PERMISSION_DENIED,
 } from "./storage/provider";
 import { isTauri, openCharacterFileTauri, openCharacterFolderTauri } from "./storage/tauriProvider";
+import { isAndroid, openCharacterFileAndroid, openCharacterFolderAndroid } from "./storage/androidProvider";
 import {
   recentsSupported,
   listRecents,
@@ -33,6 +34,8 @@ import { DiceCanvas } from "./ui/dice/DiceCanvas";
 import { Toasts } from "./ui/Toasts";
 import { useToast } from "./ui/useToast";
 import { EmptyState } from "./ui/EmptyState";
+import { UpdateBanner } from "./update/UpdateBanner";
+import { useUpdate } from "./update/useUpdate";
 
 export function App() {
   const { character, sourceName, images, liveSync, dirty, saveError, readOnly, editMode, issues } = useCharacter(
@@ -91,6 +94,11 @@ export function App() {
     ? activeTab
     : (tabs[0]?.id ?? "gioco");
 
+  // Check for a newer release once at startup (no-op on the web build, silent on failure).
+  useEffect(() => {
+    void useUpdate.getState().check();
+  }, []);
+
   // Warn before leaving with unsaved in-memory edits (live-synced files save themselves).
   // Also covers a live sync that broke and fell back to read-only: liveSync flips false then.
   useEffect(() => {
@@ -105,7 +113,11 @@ export function App() {
   }, [dirty, liveSync]);
 
   async function handleOpen() {
-    const result = isTauri() ? await openCharacterFileTauri() : await openCharacterFile();
+    const result = isAndroid()
+      ? await openCharacterFileAndroid()
+      : isTauri()
+        ? await openCharacterFileTauri()
+        : await openCharacterFile();
     if (result) {
       connect(result.provider, result.raw, result.ref.name);
       void recordRecent(result.ref);
@@ -114,7 +126,11 @@ export function App() {
 
   async function handleOpenFolderPicker() {
     try {
-      const result = isTauri() ? await openCharacterFolderTauri() : await openCharacterFolder();
+      const result = isAndroid()
+        ? await openCharacterFolderAndroid()
+        : isTauri()
+          ? await openCharacterFolderTauri()
+          : await openCharacterFolder();
       if (result) {
         connect(result.provider, result.raw, result.sourceName, result.images);
         void recordRecent(result.ref);
@@ -381,6 +397,7 @@ export function App() {
         </footer>
       )}
 
+      <UpdateBanner />
       <DiceCanvas />
       <Toasts />
     </div>
