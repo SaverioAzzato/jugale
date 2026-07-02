@@ -153,6 +153,19 @@ export async function openCharacterFolderAndroid(): Promise<{
   };
 }
 
+/**
+ * "Save a copy" via the Android system file-saver (SAF `ACTION_CREATE_DOCUMENT`, which — unlike
+ * the folder/tree picker — *does* list Google Drive). Writes the JSON to the new document and
+ * returns its display name, or null if the user cancelled. Android has no user-facing file paths,
+ * so a display name is the most we can report. This is an export, independent of any bound source.
+ */
+export async function saveCharacterAsAndroid(json: string, defaultName: string): Promise<string | null> {
+  const uri = await AndroidFs.showSaveFilePicker(defaultName, "application/json");
+  if (!uri) return null;
+  await AndroidFs.writeTextFile(uri, json);
+  return await AndroidFs.getName(uri).catch(() => defaultName);
+}
+
 /** Re-resolve an Android RecentRef via its persisted SAF permission. Throws NO_CHARACTER_JSON if
  *  the permission was lost (user cleared it / the entry is gone) or the folder no longer has one. */
 export async function reopenAndroid(ref: RecentRef): Promise<LoadedCharacter> {

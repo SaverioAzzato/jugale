@@ -7,6 +7,7 @@
   "permissions": [
     "android-fs:allow-show-open-file-picker",
     "android-fs:allow-show-open-dir-picker",
+    "android-fs:allow-show-save-file-picker",
     "android-fs:allow-read-dir",
     "android-fs:allow-read-text-file",
     "android-fs:allow-read-file",

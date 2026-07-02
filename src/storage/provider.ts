@@ -234,9 +234,10 @@ export async function importJsonFile(file: File): Promise<unknown> {
   return JSON.parse(await file.text());
 }
 
-/** Fallback save or manual backup: download the current character as a JSON file. */
-export function exportJson(data: unknown, filename: string): void {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+/** Route pre-serialized text to the browser's downloads location via an <a download> blob.
+ *  The browser never tells us where it landed (usually the Downloads folder). */
+function downloadText(text: string, filename: string, mime = "application/json"): void {
+  const blob = new Blob([text], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -245,6 +246,53 @@ export function exportJson(data: unknown, filename: string): void {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+/** Fallback save or manual backup: download an object as a pretty-printed JSON file. */
+export function exportJson(data: unknown, filename: string): void {
+  downloadText(JSON.stringify(data, null, 2), filename);
+}
+
+/** A window that may expose the File System Access save picker (Chromium today). */
+type SaveWindow = Window & {
+  showSaveFilePicker?: (opts?: unknown) => Promise<FileSystemFileHandle>;
+};
+
+/** True when the browser can offer a native "Save as…" picker (Chromium today). */
+export function isSavePickerSupported(): boolean {
+  return typeof (window as SaveWindow).showSaveFilePicker === "function";
+}
+
+/**
+ * Save a copy of the character JSON to a browser-chosen destination. On Chromium the File
+ * System Access save picker returns a writable handle, so we can report the *filename* the user
+ * chose — never the absolute path, which the browser hides for privacy (`picked: true`).
+ * Elsewhere (Firefox/Safari) we fall back to an <a download> blob, routed to the browser's
+ * downloads location without telling us where (`picked: false`). Returns null if the user
+ * dismisses the save picker.
+ */
+export async function saveCharacterAsWeb(
+  json: string,
+  defaultName: string,
+): Promise<{ name: string; picked: boolean } | null> {
+  const picker = (window as SaveWindow).showSaveFilePicker;
+  if (picker) {
+    let handle: FileSystemFileHandle;
+    try {
+      handle = await picker({
+        suggestedName: defaultName,
+        types: [{ description: "character.json", accept: { "application/json": [".json"] } }],
+      });
+    } catch {
+      return null; // user dismissed the Save picker (AbortError)
+    }
+    const writable = await handle.createWritable();
+    await writable.write(json);
+    await writable.close();
+    return { name: handle.name, picked: true };
+  }
+  downloadText(json, defaultName);
+  return { name: defaultName, picked: false };
 }
 
 /** A persisted FileSystemHandle with the permission methods TS's lib doesn't always type. */

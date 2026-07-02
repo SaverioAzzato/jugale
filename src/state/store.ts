@@ -5,7 +5,8 @@ import { setIn, insertAt, removeAt, type Path } from "../model/edit";
 import { translate, useI18n, type StringKey } from "../i18n/useI18n";
 import { useToast } from "../ui/useToast";
 import { useDice } from "../ui/useDice";
-import { exportJson, type GalleryImage, type StorageProvider } from "../storage/provider";
+import { type GalleryImage, type StorageProvider } from "../storage/provider";
+import { saveCharacterAs } from "../storage/exporter";
 
 const FIELD_LABEL: Record<string, StringKey> = {
   "combat.hp.current": "vitals.hp",
@@ -126,8 +127,9 @@ interface CharacterState {
     sourceName: string,
     images?: GalleryImage[],
   ) => void;
-  /** Download the current character as JSON. */
-  exportCharacter: () => void;
+  /** Save a copy of the character to a user-chosen destination (native picker where available),
+   *  then confirm it — with the path/filename where the host can report one. */
+  exportCharacter: () => Promise<void>;
   /** Return to welcome state (no loaded character). */
   clear: () => void;
 
@@ -315,10 +317,21 @@ export const useCharacter = create<CharacterState>((set, get) => {
       });
     },
 
-    exportCharacter: () => {
+    exportCharacter: async () => {
       const { character } = get();
       if (!character) return;
-      exportJson(character, `${slug(character.meta.name)}.json`);
+      const outcome = await saveCharacterAs(character, `${slug(character.meta.name)}.json`);
+      const locale = useI18n.getState().locale;
+      const push = useToast.getState().push;
+      if (outcome.status === "cancelled") return; // user backed out of the picker — say nothing
+      if (outcome.status === "error") {
+        push("error", translate(locale, "toast.exportFailed"), outcome.message);
+        return;
+      }
+      // Success: confirm, and name the destination where the host can (path on desktop, filename
+      // on Android/Chromium; a plain "check downloads" where the browser hides it).
+      const detail = outcome.kind === "download" ? translate(locale, "toast.checkDownloads") : outcome.location;
+      push("success", translate(locale, "toast.exported"), detail);
       set({ dirty: false });
     },
 

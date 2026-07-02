@@ -4,7 +4,7 @@
  * no read-only or import/export fallback here. The dialog plugin's open() call extends the
  * fs plugin's scope to whatever the user picks, for the running session.
  */
-import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { exists, readDir, readFile, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { join, basename } from "@tauri-apps/api/path";
 import type { StorageProvider, GalleryImage, RecentRef, LoadedCharacter } from "./provider";
@@ -101,6 +101,21 @@ export async function openCharacterFolderTauri(): Promise<{
     sourceName: await basename(dirPath),
     ref: { platform: "tauri", kind: "folder", name: await basename(dirPath), path: dirPath },
   };
+}
+
+/**
+ * "Save a copy" via the native Save dialog. Writes the JSON to a user-chosen destination and
+ * returns its absolute path, or null if the user cancelled. This is an export (a one-shot copy),
+ * independent of any bound source — it never rebinds live-sync.
+ */
+export async function saveCharacterAsTauri(json: string, defaultName: string): Promise<string | null> {
+  const path = await saveDialog({
+    defaultPath: defaultName,
+    filters: [{ name: "character.json", extensions: ["json"] }],
+  });
+  if (!path) return null;
+  await writeTextFile(path, json);
+  return path;
 }
 
 /** Re-resolve a native RecentRef (stored absolute path) into a live character.

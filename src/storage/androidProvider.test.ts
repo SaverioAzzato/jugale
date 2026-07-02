@@ -3,15 +3,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock the native SAF plugin: an in-memory folder with character.json + two images.
 // Everything the vi.mock factory needs is created via vi.hoisted (the factory is hoisted
 // above normal top-level consts, so it can't close over them).
-const { persist, checkPerm, writeText, TREE, JSON_URI } = vi.hoisted(() => {
+const { persist, checkPerm, writeText, savepicker, TREE, JSON_URI, SAVE_URI } = vi.hoisted(() => {
   const TREE = { uri: "content://tree/PG", documentTopTreeUri: "content://tree/PG" };
   const JSON_URI = { uri: "content://doc/character.json", documentTopTreeUri: TREE.uri };
+  const SAVE_URI = { uri: "content://doc/export.json", documentTopTreeUri: TREE.uri };
   return {
     TREE,
     JSON_URI,
+    SAVE_URI,
     persist: vi.fn(async () => {}),
     checkPerm: vi.fn(async () => true),
     writeText: vi.fn(async () => {}),
+    savepicker: vi.fn(async () => SAVE_URI),
   };
 });
 
@@ -26,7 +29,8 @@ vi.mock("tauri-plugin-android-fs-api", () => {
       showOpenFilePicker: vi.fn(async () => [JSON_URI]),
       persistPickerUriPermission: persist,
       checkPersistedPickerUriPermission: checkPerm,
-      getName: vi.fn(async () => "PG"),
+      getName: vi.fn(async (uri: { uri: string }) => (uri.uri === SAVE_URI.uri ? "export.json" : "PG")),
+      showSaveFilePicker: savepicker,
       writeTextFile: writeText,
       readFile: vi.fn(async (uri: { uri: string }) => {
         // For character.json return a *plain number[]* (not a Uint8Array) on purpose: that mirrors
@@ -51,12 +55,18 @@ vi.mock("tauri-plugin-android-fs-api", () => {
   };
 });
 
-import { openCharacterFolderAndroid, openCharacterFileAndroid, reopenAndroid } from "./androidProvider";
+import {
+  openCharacterFolderAndroid,
+  openCharacterFileAndroid,
+  reopenAndroid,
+  saveCharacterAsAndroid,
+} from "./androidProvider";
 
 beforeEach(() => {
   persist.mockClear();
   checkPerm.mockClear();
   writeText.mockClear();
+  savepicker.mockClear();
   // jsdom lacks createObjectURL
   globalThis.URL.createObjectURL = vi.fn(() => "blob:mock");
 });
@@ -116,5 +126,21 @@ describe("reopenAndroid", () => {
     await expect(
       reopenAndroid({ platform: "android", kind: "folder", name: "PG", uri: TREE }),
     ).rejects.toThrow();
+  });
+});
+
+describe("saveCharacterAsAndroid (export)", () => {
+  it("writes the JSON to the picked URI and returns its display name", async () => {
+    const name = await saveCharacterAsAndroid('{"a":1}', "hero.json");
+    expect(savepicker).toHaveBeenCalledWith("hero.json", "application/json");
+    expect(writeText).toHaveBeenCalledWith(SAVE_URI, '{"a":1}');
+    expect(name).toBe("export.json"); // display name, not a filesystem path (Android has none)
+  });
+
+  it("returns null (cancelled) without writing when the user dismisses the saver", async () => {
+    savepicker.mockResolvedValueOnce(null);
+    const name = await saveCharacterAsAndroid('{"a":1}', "hero.json");
+    expect(name).toBeNull();
+    expect(writeText).not.toHaveBeenCalled();
   });
 });
