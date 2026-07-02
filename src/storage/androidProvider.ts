@@ -8,8 +8,17 @@
  * `tauri-plugin-android-fs` fixes all three: it opens files/folders via SAF, persists the
  * read+write permission across restarts, and reads/writes the URI in place. So the character.json
  * stays the single source of truth **at its original location** and is saved live, exactly like
- * desktop — no copy-into-app, no export-only. Cloud providers (e.g. Google Drive) may still refuse
- * write-back regardless; when a save fails the store falls back to read-only + export as elsewhere.
+ * desktop — no copy-into-app, no export-only.
+ *
+ * Cloud caveats (platform limits, not bugs we can fix):
+ * - **Google Drive is absent from the folder picker.** Drive's DocumentsProvider does not
+ *   implement `ACTION_OPEN_DOCUMENT_TREE`, so a Drive folder can never be tree-picked on Android.
+ *   Drive-hosted characters must be opened via the *single-file* picker (`ACTION_OPEN_DOCUMENT`,
+ *   which does list Drive) — at the cost of the sibling `images/` folder.
+ * - **Persistable permission may be refused** (Drive, some providers): opening still works for the
+ *   session, we just can't silently reopen from Recents — see `tryPersist`.
+ * - **Write-back may be refused**: when a save fails the store falls back to read-only + export,
+ *   exactly like the web path.
  */
 import { AndroidFs, AndroidUriPermissionState, type AndroidFsUri } from "tauri-plugin-android-fs-api";
 import { isTauri } from "./tauriProvider";
@@ -31,6 +40,22 @@ const MIME: Record<string, string> = {
 /** True when running inside the Tauri shell on Android specifically (not desktop Tauri). */
 export function isAndroid(): boolean {
   return isTauri() && typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
+}
+
+/**
+ * Persist the SAF read+write grant so Recents can reopen the source after a restart. This is
+ * **best-effort**: some document providers — most notably Google Drive — hand back a URI that
+ * can be read for the session but refuse a *persistable* permission, so
+ * `persistPickerUriPermission` throws. That must never abort the open (the picker already granted
+ * session-scoped access); we just lose the ability to silently reopen it later. Swallowing this
+ * is what stops a Drive-hosted file from failing with a misleading "invalid JSON".
+ */
+async function tryPersist(uri: AndroidFsUri): Promise<void> {
+  try {
+    await AndroidFs.persistPickerUriPermission(uri);
+  } catch (err) {
+    console.warn("[android-fs] could not persist SAF permission (Recents may not reopen this source):", err);
+  }
 }
 
 class AndroidFsProvider implements StorageProvider {
@@ -61,10 +86,16 @@ async function resolveFolder(treeUri: AndroidFsUri): Promise<{ fileUri: AndroidF
       .filter((e) => e.type === "File" && IMAGE_RE.test(e.name))
       .sort((a, b) => a.name.localeCompare(b.name));
     for (const e of imgEntries) {
-      const bytes = await AndroidFs.readFile(e.uri);
-      const ext = e.name.split(".").pop()?.toLowerCase() ?? "";
-      const blob = new Blob([bytes as BlobPart], { type: MIME[ext] ?? "application/octet-stream" });
-      images.push({ name: `images/${e.name}`, url: URL.createObjectURL(blob) });
+      // A single unreadable image (provider quirk, revoked grant) must not sink the whole
+      // character load — skip it and keep going.
+      try {
+        const bytes = await AndroidFs.readFile(e.uri);
+        const ext = e.name.split(".").pop()?.toLowerCase() ?? "";
+        const blob = new Blob([bytes as BlobPart], { type: MIME[ext] ?? "application/octet-stream" });
+        images.push({ name: `images/${e.name}`, url: URL.createObjectURL(blob) });
+      } catch (err) {
+        console.error(`[android-fs] skipping unreadable image ${e.name}:`, err);
+      }
     }
   }
   return { fileUri: jsonEntry.uri, images };
@@ -79,8 +110,8 @@ export async function openCharacterFileAndroid(): Promise<{
   const uris = await AndroidFs.showOpenFilePicker();
   const fileUri = uris?.[0];
   if (!fileUri) return null;
-  await AndroidFs.persistPickerUriPermission(fileUri);
-  const name = await AndroidFs.getName(fileUri);
+  await tryPersist(fileUri);
+  const name = await AndroidFs.getName(fileUri).catch(() => "character.json");
   const provider = new AndroidFsProvider(fileUri);
   return {
     provider,
@@ -103,9 +134,9 @@ export async function openCharacterFolderAndroid(): Promise<{
 } | null> {
   const treeUri = await AndroidFs.showOpenDirPicker();
   if (!treeUri) return null;
-  await AndroidFs.persistPickerUriPermission(treeUri);
+  await tryPersist(treeUri);
   const { fileUri, images } = await resolveFolder(treeUri);
-  const name = await AndroidFs.getName(treeUri);
+  const name = await AndroidFs.getName(treeUri).catch(() => "character");
   const provider = new AndroidFsProvider(fileUri);
   return {
     provider,

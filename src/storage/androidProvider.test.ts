@@ -82,6 +82,22 @@ describe("openCharacterFileAndroid", () => {
   });
 });
 
+describe("cloud-provider resilience", () => {
+  it("still opens a file when the provider refuses a persistable permission (e.g. Google Drive)", async () => {
+    persist.mockRejectedValueOnce(new Error("SecurityException: no persistable permission grant"));
+    const res = await openCharacterFileAndroid();
+    expect(res).not.toBeNull();
+    expect(res!.raw).toEqual({ meta: { name: "Astrid" } }); // read succeeds despite the failed persist
+  });
+
+  it("still opens a folder when persisting the tree grant throws", async () => {
+    persist.mockRejectedValueOnce(new Error("SecurityException"));
+    const res = await openCharacterFolderAndroid();
+    expect(res).not.toBeNull();
+    expect(res!.raw).toEqual({ meta: { name: "Astrid" } });
+  });
+});
+
 describe("reopenAndroid", () => {
   it("re-resolves a folder when the persisted permission is still granted", async () => {
     const loaded = await reopenAndroid({ platform: "android", kind: "folder", name: "PG", uri: TREE });

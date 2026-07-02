@@ -25,12 +25,20 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
 - ☐ **Open folder**: pick a character folder on local device storage → sheet + portrait load
   (no "Invalid JSON").
 - ☐ **Save in place**: edit HP/resources → it persists to the original file (reopen the file in a
-  file manager or reload to confirm; status is *not* stuck on read-only).
+  file manager or reload to confirm; status is *not* stuck on read-only). *(Regression watch: the
+  plugin's `android-fs:default` capability excludes all write commands, so `capabilities/android.json`
+  must grant `android-fs:allow-write-text-file` explicitly — otherwise saves silently fail.)*
 - ☐ **Reopen from Recents after fully closing the app** (swipe it away, relaunch) → the character
   reopens writable without re-picking. (This proves the persisted SAF permission.)
 - ☐ **Open single file** (`character.json` directly): loads; edits save.
-- ☐ Google Drive file (known limitation): opening may work but saving can fail → app should fall
-  back to **read-only + "Export to save"**, not crash.
+- ☐ **Google Drive**, known platform limits:
+  - It is **absent from the folder picker** (Drive has no `ACTION_OPEN_DOCUMENT_TREE`) — use the
+    single-file picker, where Drive *does* appear.
+  - Opening a Drive file must **not** fail with a wrong "Invalid JSON": persisting the permission
+    can be refused, but the read still works (best-effort persist).
+  - Saving may still be refused → app falls back to **read-only + "Export to save"**, not a crash.
+- ☐ A genuine open failure now shows its **real message** ("Couldn't open the character: …"), and
+  only a truly malformed file says "Invalid JSON file".
 - ☐ Top bar clears the status bar / notch (safe-area).
 - ☐ **Dice on a button**: roll a die so it rests over a button; tap/hold the die → only the die
   reacts, the button underneath does **not** fire.

@@ -1,8 +1,18 @@
 {
   "$schema": "../gen/schemas/mobile-schema.json",
   "identifier": "android-fs",
-  "description": "SAF file access for Android (tauri-plugin-android-fs). Android-only: the plugin crate is target-gated in Cargo.toml, so this capability must not apply on desktop.",
+  "description": "SAF file access for Android (tauri-plugin-android-fs). Android-only: the plugin crate is target-gated in Cargo.toml, so this capability must not apply on desktop. NOTE: the plugin's `android-fs:default` set is `all-without-delete`, which deliberately EXCLUDES every write command — relying on it made live save silently fail (read-only fallback). So we grant the exact least-privilege set the provider uses, writes included.",
   "platforms": ["android"],
   "windows": ["main"],
-  "permissions": ["android-fs:default"]
+  "permissions": [
+    "android-fs:allow-show-open-file-picker",
+    "android-fs:allow-show-open-dir-picker",
+    "android-fs:allow-read-dir",
+    "android-fs:allow-read-text-file",
+    "android-fs:allow-read-file",
+    "android-fs:allow-get-name",
+    "android-fs:allow-persist-picker-uri-permission",
+    "android-fs:allow-check-persisted-picker-uri-permission",
+    "android-fs:allow-write-text-file"
+  ]
 }

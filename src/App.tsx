@@ -112,15 +112,31 @@ export function App() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty, liveSync]);
 
+  // Turn an open/read failure into a *specific* toast. The Android SAF path used to funnel every
+  // error into "invalid JSON", which hid the real cause (a permission refusal, an unreadable URI)
+  // behind a wrong message. Only a genuine JSON.parse failure is "invalid JSON" now; anything else
+  // shows its actual message so a device-only failure is diagnosable.
+  function reportOpenError(e: unknown) {
+    const push = useToast.getState().push;
+    if (e instanceof Error && e.message === NO_CHARACTER_JSON) return push("error", t("app.noCharacterJson"));
+    if (e instanceof SyntaxError) return push("error", t("app.invalidJson"));
+    const detail = e instanceof Error ? e.message : String(e);
+    push("error", `${t("app.openFailed")}: ${detail}`);
+  }
+
   async function handleOpen() {
-    const result = isAndroid()
-      ? await openCharacterFileAndroid()
-      : isTauri()
-        ? await openCharacterFileTauri()
-        : await openCharacterFile();
-    if (result) {
-      connect(result.provider, result.raw, result.ref.name);
-      void recordRecent(result.ref);
+    try {
+      const result = isAndroid()
+        ? await openCharacterFileAndroid()
+        : isTauri()
+          ? await openCharacterFileTauri()
+          : await openCharacterFile();
+      if (result) {
+        connect(result.provider, result.raw, result.ref.name);
+        void recordRecent(result.ref);
+      }
+    } catch (e) {
+      reportOpenError(e);
     }
   }
 
@@ -136,8 +152,7 @@ export function App() {
         void recordRecent(result.ref);
       }
     } catch (e) {
-      const key = e instanceof Error && e.message === NO_CHARACTER_JSON ? "app.noCharacterJson" : "app.invalidJson";
-      useToast.getState().push("error", t(key));
+      reportOpenError(e);
     }
   }
 
