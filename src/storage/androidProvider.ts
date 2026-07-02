@@ -63,7 +63,13 @@ class AndroidFsProvider implements StorageProvider {
   constructor(private fileUri: AndroidFsUri) {}
 
   async read(): Promise<unknown> {
-    return JSON.parse(await AndroidFs.readTextFile(this.fileUri));
+    // Decode raw bytes ourselves rather than using the plugin's readTextFile: on some Android
+    // WebViews the IPC payload arrives as a plain number[] instead of an ArrayBuffer, and
+    // readTextFile feeds it straight to TextDecoder.decode → "parameter 1 is not of type
+    // 'ArrayBuffer'". readFile normalizes to a Uint8Array; Uint8Array.from() is a belt-and-braces
+    // guard so either payload shape decodes cleanly. (See tauri-apps/tauri#11959.)
+    const bytes = await AndroidFs.readFile(this.fileUri);
+    return JSON.parse(new TextDecoder("utf-8").decode(Uint8Array.from(bytes)));
   }
 
   /** Truncating in-place write (append defaults to false), so the source file stays canonical. */

@@ -27,9 +27,14 @@ vi.mock("tauri-plugin-android-fs-api", () => {
       persistPickerUriPermission: persist,
       checkPersistedPickerUriPermission: checkPerm,
       getName: vi.fn(async () => "PG"),
-      readTextFile: vi.fn(async () => JSON.stringify({ meta: { name: "Astrid" } })),
       writeTextFile: writeText,
-      readFile: vi.fn(async () => new Uint8Array([1, 2, 3])),
+      readFile: vi.fn(async (uri: { uri: string }) => {
+        // For character.json return a *plain number[]* (not a Uint8Array) on purpose: that mirrors
+        // the Android WebView IPC payload that crashed TextDecoder in readTextFile. The provider
+        // must still decode it. Other URIs are images → raw bytes.
+        if (uri.uri === JSON_URI.uri) return Array.from(new TextEncoder().encode(JSON.stringify({ meta: { name: "Astrid" } })));
+        return new Uint8Array([1, 2, 3]);
+      }),
       readDir: vi.fn(async (uri: { uri: string }) => {
         if (uri.uri === TREE.uri)
           return [
