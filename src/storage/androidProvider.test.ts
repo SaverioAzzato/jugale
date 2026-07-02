@@ -14,7 +14,8 @@ const { persist, checkPerm, writeText, savepicker, TREE, JSON_URI, SAVE_URI } = 
     persist: vi.fn(async () => {}),
     checkPerm: vi.fn(async () => true),
     writeText: vi.fn(async () => {}),
-    savepicker: vi.fn(async () => SAVE_URI),
+    // typed nullable so a test can simulate the user cancelling the saver (null)
+    savepicker: vi.fn(async (): Promise<typeof SAVE_URI | null> => SAVE_URI),
   };
 });
 
