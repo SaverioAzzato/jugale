@@ -1,4 +1,4 @@
-# Character Schema — `character.json` v2.0.0
+# Character Schema — `character.json` v2.1.0
 
 > Status: **Draft for review** · The contract between the JSON (source of truth), the UI (data-driven renderer), and external GPTs.
 > Design goals, in order: **(1) structured enough** to validate rules and generate UI, **(2) free enough** for any class/homebrew, **(3) simple enough** for an LLM to read and edit by hand.
@@ -26,7 +26,7 @@ The canonical, machine-readable schema is the Zod definition in `src/schema/` (i
 
 ```jsonc
 {
-  "schemaVersion": "2.0.0",
+  "schemaVersion": "2.1.0",
   "meta":         { ... },   // identity card of the *file*: name, player, summary, ruleset
   "identity":     { ... },   // who the character is: race, background, alignment, age...
   "classes":      [ ... ],   // one entry per class → multiclass is native
@@ -165,15 +165,29 @@ The single model for **anything you spend and recover**: spell slots (any name/l
 "spellSections": [
   { "id": "cantrips", "title": "Trucchetti", "entries": [
     { "name": "Eldritch Blast", "link": "https://...", "level": "0",
-      "school": "Invocazione", "castingTime": "1 azione", "range": "120 ft",
-      "components": "V, S", "duration": "Istantaneo", "concentration": false,
-      "attack": "Attacco a distanza con incantesimo",   // tiro che fai TU
-      "defense": "—",                                    // tiro che fa l'AVVERSARIO
-      "effect": "1d10 danni da forza per raggio",
-      "description": "Descrizione estesa di cosa succede, opzionale e più ricca.",
-      "notes": "Scala a più raggi ai livelli 5/11/17", "prepared": true } ] }
+      "school": "Invocazione", "range": "120 ft",
+      "castingTime": { "type": "action", "value": "", "condition": "" },
+      "ritual": false,
+      "components": { "verbal": true, "somatic": true, "material": false },
+      "materials": [],                                   // one per material component when material:true
+      "duration": "Istantaneo", "concentration": false,
+      "attack": "Attacco a distanza con incantesimo",    // tiro che fai TU
+      "defense": "—",                                     // tiro che fa l'AVVERSARIO
+      "effect": "1d10 per raggio", "damageType": "forza", // dice + damage type (kept separate)
+      "higherLevels": "2 raggi al 5°, 3 all'11°, 4 al 17°",
+      "description": "Descrizione estesa, opzionale.",
+      "prepared": true } ] }
 ]
 ```
+Structured spell fields (v2.1.0):
+- **`castingTime`** — `{ type, value, condition }`. `type` is one of `action | bonus | reaction | time`. `value` holds the amount for `type:"time"` (`"10 minutes"`); `condition` holds the trigger for `type:"reaction"` (`"when you take damage"`). A legacy string is still accepted and coerced.
+- **`ritual`** — boolean. When `true`, fill `duration` (a warning fires otherwise).
+- **`components`** — `{ verbal, somatic, material }` booleans (was a `"V, S, M"` string). A legacy string is coerced to flags.
+- **`materials[]`** — one entry per material component: `{ text, cost, consumable }`. `cost` is in the campaign's gold unit (or `null`); set `consumable` for the ones the spell uses up (vs. a reusable focus like a 300-gp pearl). Only meaningful when `components.material` is `true` — a material component with an empty `materials[]` raises a warning. Blank material rows added in Edit mode are dropped when you leave it.
+- **`damageType`** — the damage type, split out of `effect` (so `effect` keeps just the dice).
+- **`higherLevels`** — the "At Higher Levels" upcast scaling text.
+- **`description`** — the single multi-line free-text field (the old separate `notes` was merged into it).
+
 CD incantesimi and bonus d'attacco are **derived** from `classes[].spellcasting.ability` + level (there is no top-level `spellcasting` field — it was a dead summary string and is gone). Keeps the table the user loves (what *you* roll vs what the *enemy* rolls + the wiki link), with optional richer `description`.
 
 ### `features[]`
@@ -266,9 +280,16 @@ The app validates on load but **never refuses to render**:
 2. **Rules (5e consistency)** — e.g. proficiency bonus vs level, ability scores in range, spell levels vs available slots, multiclass prerequisites. These are *warnings*, surfaced by the in-app validator and the "validate" prompt, which can propose fixes on confirmation.
 3. **Derived recompute** — modifiers/DC/bonuses recomputed; stored values that disagree are flagged, not trusted.
 
-## 4. Migration `1.0.0 → 2.0.0`
+## 4. Migration
 
-`src/schema/migrations/` upgrades older files in memory on load (persisted only on a real save). Key mappings from v1:
+`src/schema/migrate.ts` upgrades older files in memory on load (persisted only on a real save). It is version-aware: a v1 file goes `1.0.0 → 2.0.0 → 2.1.0`; a `2.0.0` file just takes the minor step. `needsMigration` compares the full version (not only the major), so a `2.0.0` file is correctly flagged as behind.
+
+### `2.0.0 → 2.1.0` (spells)
+- `castingTime` string → `{ type, value, condition }` (`"1 bonus action"` → `{type:"bonus"}`, `"10 minutes"` → `{type:"time", value:"10 minutes"}`, a reaction's trailing trigger → `condition`).
+- `components` string → `{ verbal, somatic, material }`; any material detail in a trailing parenthetical (`"V, S, M (a pearl worth 300 gp)"`) is lifted into `materials[]`, parsing a `… gp/mo` cost and a `consumable` hint. The old per-spell `notes` field is folded into `description`.
+- `ritual`, `damageType`, `higherLevels` default in via the schema. Unmigrated/hand-edited string values for `castingTime`/`components` are also coerced by the schema itself, so an old file never hard-fails.
+
+### `1.0.0 → 2.0.0` (key mappings from v1)
 - `build.baseStats`/`abilities` (string scores, `"+0"` modifiers) → `abilities` object (numeric, derived modifiers).
 - `session.resources.slots` dict (`{total, used}`) → `resources[]` entries (`{max, current}`, `category:"spellSlot"`), with `arrows` → a `category:"ammo"` resource.
 - `combat.spellcasting` summary string → if non-empty, kept losslessly as a `customSections` text block (the dead root `spellcasting` field is gone); `spellSections` entries gain optional `school/castingTime/components/duration/description`.

@@ -1,11 +1,16 @@
 {
-  "schemaVersion": "2.0.0",
+  "schemaVersion": "2.1.0",
   "meta": {
     "name": "Example Warlock",
     "player": "To fill in",
     "summary": "Tiefling Warlock — Pact of the Tome. Example v2 template.",
-    "ruleset": ["SRD"],
-    "tags": ["warlock", "example"]
+    "ruleset": [
+      "SRD"
+    ],
+    "tags": [
+      "warlock",
+      "example"
+    ]
   },
   "identity": {
     "race": "Tiefling",
@@ -22,38 +27,85 @@
       "level": 5,
       "hitDie": "d8",
       "link": "https://www.dndbeyond.com/classes/warlock",
-      "spellcasting": { "ability": "cha", "type": "known", "slotProgression": "warlock" }
+      "spellcasting": {
+        "ability": "cha",
+        "type": "known",
+        "slotProgression": "warlock"
+      }
     }
   ],
   "abilities": {
-    "str": { "score": 8 },
-    "dex": { "score": 14, "saveProficient": false },
-    "con": { "score": 14 },
-    "int": { "score": 12 },
-    "wis": { "score": 10, "saveProficient": true },
-    "cha": { "score": 17, "saveProficient": true }
+    "str": {
+      "score": 8
+    },
+    "dex": {
+      "score": 14,
+      "saveProficient": false
+    },
+    "con": {
+      "score": 14
+    },
+    "int": {
+      "score": 12
+    },
+    "wis": {
+      "score": 10,
+      "saveProficient": true
+    },
+    "cha": {
+      "score": 17,
+      "saveProficient": true
+    }
   },
   "proficiencies": {
     "skills": [
-      { "id": "arcana", "proficient": true },
-      { "id": "deception", "proficient": true },
-      { "id": "investigation", "proficient": true }
+      {
+        "id": "arcana",
+        "proficient": true
+      },
+      {
+        "id": "deception",
+        "proficient": true
+      },
+      {
+        "id": "investigation",
+        "proficient": true
+      }
     ],
-    "languages": ["Common", "Infernal", "Abyssal"],
-    "armor": ["Light"],
-    "weapons": ["Simple"]
+    "languages": [
+      "Common",
+      "Infernal",
+      "Abyssal"
+    ],
+    "armor": [
+      "Light"
+    ],
+    "weapons": [
+      "Simple"
+    ]
   },
-  "senses": ["Darkvision 60 ft"],
+  "senses": [
+    "Darkvision 60 ft"
+  ],
   "defenses": {
-    "resistances": ["fire"],
+    "resistances": [
+      "fire"
+    ],
     "immunities": [],
     "vulnerabilities": [],
     "conditionImmunities": []
   },
   "combat": {
     "armorClass": 13,
-    "speed": { "walk": 30 },
-    "hp": { "max": 38, "current": 38, "temp": 0, "hitDiceRemaining": 5 },
+    "speed": {
+      "walk": 30
+    },
+    "hp": {
+      "max": 38,
+      "current": 38,
+      "temp": 0,
+      "hitDiceRemaining": 5
+    },
     "attacks": []
   },
   "resources": [
@@ -78,16 +130,25 @@
           "link": "https://www.dndbeyond.com/spells/eldritch-blast",
           "level": "0",
           "school": "Evocation",
-          "castingTime": "1 action",
+          "castingTime": {
+            "type": "action",
+            "value": "",
+            "condition": ""
+          },
           "range": "120 ft",
-          "components": "V, S",
+          "components": {
+            "verbal": true,
+            "somatic": true,
+            "material": false
+          },
           "duration": "Instantaneous",
           "concentration": false,
           "attack": "Ranged spell attack",
           "defense": "—",
-          "effect": "1d10 force damage per beam",
-          "description": "Hurl a beam of crackling energy. Adds beams at levels 5/11/17.",
-          "notes": "With Agonizing Blast, add your Cha mod to each beam's damage."
+          "effect": "1d10 per beam",
+          "description": "Hurl a beam of crackling energy. Adds beams at levels 5/11/17.\n\nWith Agonizing Blast, add your Cha mod to each beam's damage.",
+          "damageType": "force",
+          "higherLevels": "2 beams at 5th level, 3 at 11th, 4 at 17th"
         }
       ]
     },
@@ -100,15 +161,31 @@
           "link": "https://www.dndbeyond.com/spells/hex",
           "level": "1",
           "school": "Enchantment",
-          "castingTime": "1 bonus action",
+          "castingTime": {
+            "type": "bonus",
+            "value": "",
+            "condition": ""
+          },
           "range": "90 ft",
-          "components": "V, S, M",
+          "components": {
+            "verbal": true,
+            "somatic": true,
+            "material": true
+          },
           "duration": "Concentration, 1 hour",
           "concentration": true,
           "attack": "—",
           "defense": "—",
-          "effect": "+1d6 necrotic on attacks against the target; disadvantage on one ability",
-          "notes": ""
+          "effect": "+1d6 on each attack against the target; disadvantage on one chosen ability",
+          "damageType": "necrotic",
+          "materials": [
+            {
+              "text": "the petrified eye of a newt",
+              "cost": null,
+              "consumable": false
+            }
+          ],
+          "higherLevels": "3rd–4th-level slot: up to 8 hours; 5th+ slot: up to 24 hours"
         }
       ]
     }
@@ -151,34 +228,117 @@
   ],
   "inventory": {
     "items": [
-      { "id": "potion-healing", "name": "Potion of healing", "link": "https://www.dndbeyond.com/magic-items/potion-of-healing", "quantity": 3, "category": "consumable", "equippable": false, "notes": "2d4+2 HP" },
-      { "id": "leather-armor", "name": "Leather armor", "category": "armor", "quantity": 1, "equipped": true,
-        "ac": { "base": 11, "addDex": true, "dexCap": null, "bonus": 0, "label": "leather" } },
-      { "id": "dagger", "name": "Dagger", "link": "https://www.dndbeyond.com/equipment/dagger", "category": "weapon", "quantity": 2, "equipped": true,
+      {
+        "id": "potion-healing",
+        "name": "Potion of healing",
+        "link": "https://www.dndbeyond.com/magic-items/potion-of-healing",
+        "quantity": 3,
+        "category": "consumable",
+        "equippable": false,
+        "notes": "2d4+2 HP"
+      },
+      {
+        "id": "leather-armor",
+        "name": "Leather armor",
+        "category": "armor",
+        "quantity": 1,
+        "equipped": true,
+        "ac": {
+          "base": 11,
+          "addDex": true,
+          "dexCap": null,
+          "bonus": 0,
+          "label": "leather"
+        }
+      },
+      {
+        "id": "dagger",
+        "name": "Dagger",
+        "link": "https://www.dndbeyond.com/equipment/dagger",
+        "category": "weapon",
+        "quantity": 2,
+        "equipped": true,
         "attacks": [
-          { "label": "Melee", "range": "Melee", "attack": "1d20 +5", "effect": "1d4+3 piercing" },
-          { "label": "Thrown", "range": "20/60 ft", "attack": "1d20 +5", "effect": "1d4+3 piercing", "notes": "Thrown weapon (finesse)" }
-        ] },
-      { "id": "shortsword", "name": "Shortsword", "link": "https://www.dndbeyond.com/equipment/shortsword", "category": "weapon", "quantity": 1, "equipped": false,
-        "attacks": [ { "label": "Melee", "range": "Melee", "attack": "1d20 +5", "effect": "1d6+3 piercing" } ] },
-      { "id": "book-of-shadows", "name": "Book of Shadows", "quantity": 1, "equipped": true }
+          {
+            "label": "Melee",
+            "range": "Melee",
+            "attack": "1d20 +5",
+            "effect": "1d4+3 piercing"
+          },
+          {
+            "label": "Thrown",
+            "range": "20/60 ft",
+            "attack": "1d20 +5",
+            "effect": "1d4+3 piercing",
+            "notes": "Thrown weapon (finesse)"
+          }
+        ]
+      },
+      {
+        "id": "shortsword",
+        "name": "Shortsword",
+        "link": "https://www.dndbeyond.com/equipment/shortsword",
+        "category": "weapon",
+        "quantity": 1,
+        "equipped": false,
+        "attacks": [
+          {
+            "label": "Melee",
+            "range": "Melee",
+            "attack": "1d20 +5",
+            "effect": "1d6+3 piercing"
+          }
+        ]
+      },
+      {
+        "id": "book-of-shadows",
+        "name": "Book of Shadows",
+        "quantity": 1,
+        "equipped": true
+      }
     ],
-    "currencies": { "pp": 0, "gp": 120, "ep": 0, "sp": 5, "cp": 0 },
-    "notes": ["Arcane focus: the Book of Shadows."]
+    "currencies": {
+      "pp": 0,
+      "gp": 120,
+      "ep": 0,
+      "sp": 5,
+      "cp": 0
+    },
+    "notes": [
+      "Arcane focus: the Book of Shadows."
+    ]
   },
   "origin": {
     "raceTraits": [
-      { "name": "Infernal Legacy", "description": "You know the Thaumaturgy cantrip." }
+      {
+        "name": "Infernal Legacy",
+        "description": "You know the Thaumaturgy cantrip."
+      }
     ],
-    "backgroundFeature": { "name": "Researcher", "description": "You know where and from whom to get information." }
+    "backgroundFeature": {
+      "name": "Researcher",
+      "description": "You know where and from whom to get information."
+    }
   },
   "narrative": {
-    "personality": ["Curious to the point of recklessness."],
-    "ideals": ["Knowledge is power."],
-    "bonds": ["I owe everything to my patron."],
-    "flaws": ["I can't resist a secret."],
-    "appearance": ["Curved horns, amber eyes."],
-    "backstory": ["Struck a pact in exchange for forbidden knowledge."],
+    "personality": [
+      "Curious to the point of recklessness."
+    ],
+    "ideals": [
+      "Knowledge is power."
+    ],
+    "bonds": [
+      "I owe everything to my patron."
+    ],
+    "flaws": [
+      "I can't resist a secret."
+    ],
+    "appearance": [
+      "Curved horns, amber eyes."
+    ],
+    "backstory": [
+      "Struck a pact in exchange for forbidden knowledge."
+    ],
     "notes": []
   },
   "customSections": [],
@@ -198,13 +358,18 @@
       "label": "Dark One's Blessing",
       "kind": "custom",
       "info": "Temp HP = Cha mod + warlock level (when you down an enemy).",
-      "formulas": ["combat.hp.temp = abilities.cha.mod + level"]
+      "formulas": [
+        "combat.hp.temp = abilities.cha.mod + level"
+      ]
     }
   ],
   "session": {
     "conditions": [],
     "inspiration": false,
-    "deathSaves": { "successes": 0, "failures": 0 },
+    "deathSaves": {
+      "successes": 0,
+      "failures": 0
+    },
     "notes": ""
   }
 }

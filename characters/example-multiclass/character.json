@@ -1,92 +1,327 @@
 {
-  "schemaVersion": "2.0.0",
+  "schemaVersion": "2.1.0",
   "meta": {
     "name": "Example Multiclass",
     "summary": "Paladin 3 / Sorcerer 2 — multiclass test: two casters, two save DCs, shared slots.",
-    "tags": ["paladin", "sorcerer", "multiclass", "example"]
+    "tags": [
+      "paladin",
+      "sorcerer",
+      "multiclass",
+      "example"
+    ]
   },
-  "identity": { "race": "Half-Elf", "background": "Noble", "alignment": "LG" },
+  "identity": {
+    "race": "Half-Elf",
+    "background": "Noble",
+    "alignment": "LG"
+  },
   "classes": [
     {
-      "name": "Paladin", "subclass": "Oath of Devotion", "level": 3, "hitDie": "d10",
+      "name": "Paladin",
+      "subclass": "Oath of Devotion",
+      "level": 3,
+      "hitDie": "d10",
       "link": "https://www.dndbeyond.com/classes/paladin",
-      "spellcasting": { "ability": "cha", "type": "prepared", "slotProgression": "half" }
+      "spellcasting": {
+        "ability": "cha",
+        "type": "prepared",
+        "slotProgression": "half"
+      }
     },
     {
-      "name": "Sorcerer", "subclass": "Draconic Bloodline", "level": 2, "hitDie": "d6",
+      "name": "Sorcerer",
+      "subclass": "Draconic Bloodline",
+      "level": 2,
+      "hitDie": "d6",
       "link": "https://www.dndbeyond.com/classes/sorcerer",
-      "spellcasting": { "ability": "cha", "type": "known", "slotProgression": "full" }
+      "spellcasting": {
+        "ability": "cha",
+        "type": "known",
+        "slotProgression": "full"
+      }
     }
   ],
   "abilities": {
-    "str": { "score": 14, "saveProficient": false },
-    "dex": { "score": 10 },
-    "con": { "score": 14, "saveProficient": true },
-    "int": { "score": 8 },
-    "wis": { "score": 10, "saveProficient": true },
-    "cha": { "score": 16, "saveProficient": true }
+    "str": {
+      "score": 14,
+      "saveProficient": false
+    },
+    "dex": {
+      "score": 10
+    },
+    "con": {
+      "score": 14,
+      "saveProficient": true
+    },
+    "int": {
+      "score": 8
+    },
+    "wis": {
+      "score": 10,
+      "saveProficient": true
+    },
+    "cha": {
+      "score": 16,
+      "saveProficient": true
+    }
   },
   "proficiencies": {
     "skills": [
-      { "id": "persuasion", "proficient": true, "expertise": false },
-      { "id": "religion", "proficient": true },
-      { "id": "intimidation", "proficient": true }
+      {
+        "id": "persuasion",
+        "proficient": true,
+        "expertise": false
+      },
+      {
+        "id": "religion",
+        "proficient": true
+      },
+      {
+        "id": "intimidation",
+        "proficient": true
+      }
     ],
-    "armor": ["All", "Shields"],
-    "weapons": ["Simple", "Martial"],
-    "languages": ["Common", "Elvish", "Draconic"]
+    "armor": [
+      "All",
+      "Shields"
+    ],
+    "weapons": [
+      "Simple",
+      "Martial"
+    ],
+    "languages": [
+      "Common",
+      "Elvish",
+      "Draconic"
+    ]
   },
   "combat": {
     "armorClass": 18,
-    "speed": { "walk": 30 },
-    "hp": { "max": 42, "current": 42, "temp": 0, "hitDiceRemaining": 5 },
+    "speed": {
+      "walk": 30
+    },
+    "hp": {
+      "max": 42,
+      "current": 42,
+      "temp": 0,
+      "hitDiceRemaining": 5
+    },
     "attacks": [
-      { "name": "Longsword", "link": "https://www.dndbeyond.com/equipment/longsword", "level": "Weapon", "range": "Melee", "attack": "+5 to hit", "defense": "AC", "effect": "1d8+2 slashing" },
-      { "name": "Divine Smite", "level": "1+", "range": "Melee", "attack": "—", "defense": "—", "effect": "+2d8 radiant (level 1 slot), +1d8 per slot level", "notes": "Spends a slot on a hit" }
+      {
+        "name": "Longsword",
+        "link": "https://www.dndbeyond.com/equipment/longsword",
+        "level": "Weapon",
+        "range": "Melee",
+        "attack": "+5 to hit",
+        "defense": "AC",
+        "effect": "1d8+2 slashing"
+      },
+      {
+        "name": "Divine Smite",
+        "level": "1+",
+        "range": "Melee",
+        "attack": "—",
+        "defense": "—",
+        "effect": "+2d8 radiant (level 1 slot), +1d8 per slot level",
+        "notes": "Spends a slot on a hit"
+      }
     ]
   },
   "resources": [
-    { "id": "spell-slots-1", "label": "Level 1 spell slots", "category": "spellSlot", "level": 1, "max": 4, "current": 4, "resetOn": "longRest" },
-    { "id": "sorcery-points", "label": "Sorcery Points", "category": "points", "max": 2, "current": 2, "resetOn": "longRest", "link": "https://www.dndbeyond.com/sources/basic-rules/sorcerer#FontofMagic" },
-    { "id": "channel-divinity", "label": "Channel Divinity", "category": "charges", "max": 1, "current": 1, "resetOn": "shortRest" },
-    { "id": "lay-on-hands", "label": "Lay on Hands (pool)", "category": "points", "max": 15, "current": 15, "resetOn": "longRest" }
+    {
+      "id": "spell-slots-1",
+      "label": "Level 1 spell slots",
+      "category": "spellSlot",
+      "level": 1,
+      "max": 4,
+      "current": 4,
+      "resetOn": "longRest"
+    },
+    {
+      "id": "sorcery-points",
+      "label": "Sorcery Points",
+      "category": "points",
+      "max": 2,
+      "current": 2,
+      "resetOn": "longRest",
+      "link": "https://www.dndbeyond.com/sources/basic-rules/sorcerer#FontofMagic"
+    },
+    {
+      "id": "channel-divinity",
+      "label": "Channel Divinity",
+      "category": "charges",
+      "max": 1,
+      "current": 1,
+      "resetOn": "shortRest"
+    },
+    {
+      "id": "lay-on-hands",
+      "label": "Lay on Hands (pool)",
+      "category": "points",
+      "max": 15,
+      "current": 15,
+      "resetOn": "longRest"
+    }
   ],
   "spellSections": [
     {
-      "id": "paladin-prepared", "title": "Paladin — prepared",
+      "id": "paladin-prepared",
+      "title": "Paladin — prepared",
       "entries": [
-        { "name": "Bless", "link": "https://www.dndbeyond.com/spells/bless", "level": "1", "castingTime": "1 action", "range": "30 ft", "components": "V, S, M", "duration": "Conc. 1 min", "concentration": true, "attack": "—", "defense": "—", "effect": "Up to 3 creatures: +1d4 to attack rolls and saves" },
-        { "name": "Shield of Faith", "link": "https://www.dndbeyond.com/spells/shield-of-faith", "level": "1", "range": "60 ft", "concentration": true, "attack": "—", "defense": "—", "effect": "+2 AC to one ally" }
+        {
+          "name": "Bless",
+          "link": "https://www.dndbeyond.com/spells/bless",
+          "level": "1",
+          "castingTime": {
+            "type": "action",
+            "value": "",
+            "condition": ""
+          },
+          "range": "30 ft",
+          "components": {
+            "verbal": true,
+            "somatic": true,
+            "material": true
+          },
+          "duration": "Conc. 1 min",
+          "concentration": true,
+          "attack": "—",
+          "defense": "—",
+          "effect": "Up to 3 creatures: +1d4 to attack rolls and saves",
+          "materials": [
+            {
+              "text": "a sprinkling of holy water",
+              "cost": null,
+              "consumable": false
+            }
+          ]
+        },
+        {
+          "name": "Shield of Faith",
+          "link": "https://www.dndbeyond.com/spells/shield-of-faith",
+          "level": "1",
+          "range": "60 ft",
+          "concentration": true,
+          "attack": "—",
+          "defense": "—",
+          "effect": "+2 AC to one ally"
+        }
       ]
     },
     {
-      "id": "sorcerer-known", "title": "Sorcerer — known",
+      "id": "sorcerer-known",
+      "title": "Sorcerer — known",
       "entries": [
-        { "name": "Chromatic Orb", "link": "https://www.dndbeyond.com/spells/chromatic-orb", "level": "1", "range": "90 ft", "components": "V, S, M", "concentration": false, "attack": "Ranged spell attack", "defense": "—", "effect": "3d8 damage of a chosen type (acid/cold/fire/lightning/poison/thunder); +1d8 per higher slot" },
-        { "name": "Fire Bolt", "link": "https://www.dndbeyond.com/spells/fire-bolt", "level": "0", "range": "120 ft", "concentration": false, "attack": "Ranged spell attack", "defense": "—", "effect": "1d10 fire" }
+        {
+          "name": "Chromatic Orb",
+          "link": "https://www.dndbeyond.com/spells/chromatic-orb",
+          "level": "1",
+          "range": "90 ft",
+          "components": {
+            "verbal": true,
+            "somatic": true,
+            "material": true
+          },
+          "concentration": false,
+          "attack": "Ranged spell attack",
+          "defense": "—",
+          "effect": "3d8 damage of a chosen type (acid/cold/fire/lightning/poison/thunder); +1d8 per higher slot",
+          "materials": [
+            {
+              "text": "a diamond worth at least 50 gp",
+              "cost": 50,
+              "consumable": false
+            }
+          ],
+          "higherLevels": "+1d8 damage for each slot level above 1st"
+        },
+        {
+          "name": "Fire Bolt",
+          "link": "https://www.dndbeyond.com/spells/fire-bolt",
+          "level": "0",
+          "range": "120 ft",
+          "concentration": false,
+          "attack": "Ranged spell attack",
+          "defense": "—",
+          "effect": "1d10 fire"
+        }
       ]
     }
   ],
   "features": [
-    { "id": "divine-smite", "name": "Divine Smite", "source": "class", "level": 2, "link": "https://www.dndbeyond.com/sources/basic-rules/paladin#DivineSmite", "description": "Spend a slot to deal extra radiant damage on a melee hit." },
-    { "id": "sacred-oath", "name": "Sacred Oath (Devotion)", "source": "subclass", "level": 3, "description": "Channel Divinity: Sacred Weapon / Turn the Unholy." },
-    { "id": "font-of-magic", "name": "Font of Magic", "source": "class", "level": 2, "description": "Convert slots into sorcery points and back.", "uses": { "resourceId": "sorcery-points", "amount": 1 } },
-    { "id": "draconic-resilience", "name": "Draconic Resilience", "source": "subclass", "level": 1, "description": "+1 HP per sorcerer level; base AC 13 + Dex while unarmored." }
+    {
+      "id": "divine-smite",
+      "name": "Divine Smite",
+      "source": "class",
+      "level": 2,
+      "link": "https://www.dndbeyond.com/sources/basic-rules/paladin#DivineSmite",
+      "description": "Spend a slot to deal extra radiant damage on a melee hit."
+    },
+    {
+      "id": "sacred-oath",
+      "name": "Sacred Oath (Devotion)",
+      "source": "subclass",
+      "level": 3,
+      "description": "Channel Divinity: Sacred Weapon / Turn the Unholy."
+    },
+    {
+      "id": "font-of-magic",
+      "name": "Font of Magic",
+      "source": "class",
+      "level": 2,
+      "description": "Convert slots into sorcery points and back.",
+      "uses": {
+        "resourceId": "sorcery-points",
+        "amount": 1
+      }
+    },
+    {
+      "id": "draconic-resilience",
+      "name": "Draconic Resilience",
+      "source": "subclass",
+      "level": 1,
+      "description": "+1 HP per sorcerer level; base AC 13 + Dex while unarmored."
+    }
   ],
   "inventory": {
     "items": [
-      { "id": "longsword", "name": "Longsword", "quantity": 1, "equipped": true },
-      { "id": "shield", "name": "Shield", "quantity": 1, "equipped": true },
-      { "id": "holy-symbol", "name": "Holy symbol", "quantity": 1 }
+      {
+        "id": "longsword",
+        "name": "Longsword",
+        "quantity": 1,
+        "equipped": true
+      },
+      {
+        "id": "shield",
+        "name": "Shield",
+        "quantity": 1,
+        "equipped": true
+      },
+      {
+        "id": "holy-symbol",
+        "name": "Holy symbol",
+        "quantity": 1
+      }
     ],
-    "currencies": { "gp": 40, "sp": 10 }
+    "currencies": {
+      "gp": 40,
+      "sp": 10
+    }
   },
   "customSections": [
     {
-      "id": "multiclass-rules", "title": "Multiclass reminders", "layout": "checklist",
+      "id": "multiclass-rules",
+      "title": "Multiclass reminders",
+      "layout": "checklist",
       "items": [
-        { "label": "Slots from the multiclass table (caster level = Pal/2 + Sorc)", "done": true },
-        { "label": "Spells known/prepared stay per class", "done": true }
+        {
+          "label": "Slots from the multiclass table (caster level = Pal/2 + Sorc)",
+          "done": true
+        },
+        {
+          "label": "Spells known/prepared stay per class",
+          "done": true
+        }
       ]
     }
   ]

@@ -97,4 +97,35 @@ describe("loadCharacter", () => {
     });
     expect(result.issues.some((i) => i.code === "hpExceedsMax" && i.path === "combat.hp")).toBe(true);
   });
+
+  it("warns when a spell has a material component but no materials listed", () => {
+    const result = loadCharacter({
+      meta: { name: "Tav" },
+      spellSections: [{ entries: [{ name: "Fireball", components: { material: true } }] }],
+    });
+    const issue = result.issues.find((i) => i.code === "spellMaterialMissing");
+    expect(issue?.severity).toBe("warning");
+    expect(issue?.path).toBe("spellSections.0.entries.0");
+    expect(issue?.params).toEqual({ label: "Fireball" });
+  });
+
+  it("does not warn once the material component is described", () => {
+    const result = loadCharacter({
+      meta: { name: "Tav" },
+      spellSections: [
+        { entries: [{ name: "Fireball", components: { material: true }, materials: [{ text: "bat guano" }] }] },
+      ],
+    });
+    expect(result.issues.some((i) => i.code === "spellMaterialMissing")).toBe(false);
+  });
+
+  it("warns when a ritual spell has no duration", () => {
+    const result = loadCharacter({
+      meta: { name: "Tav" },
+      spellSections: [{ entries: [{ name: "Detect Magic", ritual: true }] }],
+    });
+    const issue = result.issues.find((i) => i.code === "spellRitualNoDuration");
+    expect(issue?.severity).toBe("warning");
+    expect(issue?.params).toEqual({ label: "Detect Magic" });
+  });
 });

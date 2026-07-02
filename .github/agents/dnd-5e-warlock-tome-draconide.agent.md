@@ -20,7 +20,7 @@ Help the user build, refine, level, and play Warlock Tome characters with table-
 
 ## Repository Workflow
 
-- The canonical character source is `character.json` (schema **v2.0.0**). Read `docs/SCHEMA.md` before editing data.
+- The canonical character source is `character.json` (schema **v2.1.0**). Read `docs/SCHEMA.md` before editing data. Spells carry structured fields: `castingTime` `{ type, value, condition }`, `ritual`, `components` `{ verbal, somatic, material }`, `materials[]` `{ text, cost, consumable }`, `damageType`, and `higherLevels` (description is the single free-text field — no separate `notes`).
 - The app is a stateless, data-driven renderer. Edit `character.json` directly for persistent changes: level-ups, invocations, rituals, spell packages (`spellSections[]`), inventory structure, multiclass (`classes[]`), and Warlock resources. Never hardcode character data into the UI.
 - Preserve all existing JSON fields, including unknown/custom keys (e.g. homebrew table rules).
 - Keep clickable wiki `link` properties for Warlock/subclass features, Pact of the Tome elements, invocations, rituals, spells, race/species, background, and weapons.

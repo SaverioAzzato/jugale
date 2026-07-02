@@ -1,4 +1,4 @@
-import { SCHEMA_VERSION, type AbilityId } from "./character";
+import { SCHEMA_VERSION, parseCastingTime, parseComponents, type AbilityId } from "./character";
 
 /**
  * In-memory upgrade of older character files to the current schema.
@@ -22,14 +22,32 @@ export function schemaMajor(data: Json): number {
   return Number(String(raw).split(".")[0]) || 0;
 }
 
+type Triple = [number, number, number];
+const parseTriple = (v: string): Triple => {
+  const p = String(v).split(".").map((n) => parseInt(n, 10) || 0);
+  return [p[0] ?? 0, p[1] ?? 0, p[2] ?? 0];
+};
+const ltTriple = (a: Triple, b: Triple): boolean =>
+  a[0] !== b[0] ? a[0] < b[0] : a[1] !== b[1] ? a[1] < b[1] : a[2] < b[2];
+const CURRENT_TRIPLE = parseTriple(SCHEMA_VERSION);
+
+/** The file's version as a comparable triple. Version-less files: v1 shape → 1.0.0, else current. */
+function versionTriple(data: Json): Triple {
+  const raw = data?.schemaVersion;
+  if (raw == null || raw === "") return looksLikeV1(data) ? [1, 0, 0] : [...CURRENT_TRIPLE];
+  return parseTriple(String(raw));
+}
+
+/** True whenever the file is behind the current schema — including minor bumps (2.0.0 → 2.1.0). */
 export function needsMigration(data: Json): boolean {
-  return schemaMajor(data) < Number(SCHEMA_VERSION.split(".")[0]);
+  return ltTriple(versionTriple(data), CURRENT_TRIPLE);
 }
 
 export function migrateToCurrent(data: Json): Json {
   if (data == null || typeof data !== "object") return data;
   let out = data;
   if (schemaMajor(out) < 2) out = migrateV1toV2(out);
+  if (ltTriple(versionTriple(out), parseTriple("2.1.0"))) out = migrateV2_0toV2_1(out);
   return out;
 }
 
@@ -104,7 +122,8 @@ const CONSUMED_KEYS = new Set([
 ]);
 
 function migrateV1toV2(v1: Json): Json {
-  const out: Json = { schemaVersion: SCHEMA_VERSION };
+  // Produce a 2.0.0 doc; the minor step below carries it the rest of the way to current.
+  const out: Json = { schemaVersion: "2.0.0" };
   const custom: Json[] = [];
 
   // Unknown top-level keys (platform, assets, corrections, …) survive verbatim.
@@ -290,5 +309,58 @@ function migrateV1toV2(v1: Json): Json {
   void _consumed;
   out.session = { conditions: [], notes: v1.session?.inventoryNotes ?? "", ...sessionExtras };
 
+  return out;
+}
+
+/**
+ * 2.0.0 → 2.1.0: richer spells. `castingTime` and `components` graduate from flat
+ * strings to structured objects, and any material detail buried in a component string's
+ * parenthetical ("V, S, M (a pearl worth 300 gp)") is lifted into `materials[]`. The old
+ * separate `notes` field is folded into `description` (one free-text field now).
+ * ritual / damageType / higherLevels default in via the schema, so they need no touch here.
+ */
+function migrateSpellEntry(e: Json): Json {
+  if (e == null || typeof e !== "object") return e;
+  const out: Json = { ...e };
+
+  if (typeof out.castingTime === "string") out.castingTime = parseCastingTime(out.castingTime);
+
+  if (typeof out.components === "string") {
+    const raw = out.components;
+    out.components = parseComponents(raw);
+    const paren = /\(([^)]*)\)/.exec(raw)?.[1]?.trim();
+    if (paren && !(Array.isArray(out.materials) && out.materials.length > 0)) {
+      const costMatch = /([\d,]+)\s*(?:gp|mo)/i.exec(paren);
+      out.materials = [
+        {
+          text: paren,
+          cost: costMatch ? Number(costMatch[1].replace(/,/g, "")) : null,
+          consumable: /consum/i.test(paren),
+        },
+      ];
+    }
+  }
+
+  // Collapse `notes` into `description` (they were merged in the read view already).
+  const desc = String(out.description ?? "").trim();
+  const notes = String(out.notes ?? "").trim();
+  if (notes) {
+    out.description = [desc, notes].filter(Boolean).join("\n\n");
+    delete out.notes;
+  } else if ("notes" in out) {
+    delete out.notes;
+  }
+  return out;
+}
+
+function migrateV2_0toV2_1(v2: Json): Json {
+  const out: Json = { ...v2, schemaVersion: SCHEMA_VERSION };
+  if (Array.isArray(v2.spellSections)) {
+    out.spellSections = v2.spellSections.map((s: Json) =>
+      s && typeof s === "object" && Array.isArray(s.entries)
+        ? { ...s, entries: s.entries.map(migrateSpellEntry) }
+        : s,
+    );
+  }
   return out;
 }

@@ -89,7 +89,7 @@ Every game concept has **one home** in the JSON and one place it's edited (in Ed
 | Weapon attacks (per mode: 1h / 2h / thrown) | `inventory.items[].attacks[]` | Inventario (edit) → Gioco → Attacks |
 | Innate attacks (natural weapons, unarmed, breath weapon) | `combat.attacks[]` | Gioco → Attacks |
 | Spell slots, pact magic, ki, rage, sorcery points, channel divinity, charges, ammo | `resources[]` (generic) | Gioco → Resources |
-| Spells, grouped into sections | `spellSections[]` | Gioco → Spells |
+| Spells (casting time, ritual, V·S·M components + materials, damage & type, higher-level scaling), grouped into sections | `spellSections[]` | Gioco → Spells |
 | Class / subclass / race / background / feat features (invocations, metamagic, maneuvers, fighting styles…) | `features[]` (by `source`) | Attributi → Features |
 | Limited-use feature → its resource | `features[].uses` | Attributi → Features |
 | Items: quantity, weight, value, equipped, attuned, category | `inventory.items[]` | Inventario |

@@ -37,7 +37,7 @@ The frontend choice (a web SPA) already implies the answer, because the GitHub P
 
 ```
 src/
-  schema/         # Zod schemas + types + JSON Schema export + migrations (1.0.0 -> 2.0.0)
+  schema/         # Zod schemas + types + JSON Schema export + migrations (1.0.0 -> 2.1.0)
   model/          # Pure domain logic: derived stats, rules validation, resource math, multiclass
   state/          # Zustand store (character, session, UI), actions, debounced-save orchestration
   storage/        # StorageProvider interface + TauriFsProvider + FileSystemAccessProvider + handle persistence

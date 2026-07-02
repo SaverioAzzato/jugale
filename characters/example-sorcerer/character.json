@@ -1,85 +1,293 @@
 {
-  "schemaVersion": "2.0.0",
+  "schemaVersion": "2.1.0",
   "meta": {
     "name": "Example Sorcerer",
     "summary": "Tiefling Sorcerer (Draconic Bloodline) — sorcery-points caster + metamagic.",
-    "tags": ["sorcerer", "example", "points-caster"]
+    "tags": [
+      "sorcerer",
+      "example",
+      "points-caster"
+    ]
   },
-  "identity": { "race": "Tiefling", "background": "Charlatan", "alignment": "CN" },
+  "identity": {
+    "race": "Tiefling",
+    "background": "Charlatan",
+    "alignment": "CN"
+  },
   "classes": [
     {
-      "name": "Sorcerer", "subclass": "Draconic Bloodline (Red)", "level": 5, "hitDie": "d6",
+      "name": "Sorcerer",
+      "subclass": "Draconic Bloodline (Red)",
+      "level": 5,
+      "hitDie": "d6",
       "link": "https://www.dndbeyond.com/classes/sorcerer",
-      "spellcasting": { "ability": "cha", "type": "known", "slotProgression": "full" }
+      "spellcasting": {
+        "ability": "cha",
+        "type": "known",
+        "slotProgression": "full"
+      }
     }
   ],
   "abilities": {
-    "str": { "score": 8 },
-    "dex": { "score": 14 },
-    "con": { "score": 15, "saveProficient": true },
-    "int": { "score": 10 },
-    "wis": { "score": 12 },
-    "cha": { "score": 17, "saveProficient": true }
+    "str": {
+      "score": 8
+    },
+    "dex": {
+      "score": 14
+    },
+    "con": {
+      "score": 15,
+      "saveProficient": true
+    },
+    "int": {
+      "score": 10
+    },
+    "wis": {
+      "score": 12
+    },
+    "cha": {
+      "score": 17,
+      "saveProficient": true
+    }
   },
   "proficiencies": {
     "skills": [
-      { "id": "deception", "proficient": true },
-      { "id": "persuasion", "proficient": true },
-      { "id": "arcana", "proficient": true }
+      {
+        "id": "deception",
+        "proficient": true
+      },
+      {
+        "id": "persuasion",
+        "proficient": true
+      },
+      {
+        "id": "arcana",
+        "proficient": true
+      }
     ],
-    "weapons": ["Daggers", "Darts", "Slings", "Quarterstaffs", "Light crossbows"],
-    "languages": ["Common", "Draconic", "Infernal"]
+    "weapons": [
+      "Daggers",
+      "Darts",
+      "Slings",
+      "Quarterstaffs",
+      "Light crossbows"
+    ],
+    "languages": [
+      "Common",
+      "Draconic",
+      "Infernal"
+    ]
   },
   "combat": {
     "armorClass": 13,
-    "speed": { "walk": 30 },
-    "hp": { "max": 33, "current": 33, "temp": 0, "hitDiceRemaining": 5 },
+    "speed": {
+      "walk": 30
+    },
+    "hp": {
+      "max": 33,
+      "current": 33,
+      "temp": 0,
+      "hitDiceRemaining": 5
+    },
     "attacks": [
-      { "name": "Dagger", "level": "Weapon", "range": "Melee / 20 ft", "attack": "+5 to hit", "defense": "AC", "effect": "1d4+2 piercing" }
+      {
+        "name": "Dagger",
+        "level": "Weapon",
+        "range": "Melee / 20 ft",
+        "attack": "+5 to hit",
+        "defense": "AC",
+        "effect": "1d4+2 piercing"
+      }
     ]
   },
   "resources": [
-    { "id": "sorcery-points", "label": "Sorcery Points", "category": "points", "max": 5, "current": 5, "resetOn": "longRest", "link": "https://www.dndbeyond.com/sources/basic-rules/sorcerer#FontofMagic" },
-    { "id": "spell-slots-1", "label": "Level 1 slots", "category": "spellSlot", "level": 1, "max": 4, "current": 4, "resetOn": "longRest" },
-    { "id": "spell-slots-2", "label": "Level 2 slots", "category": "spellSlot", "level": 2, "max": 3, "current": 3, "resetOn": "longRest" },
-    { "id": "spell-slots-3", "label": "Level 3 slots", "category": "spellSlot", "level": 3, "max": 2, "current": 2, "resetOn": "longRest" }
+    {
+      "id": "sorcery-points",
+      "label": "Sorcery Points",
+      "category": "points",
+      "max": 5,
+      "current": 5,
+      "resetOn": "longRest",
+      "link": "https://www.dndbeyond.com/sources/basic-rules/sorcerer#FontofMagic"
+    },
+    {
+      "id": "spell-slots-1",
+      "label": "Level 1 slots",
+      "category": "spellSlot",
+      "level": 1,
+      "max": 4,
+      "current": 4,
+      "resetOn": "longRest"
+    },
+    {
+      "id": "spell-slots-2",
+      "label": "Level 2 slots",
+      "category": "spellSlot",
+      "level": 2,
+      "max": 3,
+      "current": 3,
+      "resetOn": "longRest"
+    },
+    {
+      "id": "spell-slots-3",
+      "label": "Level 3 slots",
+      "category": "spellSlot",
+      "level": 3,
+      "max": 2,
+      "current": 2,
+      "resetOn": "longRest"
+    }
   ],
   "spellSections": [
     {
-      "id": "cantrips", "title": "Cantrips",
+      "id": "cantrips",
+      "title": "Cantrips",
       "entries": [
-        { "name": "Fire Bolt", "link": "https://www.dndbeyond.com/spells/fire-bolt", "level": "0", "range": "120 ft", "attack": "Spell attack", "defense": "—", "effect": "2d10 fire", "concentration": false },
-        { "name": "Prestidigitation", "link": "https://www.dndbeyond.com/spells/prestidigitation", "level": "0", "range": "10 ft", "attack": "—", "defense": "—", "effect": "Minor effects", "concentration": false }
+        {
+          "name": "Fire Bolt",
+          "link": "https://www.dndbeyond.com/spells/fire-bolt",
+          "level": "0",
+          "range": "120 ft",
+          "attack": "Spell attack",
+          "defense": "—",
+          "effect": "2d10 fire",
+          "concentration": false
+        },
+        {
+          "name": "Prestidigitation",
+          "link": "https://www.dndbeyond.com/spells/prestidigitation",
+          "level": "0",
+          "range": "10 ft",
+          "attack": "—",
+          "defense": "—",
+          "effect": "Minor effects",
+          "concentration": false
+        }
       ]
     },
     {
-      "id": "known", "title": "Known",
+      "id": "known",
+      "title": "Known",
       "entries": [
-        { "name": "Shield", "link": "https://www.dndbeyond.com/spells/shield", "level": "1", "castingTime": "1 reaction", "range": "Self", "attack": "—", "defense": "—", "effect": "+5 AC until your next turn", "concentration": false },
-        { "name": "Scorching Ray", "link": "https://www.dndbeyond.com/spells/scorching-ray", "level": "2", "range": "120 ft", "attack": "3 spell attacks", "defense": "—", "effect": "2d6 fire per ray", "concentration": false },
-        { "name": "Fireball", "link": "https://www.dndbeyond.com/spells/fireball", "level": "3", "range": "150 ft", "attack": "—", "defense": "Dex save", "effect": "8d6 fire in a 20 ft radius", "concentration": false }
+        {
+          "name": "Shield",
+          "link": "https://www.dndbeyond.com/spells/shield",
+          "level": "1",
+          "castingTime": {
+            "type": "reaction",
+            "value": "",
+            "condition": ""
+          },
+          "range": "Self",
+          "attack": "—",
+          "defense": "—",
+          "effect": "+5 AC until your next turn",
+          "concentration": false
+        },
+        {
+          "name": "Scorching Ray",
+          "link": "https://www.dndbeyond.com/spells/scorching-ray",
+          "level": "2",
+          "range": "120 ft",
+          "attack": "3 spell attacks",
+          "defense": "—",
+          "effect": "2d6 fire per ray",
+          "concentration": false
+        },
+        {
+          "name": "Fireball",
+          "link": "https://www.dndbeyond.com/spells/fireball",
+          "level": "3",
+          "range": "150 ft",
+          "attack": "—",
+          "defense": "Dex save",
+          "effect": "8d6 fire in a 20 ft radius",
+          "concentration": false
+        }
       ]
     }
   ],
   "features": [
-    { "id": "font-of-magic", "name": "Font of Magic", "source": "class", "level": 2, "description": "Convert slots into sorcery points and back.", "uses": { "resourceId": "sorcery-points", "amount": 1 } },
-    { "id": "metamagic", "name": "Metamagic", "source": "class", "level": 3, "description": "Two options known: Quickened Spell and Twinned Spell." },
-    { "id": "metamagic-quickened", "name": "Quickened Spell", "source": "class", "description": "2 sorcery points: cast a 1-action spell as a bonus action." },
-    { "id": "metamagic-twinned", "name": "Twinned Spell", "source": "class", "description": "Points = slot level: target a second creature with a single-target spell." },
-    { "id": "draconic-resilience", "name": "Draconic Resilience", "source": "subclass", "level": 1, "description": "+1 HP per level; base AC 13 + Dex while unarmored." },
-    { "id": "elemental-affinity", "name": "Elemental Affinity", "source": "subclass", "level": 6, "description": "Add your Cha mod to damage of the matching type (comes online at level 6)." }
+    {
+      "id": "font-of-magic",
+      "name": "Font of Magic",
+      "source": "class",
+      "level": 2,
+      "description": "Convert slots into sorcery points and back.",
+      "uses": {
+        "resourceId": "sorcery-points",
+        "amount": 1
+      }
+    },
+    {
+      "id": "metamagic",
+      "name": "Metamagic",
+      "source": "class",
+      "level": 3,
+      "description": "Two options known: Quickened Spell and Twinned Spell."
+    },
+    {
+      "id": "metamagic-quickened",
+      "name": "Quickened Spell",
+      "source": "class",
+      "description": "2 sorcery points: cast a 1-action spell as a bonus action."
+    },
+    {
+      "id": "metamagic-twinned",
+      "name": "Twinned Spell",
+      "source": "class",
+      "description": "Points = slot level: target a second creature with a single-target spell."
+    },
+    {
+      "id": "draconic-resilience",
+      "name": "Draconic Resilience",
+      "source": "subclass",
+      "level": 1,
+      "description": "+1 HP per level; base AC 13 + Dex while unarmored."
+    },
+    {
+      "id": "elemental-affinity",
+      "name": "Elemental Affinity",
+      "source": "subclass",
+      "level": 6,
+      "description": "Add your Cha mod to damage of the matching type (comes online at level 6)."
+    }
   ],
   "inventory": {
     "items": [
-      { "id": "dagger", "name": "Dagger", "quantity": 2, "equipped": true },
-      { "id": "arcane-focus", "name": "Arcane focus (crystal)", "quantity": 1, "equipped": true },
-      { "id": "potion-healing", "name": "Potion of healing", "quantity": 2, "category": "consumable", "equippable": false }
+      {
+        "id": "dagger",
+        "name": "Dagger",
+        "quantity": 2,
+        "equipped": true
+      },
+      {
+        "id": "arcane-focus",
+        "name": "Arcane focus (crystal)",
+        "quantity": 1,
+        "equipped": true
+      },
+      {
+        "id": "potion-healing",
+        "name": "Potion of healing",
+        "quantity": 2,
+        "category": "consumable",
+        "equippable": false
+      }
     ],
-    "currencies": { "gp": 60, "sp": 8, "cp": 0 }
+    "currencies": {
+      "gp": 60,
+      "sp": 8,
+      "cp": 0
+    }
   },
   "customSections": [],
   "narrative": {
-    "personality": ["Self-assured, loves a bit of showmanship."],
-    "flaws": ["I can't resist showing off with fire."]
+    "personality": [
+      "Self-assured, loves a bit of showmanship."
+    ],
+    "flaws": [
+      "I can't resist showing off with fire."
+    ]
   }
 }

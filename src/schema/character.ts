@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * character.json schema v2.0.0 — the contract documented in docs/SCHEMA.md.
+ * character.json schema v2.1.0 — the contract documented in docs/SCHEMA.md.
  *
  * Conventions:
  * - Every section has a default so a minimal `{ meta: { name } }` validates.
@@ -10,7 +10,7 @@ import { z } from "zod";
  *   (see derive.ts), with optional `*Override` escape hatches for homebrew.
  */
 
-export const SCHEMA_VERSION = "2.0.0";
+export const SCHEMA_VERSION = "2.1.0";
 
 const link = z.string().nullable().optional();
 const strings = z.array(z.string()).default([]);
@@ -214,23 +214,84 @@ const Resource = z
   })
   .passthrough();
 
+/** How long a spell takes to cast. `value` carries the amount for `type:"time"`
+ *  ("10 minutes"); `condition` carries the trigger for `type:"reaction"`. */
+const CastingTime = z
+  .object({
+    type: z.enum(["action", "bonus", "reaction", "time"]).default("action"),
+    value: z.string().default(""),
+    condition: z.string().default(""),
+  })
+  .passthrough();
+export type SpellCastingTime = z.infer<typeof CastingTime>;
+
+/** Turn a legacy free-string casting time ("1 bonus action", "10 minutes") into the
+ *  structured object. Exported so the migration reuses the exact same parsing. */
+export function parseCastingTime(raw: unknown): SpellCastingTime {
+  const s = String(raw ?? "").trim();
+  if (!s) return { type: "action", value: "", condition: "" };
+  if (/bonus/i.test(s)) return { type: "bonus", value: "", condition: "" };
+  if (/reaction/i.test(s)) {
+    const m = s.match(/reaction\b[\s,]*(?:which you take\s+)?(.*)$/i);
+    return { type: "reaction", value: "", condition: (m?.[1] ?? "").trim() };
+  }
+  if (/^\s*(?:1\s+)?action\s*$/i.test(s)) return { type: "action", value: "", condition: "" };
+  return { type: "time", value: s, condition: "" };
+}
+
+/** V / S / M component flags. */
+const Components = z
+  .object({
+    verbal: z.boolean().default(false),
+    somatic: z.boolean().default(false),
+    material: z.boolean().default(false),
+  })
+  .passthrough();
+export type SpellComponents = z.infer<typeof Components>;
+
+/** Parse a legacy component string ("V, S, M") into flags. Reused by the migration. */
+export function parseComponents(raw: unknown): SpellComponents {
+  const up = String(raw ?? "").toUpperCase();
+  return { verbal: /\bV\b/.test(up), somatic: /\bS\b/.test(up), material: /\bM\b/.test(up) };
+}
+
+/** One material component. `cost` is in the campaign's gold unit; `consumable` marks
+ *  the ones the spell uses up (vs. a reusable focus like a 300-gp pearl). */
+const SpellMaterial = z
+  .object({
+    text: z.string().default(""),
+    cost: z.number().nullable().default(null),
+    consumable: z.boolean().default(false),
+  })
+  .passthrough();
+export type SpellMaterial = z.infer<typeof SpellMaterial>;
+
 const Spell = z
   .object({
     name: z.string().default(""),
     link,
     level: z.string().default(""),
     school: z.string().default(""),
-    castingTime: z.string().default(""),
+    // Tolerant: a stray legacy string is coerced instead of failing the whole character.
+    castingTime: z
+      .preprocess((v) => (typeof v === "string" ? parseCastingTime(v) : v), CastingTime)
+      .default({ type: "action", value: "", condition: "" }),
+    ritual: z.boolean().default(false),
     range: z.string().default(""),
     area: z.string().default(""),
-    components: z.string().default(""),
+    components: z
+      .preprocess((v) => (typeof v === "string" ? parseComponents(v) : v), Components)
+      .default({ verbal: false, somatic: false, material: false }),
+    materials: z.array(SpellMaterial).default([]),
     duration: z.string().default(""),
     concentration: z.boolean().default(false),
     attack: z.string().default(""),
     defense: z.string().default(""),
     effect: z.string().default(""),
+    damageType: z.string().default(""),
+    higherLevels: z.string().default(""),
+    // description is the single free-text field (any old `notes` is merged in on migration).
     description: z.string().default(""),
-    notes: z.string().default(""),
     prepared: z.boolean().default(true),
   })
   .passthrough();
