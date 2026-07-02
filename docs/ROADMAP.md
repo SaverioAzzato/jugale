@@ -7,7 +7,7 @@ Cross-cutting from day one: every milestone ships with tests, runs through CI, a
 ## M0 — Foundations & spec ✅ done
 - Architecture, schema, prompts, automation docs (`docs/`).
 - Repo scaffolding: Vite + React + TypeScript, Vitest.
-- Formal **JSON Schema** (via Zod) + the `schemaVersion 1.0.0 → 2.0.0` migration.
+- Formal **JSON Schema** (via Zod) + the `schemaVersion` migration chain (`1.0.0 → 2.0.0 → 2.1.0`).
 - `StorageProvider` interface (browser File System Access; Tauri lands in M4).
 - CI skeleton (PR checks) + a documented "ticket → PR" automation path.
 - **Deliverable:** an app that loads, migrates, and validates any character — sheet still minimal.

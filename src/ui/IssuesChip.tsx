@@ -3,11 +3,23 @@ import type { Issue, IssueCode } from "../schema";
 import { interpolate, useT, type TFn } from "../i18n/useI18n";
 import { useFocusTrap } from "./useFocusTrap";
 
-const MESSAGE_KEY: Partial<Record<IssueCode, "issues.levelExceeds20" | "issues.proficiencyBonusMismatch" | "issues.resourceOverspent" | "issues.hpExceedsMax">> = {
+const MESSAGE_KEY: Partial<
+  Record<
+    IssueCode,
+    | "issues.levelExceeds20"
+    | "issues.proficiencyBonusMismatch"
+    | "issues.resourceOverspent"
+    | "issues.hpExceedsMax"
+    | "issues.spellMaterialMissing"
+    | "issues.spellRitualNoDuration"
+  >
+> = {
   levelExceeds20: "issues.levelExceeds20",
   proficiencyBonusMismatch: "issues.proficiencyBonusMismatch",
   resourceOverspent: "issues.resourceOverspent",
   hpExceedsMax: "issues.hpExceedsMax",
+  spellMaterialMissing: "issues.spellMaterialMissing",
+  spellRitualNoDuration: "issues.spellRitualNoDuration",
 };
 
 /** Localized issue text. Known codes interpolate a translated template; raw schema errors

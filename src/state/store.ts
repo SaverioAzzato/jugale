@@ -61,6 +61,23 @@ function notify(label: string, c: Character, changes: FormulaChange[], rolls: st
 const clamp = (n: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, n));
 
+/** Drop spell material rows with no text (blank ones the user added and left empty).
+ *  Returns the same reference when nothing changed, so callers can skip a no-op save. */
+function pruneEmptyMaterials(c: Character): Character {
+  let changed = false;
+  const spellSections = c.spellSections.map((sec) => ({
+    ...sec,
+    entries: sec.entries.map((e) => {
+      if (!Array.isArray(e.materials) || e.materials.length === 0) return e;
+      const kept = e.materials.filter((m) => (m.text ?? "").trim() !== "");
+      if (kept.length === e.materials.length) return e;
+      changed = true;
+      return { ...e, materials: kept };
+    }),
+  }));
+  return changed ? { ...c, spellSections } : c;
+}
+
 /** Regaining HP from 0 clears death saves, so a later death starts the count fresh. */
 function clearDeathOnRevive(before: Character, after: Character): Character {
   const ds = after.session.deathSaves;
@@ -323,7 +340,20 @@ export const useCharacter = create<CharacterState>((set, get) => {
       });
     },
 
-    toggleEditMode: () => set({ editMode: !get().editMode }),
+    toggleEditMode: () => {
+      // Leaving Edit mode drops any material rows the user added but left blank.
+      if (get().editMode) {
+        const c = get().character;
+        if (c) {
+          const cleaned = pruneEmptyMaterials(c);
+          if (cleaned !== c) {
+            set({ character: cleaned, dirty: true });
+            scheduleSave();
+          }
+        }
+      }
+      set({ editMode: !get().editMode });
+    },
 
     editField: (path, value) => {
       const c = get().character;

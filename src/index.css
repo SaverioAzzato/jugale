@@ -855,6 +855,70 @@ a {
   margin: 12px 0 2px;
 }
 
+/* material components list inside an expanded spell */
+.spell-materials {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.spell-material {
+  font-size: 12.5px;
+}
+.spell-material-cost {
+  color: var(--gold);
+}
+.spell-material-tag {
+  font-size: 10px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 6px;
+  margin-left: 6px;
+}
+.spell-material.is-consumable .spell-material-tag {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Materials editor spans the whole spell card (not one narrow grid cell), and each
+   material row stacks its text over the cost/consumable controls. */
+.edit-materials {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.edit-materials .edit-entry-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* casting-time quick-pick (Edit mode) */
+.ct-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.ct-opt {
+  font-size: 12px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: pointer;
+}
+.ct-opt.is-active {
+  color: var(--gold);
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+
 /* ---- Gioco: consumables ---- */
 .consumable-list {
   list-style: none;

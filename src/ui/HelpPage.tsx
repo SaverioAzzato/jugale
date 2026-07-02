@@ -103,7 +103,7 @@ const CONTENT: Record<Locale, HelpContent> = {
       },
       {
         key: "spellcasting / spellSections",
-        body: "Spell save DC and attack bonus are calculated from your caster class(es) — don't set them by hand. Your actual spell lists live in spellSections, grouped however you like (cantrips, 1st level, a subclass's expanded list…), each spell carrying its range, components, and — most usefully — the roll you make versus the roll your enemy makes.",
+        body: "Spell save DC and attack bonus are calculated from your caster class(es) — don't set them by hand. Your actual spell lists live in spellSections, grouped however you like (cantrips, 1st level, a subclass's expanded list…). Each spell carries its casting time (action / bonus / reaction / a longer time), whether it's a ritual, its V·S·M components with a materials list (cost and whether the spell consumes them), range, duration/concentration, damage and its type, the “at higher levels” scaling, and — most usefully — the roll you make versus the roll your enemy makes.",
       },
       {
         key: "features",
@@ -192,7 +192,7 @@ const CONTENT: Record<Locale, HelpContent> = {
       },
       {
         key: "spellcasting / spellSections",
-        body: "CD incantesimi e bonus d'attacco sono calcolati dalle tue classi incantatrici — non impostarli a mano. Le tue liste di incantesimi vivono in spellSections, raggruppate come preferisci (trucchetti, primo livello, la lista estesa di una sottoclasse…), ciascun incantesimo con gittata, componenti, e — la cosa più utile — il tiro che fai tu contro quello che fa il nemico.",
+        body: "CD incantesimi e bonus d'attacco sono calcolati dalle tue classi incantatrici — non impostarli a mano. Le tue liste di incantesimi vivono in spellSections, raggruppate come preferisci (trucchetti, primo livello, la lista estesa di una sottoclasse…). Ogni incantesimo porta il tempo di lancio (azione / bonus / reazione / un tempo più lungo), se è un rituale, i componenti V·S·M con la lista dei materiali (costo e se l'incantesimo li consuma), gittata, durata/concentrazione, danno e tipo, lo scaling “ai livelli superiori”, e — la cosa più utile — il tiro che fai tu contro quello che fa il nemico.",
       },
       {
         key: "features",

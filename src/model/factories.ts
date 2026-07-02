@@ -54,19 +54,25 @@ export const newSpell = (): Spell => ({
   link: null,
   level: "",
   school: "",
-  castingTime: "",
+  castingTime: { type: "action", value: "", condition: "" },
+  ritual: false,
   range: "",
   area: "",
-  components: "",
+  components: { verbal: false, somatic: false, material: false },
+  materials: [],
   duration: "",
   concentration: false,
   attack: "",
   defense: "",
   effect: "",
+  damageType: "",
+  higherLevels: "",
   description: "",
-  notes: "",
   prepared: true,
 });
+
+/** A blank material component row (Edit mode "add material"). */
+export const newSpellMaterial = (): Spell["materials"][number] => ({ text: "", cost: null, consumable: false });
 
 export const newSpellSection = (): SpellSection => ({ id: uid(), title: "", entries: [] });
 

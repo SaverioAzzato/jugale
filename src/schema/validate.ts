@@ -13,7 +13,9 @@ export type IssueCode =
   | "levelExceeds20"
   | "proficiencyBonusMismatch"
   | "resourceOverspent"
-  | "hpExceedsMax";
+  | "hpExceedsMax"
+  | "spellMaterialMissing"
+  | "spellRitualNoDuration";
 
 export interface Issue {
   path: string;
@@ -110,6 +112,32 @@ export function ruleChecks(c: Character): Issue[] {
       code: "hpExceedsMax",
     });
   }
+
+  // Spell completeness: a material component with nothing listed, or a ritual with no duration.
+  c.spellSections.forEach((sec, si) => {
+    sec.entries.forEach((s, ei) => {
+      const path = `spellSections.${si}.entries.${ei}`;
+      const label = s.name || `#${ei + 1}`;
+      if (s.components.material && s.materials.length === 0) {
+        issues.push({
+          path,
+          message: `${label}: has a material component but no materials listed`,
+          severity: "warning",
+          code: "spellMaterialMissing",
+          params: { label },
+        });
+      }
+      if (s.ritual && !s.duration.trim()) {
+        issues.push({
+          path,
+          message: `${label}: is a ritual but has no duration`,
+          severity: "warning",
+          code: "spellRitualNoDuration",
+          params: { label },
+        });
+      }
+    });
+  });
 
   return issues;
 }

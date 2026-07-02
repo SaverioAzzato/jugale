@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { migrateToCurrent, needsMigration, schemaMajor } from "./migrate";
-import { CharacterSchema } from "./character";
+import { CharacterSchema, SCHEMA_VERSION } from "./character";
 import { loadCharacter } from "./validate";
 import { spellSaveDc } from "./derive";
 
@@ -66,7 +66,9 @@ describe("migration detection", () => {
   it("treats numeric schemaVersion 1 as v1", () => {
     expect(schemaMajor(v1Character)).toBe(1);
     expect(needsMigration(v1Character)).toBe(true);
-    expect(needsMigration({ schemaVersion: "2.0.0" })).toBe(false);
+    // A 2.0.0 file is behind the current 2.1.0 contract → still needs the minor migration.
+    expect(needsMigration({ schemaVersion: "2.0.0" })).toBe(true);
+    expect(needsMigration({ schemaVersion: SCHEMA_VERSION })).toBe(false);
   });
 });
 
@@ -75,7 +77,7 @@ describe("v1 → v2 migration", () => {
   const parsed = CharacterSchema.parse(migrated);
 
   it("produces a schema-valid v2 character", () => {
-    expect(parsed.schemaVersion).toBe("2.0.0");
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(parsed.meta.name).toBe("Old PG");
     // `portrait` is no longer a schema field (the app derives the portrait from the
     // images/ folder), but unknown meta keys survive migration losslessly via passthrough.
@@ -148,5 +150,71 @@ describe("loadCharacter on v1 input", () => {
     expect(result.ok).toBe(true);
     expect(result.migrated).toBe(true);
     expect(result.issues.filter((i) => i.severity === "error")).toHaveLength(0);
+  });
+});
+
+describe("2.0.0 → 2.1.0 spell migration", () => {
+  const v2_0 = {
+    schemaVersion: "2.0.0",
+    meta: { name: "Caster" },
+    spellSections: [
+      {
+        id: "lvl1",
+        title: "1st level",
+        entries: [
+          { name: "Shield", castingTime: "1 reaction, when hit by an attack", components: "V, S" },
+          { name: "Find Familiar", castingTime: "10 minutes", components: "V, S, M (charcoal, incense worth 10 gp, which the spell consumes)" },
+          {
+            name: "Fireball",
+            castingTime: "1 action",
+            components: "V, S, M (a tiny ball of bat guano and sulfur)",
+            description: "A bright streak flashes to a point.",
+            notes: "It ignites flammable objects.",
+          },
+        ],
+      },
+    ],
+  };
+
+  const parsed = CharacterSchema.parse(migrateToCurrent(v2_0));
+  const [shield, familiar, fireball] = parsed.spellSections[0].entries;
+
+  it("bumps the version and flags migration for a 2.0.0 file", () => {
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(needsMigration(v2_0)).toBe(true);
+    expect(loadCharacter(v2_0).migrated).toBe(true);
+  });
+
+  it("structures casting time, keeping a reaction trigger and a longer time value", () => {
+    expect(shield.castingTime).toMatchObject({ type: "reaction", condition: "when hit by an attack" });
+    expect(familiar.castingTime).toMatchObject({ type: "time", value: "10 minutes" });
+    expect(fireball.castingTime).toMatchObject({ type: "action" });
+  });
+
+  it("splits V/S/M flags out of the component string", () => {
+    expect(shield.components).toEqual({ verbal: true, somatic: true, material: false });
+    expect(fireball.components).toEqual({ verbal: true, somatic: true, material: true });
+  });
+
+  it("lifts the parenthetical material into materials[], parsing cost and consumable", () => {
+    expect(familiar.materials).toEqual([
+      { text: "charcoal, incense worth 10 gp, which the spell consumes", cost: 10, consumable: true },
+    ]);
+    expect(fireball.materials).toEqual([{ text: "a tiny ball of bat guano and sulfur", cost: null, consumable: false }]);
+    expect(shield.materials).toEqual([]);
+  });
+
+  it("folds the old separate notes field into description", () => {
+    expect(fireball.description).toBe("A bright streak flashes to a point.\n\nIt ignites flammable objects.");
+    expect((fireball as Record<string, unknown>).notes).toBeUndefined();
+  });
+
+  it("tolerates a stray legacy string on an already-2.1.0 file (schema coercion)", () => {
+    const loose = CharacterSchema.parse({
+      meta: { name: "X" },
+      spellSections: [{ entries: [{ name: "Bless", castingTime: "1 action", components: "V, S, M" }] }],
+    });
+    expect(loose.spellSections[0].entries[0].components).toEqual({ verbal: true, somatic: true, material: true });
+    expect(loose.spellSections[0].entries[0].castingTime.type).toBe("action");
   });
 });

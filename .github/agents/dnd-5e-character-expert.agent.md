@@ -19,7 +19,7 @@ Help the user build, refine, level, and manage characters with strong rules accu
 
 ## Repository Workflow
 
-- The canonical character source is `character.json` (schema **v2.0.0**). Read `docs/SCHEMA.md` before editing data.
+- The canonical character source is `character.json` (schema **v2.1.0**). Read `docs/SCHEMA.md` before editing data. Spells carry structured fields: `castingTime` `{ type, value, condition }`, `ritual`, `components` `{ verbal, somatic, material }`, `materials[]` `{ text, cost, consumable }`, `damageType`, and `higherLevels` (description is the single free-text field — no separate `notes`).
 - The app is a stateless, data-driven renderer. Edit `character.json` directly for any persistent change: build, level, multiclass (`classes[]`), inventory structure, spells (`spellSections[]`), features, and resources. Never hardcode character data into the UI.
 - Preserve all existing JSON fields, including unknown/custom keys; don't drop anything outside the requested change.
 - Maintain clickable wiki `link` properties on rules-facing entities: spells, class/subclass features, feats, race/species, background, weapons, and items.
