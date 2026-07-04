@@ -57,11 +57,12 @@ export function Stepper({
     onChange(value + 1);
   });
 
-  // Mouse/touch already step via start()/stop() above. Keyboard activation (Enter/Space)
-  // only fires a `click` — with no mousedown/touchstart, it would otherwise do nothing.
-  // event.detail is 0 for a keyboard-triggered click and >=1 for a real pointer click, so
-  // this only fires the missing keyboard path; start()+stop() synchronously cancels the
-  // pending hold-repeat before it can schedule, leaving exactly one step.
+  // Pointer events unify mouse/touch/pen into a single event stream, so a tap fires `start()`
+  // exactly once. (The old mouse+touch handler pair double-fired on mobile — a touchstart plus
+  // the browser's synthesized mousedown both stepped, so one tap moved by 2.) A pointer tap still
+  // emits a trailing compatibility `click`, but that reports `detail >= 1`; keyboard activation
+  // (Enter/Space) fires a `click` with `detail === 0` and no pointerdown. So onClick only runs the
+  // keyboard path, where start()+stop() steps exactly once and cancels the pending hold-repeat.
   const onKeyboardClick = (repeat: ReturnType<typeof useHoldRepeat>) => (e: React.MouseEvent) => {
     if (e.detail !== 0) return;
     repeat.start();
@@ -75,14 +76,10 @@ export function Stepper({
         className="stepper-btn"
         disabled={value <= min}
         aria-label={t("stepper.decrease")}
-        onMouseDown={dec.start}
-        onMouseUp={dec.stop}
-        onMouseLeave={dec.stop}
-        onTouchStart={(e) => {
-          e.preventDefault();
-          dec.start();
-        }}
-        onTouchEnd={dec.stop}
+        onPointerDown={dec.start}
+        onPointerUp={dec.stop}
+        onPointerLeave={dec.stop}
+        onPointerCancel={dec.stop}
         onClick={onKeyboardClick(dec)}
       >
         −
@@ -96,14 +93,10 @@ export function Stepper({
         className="stepper-btn"
         disabled={max != null && value >= max}
         aria-label={t("stepper.increase")}
-        onMouseDown={inc.start}
-        onMouseUp={inc.stop}
-        onMouseLeave={inc.stop}
-        onTouchStart={(e) => {
-          e.preventDefault();
-          inc.start();
-        }}
-        onTouchEnd={inc.stop}
+        onPointerDown={inc.start}
+        onPointerUp={inc.stop}
+        onPointerLeave={inc.stop}
+        onPointerCancel={inc.stop}
         onClick={onKeyboardClick(inc)}
       >
         +

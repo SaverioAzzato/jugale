@@ -1,4 +1,4 @@
-# Character Schema — `character.json` v2.1.0
+# Character Schema — `character.json` v2.2.0
 
 > Status: **Draft for review** · The contract between the JSON (source of truth), the UI (data-driven renderer), and external GPTs.
 > Design goals, in order: **(1) structured enough** to validate rules and generate UI, **(2) free enough** for any class/homebrew, **(3) simple enough** for an LLM to read and edit by hand.
@@ -26,7 +26,7 @@ The canonical, machine-readable schema is the Zod definition in `src/schema/` (i
 
 ```jsonc
 {
-  "schemaVersion": "2.1.0",
+  "schemaVersion": "2.2.0",
   "meta":         { ... },   // identity card of the *file*: name, player, summary, ruleset
   "identity":     { ... },   // who the character is: race, background, alignment, age...
   "classes":      [ ... ],   // one entry per class → multiclass is native
@@ -127,8 +127,7 @@ These give two 5e concepts a single, explicit home instead of burying them in pr
 ### `combat`
 ```jsonc
 {
-  "armorClass": 13,             // legacy / hand-set AC; used only when no equipped item declares an `ac`
-  "armorClassOverride": null,   // when set, this wins over any armor-derived value (note: "manuale")
+  "armorClassOverride": null,   // when set, wins over everything; else AC = sum of equipped items' `ac`, else 10 + Dex
   "initiativeOverride": null, "speed": { "walk": 30, "fly": 0 },
   "hp": { "max": 38, "current": 38, "temp": 0, "hitDiceRemaining": 5 },
   "attacks": [
@@ -143,7 +142,7 @@ These give two 5e concepts a single, explicit home instead of burying them in pr
   ]
 }
 ```
-`hp.current`/`hp.temp`/`hp.hitDiceRemaining` are live (max Hit Dice = total level, derived). **AC** is derived without hardcoding 5e rules: each equipped armor/shield item declares its own contribution (`items[].ac`) and the app sums them, showing a provenance note (e.g. `cuoio 11 + des 3`); `armorClassOverride` wins if set, else the stored `armorClass` is the fallback. See `derive.ts → derivedArmorClass` and `docs/UI.md`.
+`hp.current`/`hp.temp`/`hp.hitDiceRemaining` are live (max Hit Dice = total level, derived). **AC** is derived from item data, not hardcoded rules: each equipped armor/shield declares its own contribution (`items[].ac`), with a provenance note (e.g. `cuoio 11 + des 3`). Precedence: `armorClassOverride` wins if set → else the **base** from the one worn body armor (`ac.base` + Dex per `addDex`/`dexCap`), or **10 + Dex** when unarmored → then every equipped `ac.bonus` (shield, ring) stacks on top. Only one body armor (an item with `ac.base`) may be worn at once — a bonus-only shield doesn't count and always stacks; equipping a second body armor is blocked in-app and flagged (`multipleBodyArmor`) for imported data. There is no flat `armorClass` field — model armor as items, or use the override for an item-less class-feature AC. See `derive.ts → derivedArmorClass` and `docs/UI.md`.
 
 ### `resources[]` — the generic tracker (generalizes "warlock slots")
 The single model for **anything you spend and recover**: spell slots (any name/level), pact magic, ki, rage, sorcery points, channel divinity, superiority dice, bardic inspiration, arrows, potions-as-resource, etc.
@@ -282,7 +281,11 @@ The app validates on load but **never refuses to render**:
 
 ## 4. Migration
 
-`src/schema/migrate.ts` upgrades older files in memory on load (persisted only on a real save). It is version-aware: a v1 file goes `1.0.0 → 2.0.0 → 2.1.0`; a `2.0.0` file just takes the minor step. `needsMigration` compares the full version (not only the major), so a `2.0.0` file is correctly flagged as behind.
+`src/schema/migrate.ts` upgrades older files in memory on load (persisted only on a real save). It is version-aware: a v1 file walks the chain `1.0.0 → 2.0.0 → 2.1.0 → 2.2.0`; a newer file takes only the remaining minor steps. `needsMigration` compares the full version (not only the major), so a `2.0.0`/`2.1.0` file is correctly flagged as behind.
+
+### `2.1.0 → 2.2.0` (AC)
+- The flat `combat.armorClass` fallback is removed. AC now comes from `combat.armorClassOverride` (manual, wins), else the sum of equipped items' `ac`, else `10 + Dex modifier`.
+- Lossless on the *shown* AC: `armorClass` was already ignored whenever an override or an equipped `ac` item was present, so it's only preserved — moved into `armorClassOverride` — when it was actually the displayed value (no override, no `ac` item), and even then only if it differed from the new default of 10.
 
 ### `2.0.0 → 2.1.0` (spells)
 - `castingTime` string → `{ type, value, condition }` (`"1 bonus action"` → `{type:"bonus"}`, `"10 minutes"` → `{type:"time", value:"10 minutes"}`, a reaction's trailing trigger → `condition`).

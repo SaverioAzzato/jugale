@@ -16,14 +16,16 @@ describe("Stepper", () => {
     expect(onChange).toHaveBeenCalledWith(6);
   });
 
-  it("does not double-step a real mouse click (mousedown/mouseup already step it)", () => {
+  it("steps exactly once per pointer tap (mouse, touch, or pen)", () => {
     const onChange = vi.fn();
     render(<Stepper value={5} onChange={onChange} min={0} max={10} label="Test" />);
     const inc = screen.getByRole("button", { name: "Increase" });
 
-    fireEvent.mouseDown(inc);
-    fireEvent.mouseUp(inc);
-    fireEvent.click(inc, { detail: 1 }); // a real pointer click reports detail >= 1
+    // One tap: a single pointerdown/up, then the browser's trailing compatibility click
+    // (detail >= 1). Previously a touch tap also fired a synthesized mousedown, double-stepping.
+    fireEvent.pointerDown(inc);
+    fireEvent.pointerUp(inc);
+    fireEvent.click(inc, { detail: 1 });
 
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledWith(6);

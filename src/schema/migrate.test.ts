@@ -66,8 +66,9 @@ describe("migration detection", () => {
   it("treats numeric schemaVersion 1 as v1", () => {
     expect(schemaMajor(v1Character)).toBe(1);
     expect(needsMigration(v1Character)).toBe(true);
-    // A 2.0.0 file is behind the current 2.1.0 contract → still needs the minor migration.
+    // Any file behind the current contract still needs a minor migration (2.0.0, 2.1.0, …).
     expect(needsMigration({ schemaVersion: "2.0.0" })).toBe(true);
+    expect(needsMigration({ schemaVersion: "2.1.0" })).toBe(true);
     expect(needsMigration({ schemaVersion: SCHEMA_VERSION })).toBe(false);
   });
 });
@@ -104,7 +105,8 @@ describe("v1 → v2 migration", () => {
   });
 
   it("reads AC and speed from baseStats", () => {
-    expect(parsed.combat.armorClass).toBe(13);
+    // v1's flat AC (13) has no override and no `ac` item, so 2.1→2.2 preserves it as an override.
+    expect(parsed.combat.armorClassOverride).toBe(13);
     expect(parsed.combat.speed.walk).toBe(9);
     expect(parsed.combat.hp).toMatchObject({ max: 31, current: 31 });
   });
@@ -216,5 +218,44 @@ describe("2.0.0 → 2.1.0 spell migration", () => {
     });
     expect(loose.spellSections[0].entries[0].components).toEqual({ verbal: true, somatic: true, material: true });
     expect(loose.spellSections[0].entries[0].castingTime.type).toBe("action");
+  });
+});
+
+describe("2.1.0 → 2.2.0 armorClass removal", () => {
+  const base = (combat: Record<string, unknown>, items: unknown[] = []) => ({
+    schemaVersion: "2.1.0",
+    meta: { name: "AC" },
+    combat: { speed: { walk: 30 }, hp: { max: 1, current: 1 }, ...combat },
+    inventory: { items },
+  });
+
+  it("drops a flat armorClass and never re-adds it", () => {
+    const out = migrateToCurrent(base({ armorClass: 15 }));
+    expect(out.schemaVersion).toBe(SCHEMA_VERSION);
+    expect("armorClass" in out.combat).toBe(false);
+  });
+
+  it("preserves a flat armorClass (no override, no ac item) as an override", () => {
+    const out = migrateToCurrent(base({ armorClass: 15 }));
+    expect(out.combat.armorClassOverride).toBe(15);
+  });
+
+  it("does not create an override for the bare default of 10", () => {
+    const out = migrateToCurrent(base({ armorClass: 10 }));
+    expect(out.combat.armorClassOverride ?? null).toBeNull();
+  });
+
+  it("just drops armorClass when an override is already set", () => {
+    const out = migrateToCurrent(base({ armorClass: 15, armorClassOverride: 18 }));
+    expect(out.combat.armorClassOverride).toBe(18);
+    expect("armorClass" in out.combat).toBe(false);
+  });
+
+  it("just drops armorClass when an equipped ac item drives the AC", () => {
+    const out = migrateToCurrent(
+      base({ armorClass: 12 }, [{ name: "Leather", equipped: true, ac: { base: 11, addDex: true } }]),
+    );
+    expect(out.combat.armorClassOverride ?? null).toBeNull();
+    expect("armorClass" in out.combat).toBe(false);
   });
 });

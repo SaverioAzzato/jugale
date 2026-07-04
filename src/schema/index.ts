@@ -26,6 +26,7 @@ export {
   spellAttackBonus,
   maxHitDice,
   derivedArmorClass,
+  isBodyArmor,
 } from "./derive";
 export { migrateToCurrent, needsMigration, schemaMajor } from "./migrate";
 export { loadCharacter, ruleChecks, type Issue, type IssueCode, type LoadResult, type Severity } from "./validate";

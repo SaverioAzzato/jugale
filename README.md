@@ -84,7 +84,7 @@ Every game concept has **one home** in the JSON and one place it's edited (in Ed
 | Special senses (darkvision, blindsight…) | `senses[]` | Attributi → Senses & defenses |
 | Damage resistances / immunities / vulnerabilities, condition immunities | `defenses` | Attributi → Senses & defenses |
 | Hit points (max / current / temp), hit dice | `combat.hp` | Gioco → Vitals |
-| Armor Class (summed from equipped armor/shield, or override) | `inventory.items[].ac` · `combat.armorClass*` | Gioco → Vitals · Inventario |
+| Armor Class (summed from equipped armor/shield, or override; else 10 + Dex) | `inventory.items[].ac` · `combat.armorClassOverride` | Gioco → Vitals · Inventario |
 | Initiative, speed | `combat.initiativeOverride` · `combat.speed` | Gioco → Vitals |
 | Weapon attacks (per mode: 1h / 2h / thrown) | `inventory.items[].attacks[]` | Inventario (edit) → Gioco → Attacks |
 | Innate attacks (natural weapons, unarmed, breath weapon) | `combat.attacks[]` | Gioco → Attacks |

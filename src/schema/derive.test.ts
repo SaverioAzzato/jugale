@@ -67,14 +67,14 @@ describe("maxHitDice", () => {
 });
 
 describe("derivedArmorClass", () => {
-  it("falls back to the stored armorClass when nothing is equipped with ac data", () => {
-    const c = make({ combat: { armorClass: 15 } });
-    expect(derivedArmorClass(c)).toEqual({ value: 15, breakdown: "" });
+  it("falls back to 10 + Dex (unarmored) when nothing is equipped with ac data", () => {
+    const c = make({ abilities: { dex: { score: 16 } } }); // +3
+    expect(derivedArmorClass(c)).toEqual({ value: 13, breakdown: "no armor" });
   });
 
   it("an explicit override always wins", () => {
     const c = make({
-      combat: { armorClass: 10, armorClassOverride: 18 },
+      combat: { armorClassOverride: 18 },
       inventory: { items: [{ name: "Leather", equipped: true, ac: { base: 11, addDex: true, label: "leather" } }] },
     });
     expect(derivedArmorClass(c)).toEqual({ value: 18, breakdown: "manual" });
@@ -101,12 +101,20 @@ describe("derivedArmorClass", () => {
     expect(derivedArmorClass(c)).toEqual({ value: 18, breakdown: "chain 14 + dex 2 + shield +2" });
   });
 
-  it("ignores unequipped armor", () => {
+  it("keeps the unarmored 10 + Dex base under a bonus-only shield", () => {
     const c = make({
-      combat: { armorClass: 10 },
-      abilities: { dex: { score: 14 } },
+      abilities: { dex: { score: 14 } }, // +2
+      inventory: { items: [{ name: "Shield", equipped: true, ac: { bonus: 2, label: "shield" } }] },
+    });
+    // 10 + dex 2 + shield 2 = 14 (not just the shield's +2).
+    expect(derivedArmorClass(c)).toEqual({ value: 14, breakdown: "no armor + shield +2" });
+  });
+
+  it("ignores unequipped armor and falls back to 10 + Dex", () => {
+    const c = make({
+      abilities: { dex: { score: 14 } }, // +2
       inventory: { items: [{ name: "Piastre", equipped: false, ac: { base: 18, label: "piastre" } }] },
     });
-    expect(derivedArmorClass(c)).toEqual({ value: 10, breakdown: "" });
+    expect(derivedArmorClass(c)).toEqual({ value: 12, breakdown: "no armor" });
   });
 });

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { loadCharacter, maxHitDice, type Character, type Issue } from "../schema";
+import { loadCharacter, maxHitDice, isBodyArmor, type Character, type Issue } from "../schema";
 import { applyAction, getByPath, makeRng, type FormulaChange, type RolledFace } from "../model/formula";
 import { setIn, insertAt, removeAt, type Path } from "../model/edit";
 import { translate, useI18n, type StringKey } from "../i18n/useI18n";
@@ -442,16 +442,31 @@ export const useCharacter = create<CharacterState>((set, get) => {
         },
       })),
 
-    toggleEquipped: (index) =>
-      mutate((c) => ({
-        ...c,
+    toggleEquipped: (index) => {
+      const c = get().character;
+      if (!c) return;
+      const target = c.inventory.items[index];
+      // Only one suit of body armor may be worn at a time: refuse to equip a second one (the
+      // UI also disables the button, so this is the belt-and-suspenders guard). Unequipping and
+      // equipping non-armor / shields are unaffected.
+      if (
+        target &&
+        !target.equipped &&
+        isBodyArmor(target) &&
+        c.inventory.items.some((it, i) => i !== index && it.equipped && isBodyArmor(it))
+      ) {
+        return;
+      }
+      mutate((cur) => ({
+        ...cur,
         inventory: {
-          ...c.inventory,
-          items: c.inventory.items.map((it, i) =>
+          ...cur.inventory,
+          items: cur.inventory.items.map((it, i) =>
             i === index ? { ...it, equipped: !it.equipped } : it,
           ),
         },
-      })),
+      }));
+    },
 
     setCurrency: (code, value) =>
       mutate((c) => ({

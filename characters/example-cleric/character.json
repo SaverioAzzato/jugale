@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "2.1.0",
+  "schemaVersion": "2.2.0",
   "meta": {
     "name": "Example Cleric",
     "summary": "Hill Dwarf Cleric (Life Domain) — prepared caster, multiple slot levels, Channel Divinity.",
@@ -81,7 +81,6 @@
     ]
   },
   "combat": {
-    "armorClass": 18,
     "speed": {
       "walk": 25
     },
@@ -251,10 +250,34 @@
         "equipped": true
       },
       {
+        "id": "chain-mail",
+        "name": "Chain mail",
+        "category": "armor",
+        "quantity": 1,
+        "equipped": true,
+        "weight": 55,
+        "ac": {
+          "base": 16,
+          "addDex": false,
+          "dexCap": null,
+          "bonus": 0,
+          "label": "chain mail"
+        }
+      },
+      {
         "id": "shield",
         "name": "Shield",
+        "category": "armor",
         "quantity": 1,
-        "equipped": true
+        "equipped": true,
+        "weight": 6,
+        "ac": {
+          "base": null,
+          "addDex": false,
+          "dexCap": null,
+          "bonus": 2,
+          "label": "shield"
+        }
       },
       {
         "id": "holy-symbol",

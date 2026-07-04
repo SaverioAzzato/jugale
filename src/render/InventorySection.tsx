@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Character, Item } from "../schema";
+import { isBodyArmor, type Character, type Item } from "../schema";
 import { Panel, WikiLink } from "./primitives";
 import { Stepper } from "./controls";
 import {
@@ -56,11 +56,25 @@ function acNote(it: Item): string | null {
   return parts.join(" · ") || null;
 }
 
-function ItemRow({ entry, t, units }: { entry: Indexed; t: TFn; units: UnitSystem }) {
+function ItemRow({
+  entry,
+  t,
+  units,
+  armorEquipped,
+}: {
+  entry: Indexed;
+  t: TFn;
+  units: UnitSystem;
+  /** True when some body-armor item is already equipped (used to lock a second armor's Equip). */
+  armorEquipped: boolean;
+}) {
   const setItemQuantity = useCharacter((s) => s.setItemQuantity);
   const toggleEquipped = useCharacter((s) => s.toggleEquipped);
   const { it, index } = entry;
   const ac = acNote(it);
+  // Only one suit of body armor at a time: block equipping a second one (unequip the current
+  // one first). Shields/rings (bonus-only) and unequipping are never blocked.
+  const equipBlocked = !it.equipped && isBodyArmor(it) && armorEquipped;
 
   return (
     <li className="inv-item">
@@ -86,6 +100,8 @@ function ItemRow({ entry, t, units }: { entry: Indexed; t: TFn; units: UnitSyste
           type="button"
           className={it.equipped ? "btn inv-equip is-on" : "btn inv-equip"}
           onClick={() => toggleEquipped(index)}
+          disabled={equipBlocked}
+          title={equipBlocked ? t("inv.armorLocked") : undefined}
         >
           {it.equipped ? t("inv.unequip") : t("inv.equip")}
         </button>
@@ -288,6 +304,8 @@ export function InventorySection({ c }: { c: Character }) {
 
   const equipped = indexed.filter((e) => e.it.equipped);
   const rest = indexed.filter((e) => !e.it.equipped);
+  // One suit of body armor at a time: once one is worn, other armors' Equip buttons lock.
+  const armorEquipped = indexed.some((e) => e.it.equipped && isBodyArmor(e.it));
 
   // Group the non-equipped items by category, ordered.
   const groups = new Map<string, Indexed[]>();
@@ -348,7 +366,7 @@ export function InventorySection({ c }: { c: Character }) {
         <Panel plain title={t("inv.equipped")} id="inventory">
           <ul className="inv-list">
             {equipped.map((e) => (
-              <ItemRow key={e.it.id || e.index} entry={e} t={t} units={units} />
+              <ItemRow key={e.it.id || e.index} entry={e} t={t} units={units} armorEquipped={armorEquipped} />
             ))}
           </ul>
         </Panel>
@@ -359,7 +377,7 @@ export function InventorySection({ c }: { c: Character }) {
         <Panel key={cat} title={categoryLabel(cat, t)}>
           <ul className="inv-list">
             {groups.get(cat)!.map((e) => (
-              <ItemRow key={e.it.id || e.index} entry={e} t={t} units={units} />
+              <ItemRow key={e.it.id || e.index} entry={e} t={t} units={units} armorEquipped={armorEquipped} />
             ))}
           </ul>
         </Panel>

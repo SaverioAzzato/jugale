@@ -82,7 +82,7 @@ Keep them in lockstep:
 2. After merging to `main`, create and push the matching tag **`v<version>`** (e.g. `v1.3.0`). The tag is what triggers `pages.yml` (web deploy) and `release.yml` (native draft).
 3. Publish the drafted GitHub Release once the native assets are attached.
 
-> **Don't confuse this with `schemaVersion`.** `package.json` `version` is the *app* release (the `v1.x` line). The `character.json` contract has its own independent `schemaVersion` (`2.1.0`), documented in [SCHEMA.md](SCHEMA.md) — the two move on separate clocks and need not agree. (The app version started at `2.0.0-dev` during the rewrite, then realigned to the `1.x` release line.)
+> **Don't confuse this with `schemaVersion`.** `package.json` `version` is the *app* release (the `v1.x` line). The `character.json` contract has its own independent `schemaVersion` (`2.2.0`), documented in [SCHEMA.md](SCHEMA.md) — the two move on separate clocks and need not agree. (The app version started at `2.0.0-dev` during the rewrite, then realigned to the `1.x` release line.)
 
 ## "ticket → PR", three ways
 

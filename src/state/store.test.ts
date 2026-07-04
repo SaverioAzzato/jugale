@@ -56,6 +56,32 @@ describe("store — live play mutations", () => {
     expect(c().inventory.currencies.gp).toBe(0);
   });
 
+  it("allows only one suit of body armor equipped at a time", () => {
+    useCharacter.getState().loadRaw(
+      {
+        meta: { name: "Armored" },
+        inventory: {
+          items: [
+            { id: "chain", name: "Chain mail", equippable: true, equipped: true, ac: { base: 16 } },
+            { id: "plate", name: "Plate", equippable: true, equipped: false, ac: { base: 18 } },
+            { id: "shield", name: "Shield", equippable: true, equipped: false, ac: { bonus: 2 } },
+          ],
+        },
+      },
+      "test",
+    );
+    // Plate can't be equipped while the chain mail is worn.
+    useCharacter.getState().toggleEquipped(1);
+    expect(c().inventory.items[1].equipped).toBe(false);
+    // A bonus-only shield is not body armor → still equippable.
+    useCharacter.getState().toggleEquipped(2);
+    expect(c().inventory.items[2].equipped).toBe(true);
+    // Unequip the chain mail first, then the plate goes on.
+    useCharacter.getState().toggleEquipped(0);
+    useCharacter.getState().toggleEquipped(1);
+    expect(c().inventory.items[1].equipped).toBe(true);
+  });
+
   it("marks the character dirty after an edit", () => {
     expect(useCharacter.getState().dirty).toBe(false);
     useCharacter.getState().heal(1);

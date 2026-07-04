@@ -10,7 +10,7 @@ import { z } from "zod";
  *   (see derive.ts), with optional `*Override` escape hatches for homebrew.
  */
 
-export const SCHEMA_VERSION = "2.1.0";
+export const SCHEMA_VERSION = "2.2.0";
 
 const link = z.string().nullable().optional();
 const strings = z.array(z.string()).default([]);
@@ -172,9 +172,19 @@ const Attack = z
 
 const Combat = z
   .object({
-    armorClass: z.number().int().default(10),
-    // Manual AC that wins over any armor-derived value (see derive.ts → derivedArmorClass).
-    armorClassOverride: z.number().int().nullable().default(null),
+    // Manual AC that wins over everything else. AC precedence (see derive.ts → derivedArmorClass):
+    // this override if set, else the sum of equipped items' `ac` contributions, else a default of
+    // 10 + Dex modifier (unarmored). Model armor/shields as items with an `ac` object; use this
+    // override only for AC that comes from no item (e.g. Unarmored Defense).
+    armorClassOverride: z
+      .number()
+      .int()
+      .nullable()
+      .default(null)
+      .describe(
+        "Manual Armor Class that overrides everything. Leave null to derive AC: sum of equipped " +
+          "items' `ac` contributions, or 10 + Dex modifier (unarmored) when no item declares one.",
+      ),
     initiativeOverride: z.number().int().nullable().default(null),
     speed: z.object({ walk: z.number().default(30) }).passthrough().default({}),
     hp: Hp,

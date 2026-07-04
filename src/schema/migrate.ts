@@ -48,6 +48,7 @@ export function migrateToCurrent(data: Json): Json {
   let out = data;
   if (schemaMajor(out) < 2) out = migrateV1toV2(out);
   if (ltTriple(versionTriple(out), parseTriple("2.1.0"))) out = migrateV2_0toV2_1(out);
+  if (ltTriple(versionTriple(out), parseTriple("2.2.0"))) out = migrateV2_1toV2_2(out);
   return out;
 }
 
@@ -354,7 +355,8 @@ function migrateSpellEntry(e: Json): Json {
 }
 
 function migrateV2_0toV2_1(v2: Json): Json {
-  const out: Json = { ...v2, schemaVersion: SCHEMA_VERSION };
+  // Stamp the step's own target (not SCHEMA_VERSION) so the chain still runs the next steps.
+  const out: Json = { ...v2, schemaVersion: "2.1.0" };
   if (Array.isArray(v2.spellSections)) {
     out.spellSections = v2.spellSections.map((s: Json) =>
       s && typeof s === "object" && Array.isArray(s.entries)
@@ -362,5 +364,34 @@ function migrateV2_0toV2_1(v2: Json): Json {
         : s,
     );
   }
+  return out;
+}
+
+/**
+ * 2.1.0 → 2.2.0: `combat.armorClass` (a flat, hand-set AC fallback) is removed. AC now comes from
+ * `combat.armorClassOverride` (manual, wins), else equipped items' `ac`, else 10 + Dex (unarmored).
+ * Lossless on the *effective* AC: `armorClass` was already ignored whenever an override or any
+ * equipped `ac` item was present, so we only preserve it (into `armorClassOverride`) when it was
+ * actually the shown value — i.e. no override and no `ac` item — and even then only if it differs
+ * from the new default of 10 (a bare 10 == the default, so no override is needed).
+ */
+function migrateV2_1toV2_2(v2: Json): Json {
+  const out: Json = { ...v2, schemaVersion: SCHEMA_VERSION };
+  const combat = out.combat;
+  if (combat == null || typeof combat !== "object") return out;
+
+  const nextCombat: Json = { ...combat };
+  const legacy = nextCombat.armorClass;
+  delete nextCombat.armorClass;
+
+  const hasOverride = nextCombat.armorClassOverride != null;
+  const items: Json[] = Array.isArray(out.inventory?.items) ? out.inventory.items : [];
+  const hasAcItem = items.some((it) => it?.equipped && it?.ac != null);
+
+  if (!hasOverride && !hasAcItem && typeof legacy === "number" && legacy !== 10) {
+    nextCombat.armorClassOverride = legacy; // this flat value was the effective AC — preserve it
+  }
+
+  out.combat = nextCombat;
   return out;
 }

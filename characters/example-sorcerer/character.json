@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "2.1.0",
+  "schemaVersion": "2.2.0",
   "meta": {
     "name": "Example Sorcerer",
     "summary": "Tiefling Sorcerer (Draconic Bloodline) — sorcery-points caster + metamagic.",
@@ -79,7 +79,7 @@
     ]
   },
   "combat": {
-    "armorClass": 13,
+    "armorClassOverride": 13,
     "speed": {
       "walk": 30
     },

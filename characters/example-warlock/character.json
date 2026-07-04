@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "2.1.0",
+  "schemaVersion": "2.2.0",
   "meta": {
     "name": "Example Warlock",
     "player": "To fill in",
@@ -96,7 +96,6 @@
     "conditionImmunities": []
   },
   "combat": {
-    "armorClass": 13,
     "speed": {
       "walk": 30
     },

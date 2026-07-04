@@ -1,5 +1,6 @@
 import { CharacterSchema, type Character } from "./character";
 import { migrateToCurrent, needsMigration } from "./migrate";
+import { isBodyArmor } from "./derive";
 
 export type Severity = "error" | "warning";
 
@@ -15,7 +16,8 @@ export type IssueCode =
   | "resourceOverspent"
   | "hpExceedsMax"
   | "spellMaterialMissing"
-  | "spellRitualNoDuration";
+  | "spellRitualNoDuration"
+  | "multipleBodyArmor";
 
 export interface Issue {
   path: string;
@@ -102,6 +104,19 @@ export function ruleChecks(c: Character): Issue[] {
         params: { label: r.label || r.id, current: r.current, max: r.max },
       });
     }
+  }
+
+  // AC: only one suit of body armor can be worn at a time (bases don't stack; shields are a
+  // separate bonus). We still render a summed AC, but flag the illegal setup so it's visible.
+  const bodyArmor = c.inventory.items.filter((it) => it.equipped && isBodyArmor(it));
+  if (bodyArmor.length > 1) {
+    issues.push({
+      path: "inventory.items",
+      message: `${bodyArmor.length} body-armor items are equipped at once; only one may be worn`,
+      severity: "warning",
+      code: "multipleBodyArmor",
+      params: { count: bodyArmor.length },
+    });
   }
 
   if (c.combat.hp.max > 0 && c.combat.hp.current > c.combat.hp.max + c.combat.hp.temp) {

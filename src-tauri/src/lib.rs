@@ -13,6 +13,12 @@ pub fn run() {
     #[cfg(target_os = "android")]
     let builder = builder.plugin(tauri_plugin_android_fs::init());
 
+    // The Android update check calls the GitHub API through this HTTP plugin (from Rust) instead
+    // of the webview's `fetch`, which is unreliable there. Desktop uses the native updater below,
+    // so this is Android-only. See src/update/useUpdate.ts.
+    #[cfg(target_os = "android")]
+    let builder = builder.plugin(tauri_plugin_http::init());
+
     // Self-update from GitHub Releases (signed `latest.json`). Desktop only — Tauri's updater
     // doesn't support mobile, so Android uses an in-app "new version" check instead (see
     // src/update/). `process` provides relaunch after an update installs.

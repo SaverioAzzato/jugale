@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import type { Character } from "../schema";
 import { abilityModifierFor, derivedArmorClass, maxHitDice } from "../schema";
 import { Panel, fmtMod } from "./primitives";
@@ -28,36 +28,19 @@ function HpControl({ c }: { c: Character }) {
   const setTempHp = useCharacter((s) => s.setTempHp);
   const adjustHitDice = useCharacter((s) => s.adjustHitDice);
   const maxHd = maxHitDice(c);
-  const damagePressed = useRef(false);
-  const healPressed = useRef(false);
   const pct = hp.max > 0 ? Math.round((hp.current / hp.max) * 100) : 0;
 
-  // Damage/Heal apply 1 per activation, but hold-to-repeat ramps it up for bigger hits.
+  // Damage/Heal apply 1 per activation, but hold-to-repeat ramps it up for bigger hits. Pointer
+  // events fire once per interaction (mouse/touch/pen), so a single mobile tap no longer applies
+  // the change twice (the old touch + synthesized-mouse pair double-fired). Keyboard activation
+  // runs on a detail-0 click.
   const holdDamage = useHoldRepeat(() => damage(1));
   const holdHeal = useHoldRepeat(() => heal(1));
 
-  const clearPressedSoon = (ref: { current: boolean }) => {
-    setTimeout(() => {
-      ref.current = false;
-    }, 0);
-  };
-
-  const startDamage = () => {
-    damagePressed.current = true;
-    holdDamage.start();
-  };
-  const stopDamage = () => {
-    holdDamage.stop();
-    clearPressedSoon(damagePressed);
-  };
-
-  const startHeal = () => {
-    healPressed.current = true;
-    holdHeal.start();
-  };
-  const stopHeal = () => {
-    holdHeal.stop();
-    clearPressedSoon(healPressed);
+  const keyActivate = (hold: ReturnType<typeof useHoldRepeat>) => (e: { detail: number }) => {
+    if (e.detail !== 0) return; // a pointer tap already applied it on pointerdown
+    hold.start();
+    hold.stop();
   };
 
   return (
@@ -78,42 +61,22 @@ function HpControl({ c }: { c: Character }) {
         <button
           type="button"
           className="btn btn-danger"
-          onClick={() => {
-            if (damagePressed.current) {
-              damagePressed.current = false;
-              return;
-            }
-            damage(1);
-          }}
-          onMouseDown={startDamage}
-          onMouseUp={stopDamage}
-          onMouseLeave={stopDamage}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            startDamage();
-          }}
-          onTouchEnd={stopDamage}
+          onPointerDown={holdDamage.start}
+          onPointerUp={holdDamage.stop}
+          onPointerLeave={holdDamage.stop}
+          onPointerCancel={holdDamage.stop}
+          onClick={keyActivate(holdDamage)}
         >
           {t("vitals.damage")}
         </button>
         <button
           type="button"
           className="btn btn-heal"
-          onClick={() => {
-            if (healPressed.current) {
-              healPressed.current = false;
-              return;
-            }
-            heal(1);
-          }}
-          onMouseDown={startHeal}
-          onMouseUp={stopHeal}
-          onMouseLeave={stopHeal}
-          onTouchStart={(e) => {
-            e.preventDefault();
-            startHeal();
-          }}
-          onTouchEnd={stopHeal}
+          onPointerDown={holdHeal.start}
+          onPointerUp={holdHeal.stop}
+          onPointerLeave={holdHeal.stop}
+          onPointerCancel={holdHeal.stop}
+          onClick={keyActivate(holdHeal)}
         >
           {t("vitals.heal")}
         </button>
@@ -164,9 +127,6 @@ function CombatEdit({ c }: { c: Character }) {
           label={t("vitals.hitDice")}
           onChange={(v) => editField(["combat", "hp", "hitDiceRemaining"], v)}
         />
-      </Field>
-      <Field label={t("vitals.acValue")}>
-        <NumberInput value={c.combat.armorClass} label={t("vitals.acValue")} onChange={(v) => editField(["combat", "armorClass"], v)} />
       </Field>
       <Field label={t("vitals.speed")}>
         <NumberInput value={c.combat.speed.walk} min={0} label={t("vitals.speed")} onChange={(v) => editField(["combat", "speed", "walk"], v)} />

@@ -2,6 +2,8 @@ import { THEMES, useTheme, type ThemeId } from "../theme/useTheme";
 import { LOCALES, useI18n, useT, type Locale } from "../i18n/useI18n";
 import { useSettings, type UnitSystem } from "./useSettings";
 import { Panel } from "../render/primitives";
+import { isTauri } from "../storage/tauriProvider";
+import { useUpdate } from "../update/useUpdate";
 
 const TOAST_OPTIONS = [5, 10, 15, 20, 0];
 
@@ -44,6 +46,8 @@ export function SettingsPage() {
   const setToastSeconds = useSettings((s) => s.setToastSeconds);
   const units = useSettings((s) => s.units);
   const setUnits = useSettings((s) => s.setUnits);
+  const checking = useUpdate((s) => s.state.status === "checking");
+  const checkForUpdates = useUpdate((s) => s.check);
 
   return (
     <div className="settings-page">
@@ -85,6 +89,14 @@ export function SettingsPage() {
             <option value="metric">{t("settings.unitsMetric")}</option>
           </select>
         </label>
+        {isTauri() && (
+          <div className="settings-row">
+            <span>{t("update.check")}</span>
+            <button type="button" className="btn" disabled={checking} onClick={() => void checkForUpdates(true)}>
+              {t("update.check")}
+            </button>
+          </div>
+        )}
       </Panel>
     </div>
   );

@@ -31,3 +31,6 @@ tauri-plugin-opener = "2.5.4"
 
 [target.'cfg(target_os = "android")'.dependencies]
 tauri-plugin-android-fs = "=28.2.2"
+# The update check hits the GitHub API from Rust (not the webview's fetch, which is unreliable on
+# Android). Desktop uses the native updater plugin instead, so this is Android-only.
+tauri-plugin-http = "2"

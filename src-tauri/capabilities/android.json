@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/mobile-schema.json",
-  "identifier": "android-fs",
-  "description": "SAF file access for Android (tauri-plugin-android-fs). Android-only: the plugin crate is target-gated in Cargo.toml, so this capability must not apply on desktop. NOTE: the plugin's `android-fs:default` set is `all-without-delete`, which deliberately EXCLUDES every write command — relying on it made live save silently fail (read-only fallback). So we grant the exact least-privilege set the provider uses, writes included.",
+  "identifier": "android-mobile",
+  "description": "Android-only capabilities (target-gated in Cargo.toml, must not apply on desktop). (1) SAF file access (tauri-plugin-android-fs): the plugin's `android-fs:default` set is `all-without-delete`, which deliberately EXCLUDES every write command — relying on it made live save silently fail (read-only fallback), so we grant the exact least-privilege set the provider uses, writes included. (2) HTTP to the GitHub API for the in-app update check, scoped to api.github.com (desktop uses the native updater instead).",
   "platforms": ["android"],
   "windows": ["main"],
   "permissions": [
@@ -14,6 +14,10 @@
     "android-fs:allow-get-name",
     "android-fs:allow-persist-picker-uri-permission",
     "android-fs:allow-check-persisted-picker-uri-permission",
-    "android-fs:allow-write-text-file"
+    "android-fs:allow-write-text-file",
+    {
+      "identifier": "http:default",
+      "allow": [{ "url": "https://api.github.com/*" }]
+    }
   ]
 }

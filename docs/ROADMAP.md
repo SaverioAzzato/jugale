@@ -7,7 +7,7 @@ Cross-cutting from day one: every milestone ships with tests, runs through CI, a
 ## M0 — Foundations & spec ✅ done
 - Architecture, schema, prompts, automation docs (`docs/`).
 - Repo scaffolding: Vite + React + TypeScript, Vitest.
-- Formal **JSON Schema** (via Zod) + the `schemaVersion` migration chain (`1.0.0 → 2.0.0 → 2.1.0`).
+- Formal **JSON Schema** (via Zod) + the `schemaVersion` migration chain (`1.0.0 → 2.0.0 → 2.1.0 → 2.2.0`).
 - `StorageProvider` interface (browser File System Access; Tauri lands in M4).
 - CI skeleton (PR checks) + a documented "ticket → PR" automation path.
 - **Deliverable:** an app that loads, migrates, and validates any character — sheet still minimal.
@@ -41,7 +41,7 @@ The 4 prompts (base / create / level-up / validate) — shipped in [`src/prompts
 - **Licensing & liability clauses baked into the prompt text itself:** the user must only reference source material they hold the rights/license to use, and must respect that material's license terms and any usage policy, using it responsibly and legally; the assistant should flag ambiguous or likely non-free sources; the app and its maintainers are not responsible for a user's misuse of copyrighted material.
 - **Concrete non-SRD examples are illustrative and README-only.** If we want to show "you could point this at Xanathar's if you own it," that sentence lives in the README as a labeled example — never inside the shipped prompt text, the schema defaults, or the agent seed files.
 - **Teach the data-encoding conventions the renderer relies on.** The UI is a dumb-but-faithful renderer: it never computes rules itself, so the prompts must instruct the GPT to encode the inputs the renderer sums/derives. Concretely:
-  - **AC** — armor and shields each encode their own AC contribution *on the item* (base + Dex handling + bonus/malus); the app sums equipped contributions and shows a provenance note (e.g. `cuoio 11 + des 3`, `no arm` for Monk, `ombra` for a Warlock's shadow armor); a manual `combat.armorClass` override always wins.
+  - **AC** — armor and shields each encode their own AC contribution *on the item* (base + Dex handling + bonus/malus); the app sums equipped contributions and shows a provenance note (e.g. `cuoio 11 + des 3`, `no armor` unarmored, `ombra` for a Warlock's shadow armor); a manual `combat.armorClassOverride` always wins, and with no items and no override the default is 10 + Dex.
   - **Attacks** — weapon attack profiles live on the inventory item; `combat.attacks[]` is for **physical/innate non-spell** attacks only (never spells — those go in `spellSections`, or they'd show twice).
   - **Features** — class/subclass options (invocations, metamagic, maneuvers, fighting styles) go in `features[]` (so they land in the Attributi tab), **not** in `customSections[]`.
   - **Resources & rests** — `resetOn` per resource drives what rest buttons restore.

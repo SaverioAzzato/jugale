@@ -12,6 +12,7 @@ const MESSAGE_KEY: Partial<
     | "issues.hpExceedsMax"
     | "issues.spellMaterialMissing"
     | "issues.spellRitualNoDuration"
+    | "issues.multipleBodyArmor"
   >
 > = {
   levelExceeds20: "issues.levelExceeds20",
@@ -20,6 +21,7 @@ const MESSAGE_KEY: Partial<
   hpExceedsMax: "issues.hpExceedsMax",
   spellMaterialMissing: "issues.spellMaterialMissing",
   spellRitualNoDuration: "issues.spellRitualNoDuration",
+  multipleBodyArmor: "issues.multipleBodyArmor",
 };
 
 /** Localized issue text. Known codes interpolate a translated template; raw schema errors

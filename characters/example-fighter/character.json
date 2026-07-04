@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "2.1.0",
+  "schemaVersion": "2.2.0",
   "meta": {
     "name": "Example Fighter",
     "summary": "Human Fighter (Champion) — no spells, exercises the engine's generality on a non-caster.",
@@ -74,7 +74,6 @@
     ]
   },
   "combat": {
-    "armorClass": 18,
     "speed": {
       "walk": 30
     },
@@ -170,6 +169,21 @@
         "quantity": 1,
         "equipped": true,
         "weight": 6
+      },
+      {
+        "id": "plate-armor",
+        "name": "Plate armor",
+        "category": "armor",
+        "quantity": 1,
+        "equipped": true,
+        "weight": 65,
+        "ac": {
+          "base": 18,
+          "addDex": false,
+          "dexCap": null,
+          "bonus": 0,
+          "label": "plate"
+        }
       },
       {
         "id": "rations",

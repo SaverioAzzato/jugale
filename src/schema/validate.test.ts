@@ -13,7 +13,7 @@ describe("loadCharacter", () => {
     const { character } = loadCharacter({ meta: { name: "Tav" } });
     expect(character.abilities.str.score).toBe(10);
     expect(character.inventory.currencies.gp).toBe(0);
-    expect(character.combat.armorClass).toBe(10);
+    expect(character.combat.armorClassOverride).toBeNull();
     expect(character.senses).toEqual([]);
     expect(character.defenses).toEqual({
       resistances: [],
@@ -67,6 +67,36 @@ describe("loadCharacter", () => {
     expect(issue?.severity).toBe("warning");
     expect(issue?.code).toBe("resourceOverspent");
     expect(issue?.params).toEqual({ label: "Ki", current: 5, max: 3 });
+  });
+
+  it("warns when more than one body-armor item is equipped (bases don't stack)", () => {
+    const result = loadCharacter({
+      meta: { name: "Tav" },
+      inventory: {
+        items: [
+          { name: "Leather", equipped: true, ac: { base: 11, addDex: true } },
+          { name: "Plate", equipped: true, ac: { base: 18 } },
+          { name: "Shield", equipped: true, ac: { bonus: 2 } }, // a bonus-only item must NOT count
+        ],
+      },
+    });
+    expect(result.ok).toBe(true);
+    const issue = result.issues.find((i) => i.code === "multipleBodyArmor");
+    expect(issue?.severity).toBe("warning");
+    expect(issue?.params).toEqual({ count: 2 });
+  });
+
+  it("does not warn about body armor for a single suit plus a shield", () => {
+    const result = loadCharacter({
+      meta: { name: "Tav" },
+      inventory: {
+        items: [
+          { name: "Chain mail", equipped: true, ac: { base: 16 } },
+          { name: "Shield", equipped: true, ac: { bonus: 2 } },
+        ],
+      },
+    });
+    expect(result.issues.some((i) => i.code === "multipleBodyArmor")).toBe(false);
   });
 
   it("warns on a proficiency bonus override that disagrees with level", () => {
