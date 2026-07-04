@@ -248,11 +248,6 @@ function downloadText(text: string, filename: string, mime = "application/json")
   URL.revokeObjectURL(url);
 }
 
-/** Fallback save or manual backup: download an object as a pretty-printed JSON file. */
-export function exportJson(data: unknown, filename: string): void {
-  downloadText(JSON.stringify(data, null, 2), filename);
-}
-
 /** A window that may expose the File System Access save picker (Chromium today). */
 type SaveWindow = Window & {
   showSaveFilePicker?: (opts?: unknown) => Promise<FileSystemFileHandle>;
@@ -271,7 +266,7 @@ export function isSavePickerSupported(): boolean {
  * downloads location without telling us where (`picked: false`). Returns null if the user
  * dismisses the save picker.
  */
-export async function saveCharacterAsWeb(
+export async function saveJsonAsWeb(
   json: string,
   defaultName: string,
 ): Promise<{ name: string; picked: boolean } | null> {

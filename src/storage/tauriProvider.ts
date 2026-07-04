@@ -108,7 +108,7 @@ export async function openCharacterFolderTauri(): Promise<{
  * returns its absolute path, or null if the user cancelled. This is an export (a one-shot copy),
  * independent of any bound source — it never rebinds live-sync.
  */
-export async function saveCharacterAsTauri(json: string, defaultName: string): Promise<string | null> {
+export async function saveJsonAsTauri(json: string, defaultName: string): Promise<string | null> {
   const path = await saveDialog({
     defaultPath: defaultName,
     filters: [{ name: "character.json", extensions: ["json"] }],

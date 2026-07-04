@@ -10,6 +10,7 @@ describe("composePrompt", () => {
     expect(text).toContain("Sources in scope");
     expect(text).toContain("- SRD");
     expect(text).toContain("How to edit character.json");
+    expect(text).toContain("Retrieve rules; don't lean on memory"); // grounding over recall
     // base carries no task-specific section
     expect(text).not.toContain("Task: create");
   });
