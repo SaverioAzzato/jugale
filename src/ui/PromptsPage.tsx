@@ -14,7 +14,8 @@ import {
 } from "../prompts/prompts";
 import { usePromptSegments } from "./usePromptSegments";
 import { characterJsonSchema } from "../schema/jsonSchema";
-import { exportJson } from "../storage/provider";
+import { saveJsonAs } from "../storage/exporter";
+import { notifySaveOutcome } from "./saveToast";
 import { useToast } from "./useToast";
 
 /** Book icon button — opens the full Prompts page (App owns the open/close state). */
@@ -319,7 +320,7 @@ export function PromptsPage() {
           <button
             type="button"
             className="btn"
-            onClick={() => exportJson(characterJsonSchema, "character.schema.json")}
+            onClick={async () => notifySaveOutcome(await saveJsonAs(characterJsonSchema, "character.schema.json"))}
           >
             {t("prompts.downloadSchema")}
           </button>

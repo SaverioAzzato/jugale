@@ -6,7 +6,8 @@ import { translate, useI18n, type StringKey } from "../i18n/useI18n";
 import { useToast } from "../ui/useToast";
 import { useDice } from "../ui/useDice";
 import { type GalleryImage, type StorageProvider } from "../storage/provider";
-import { saveCharacterAs } from "../storage/exporter";
+import { saveJsonAs } from "../storage/exporter";
+import { notifySaveOutcome } from "../ui/saveToast";
 
 const FIELD_LABEL: Record<string, StringKey> = {
   "combat.hp.current": "vitals.hp",
@@ -320,19 +321,8 @@ export const useCharacter = create<CharacterState>((set, get) => {
     exportCharacter: async () => {
       const { character } = get();
       if (!character) return;
-      const outcome = await saveCharacterAs(character, `${slug(character.meta.name)}.json`);
-      const locale = useI18n.getState().locale;
-      const push = useToast.getState().push;
-      if (outcome.status === "cancelled") return; // user backed out of the picker — say nothing
-      if (outcome.status === "error") {
-        push("error", translate(locale, "toast.exportFailed"), outcome.message);
-        return;
-      }
-      // Success: confirm, and name the destination where the host can (path on desktop, filename
-      // on Android/Chromium; a plain "check downloads" where the browser hides it).
-      const detail = outcome.kind === "download" ? translate(locale, "toast.checkDownloads") : outcome.location;
-      push("success", translate(locale, "toast.exported"), detail);
-      set({ dirty: false });
+      const outcome = await saveJsonAs(character, `${slug(character.meta.name)}.json`);
+      if (notifySaveOutcome(outcome)) set({ dirty: false }); // clear dirty only on a real write
     },
 
     clear: () => {

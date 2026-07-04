@@ -60,7 +60,7 @@ import {
   openCharacterFolderAndroid,
   openCharacterFileAndroid,
   reopenAndroid,
-  saveCharacterAsAndroid,
+  saveJsonAsAndroid,
 } from "./androidProvider";
 
 beforeEach(() => {
@@ -130,9 +130,9 @@ describe("reopenAndroid", () => {
   });
 });
 
-describe("saveCharacterAsAndroid (export)", () => {
+describe("saveJsonAsAndroid (export)", () => {
   it("writes the JSON to the picked URI and returns its display name", async () => {
-    const name = await saveCharacterAsAndroid('{"a":1}', "hero.json");
+    const name = await saveJsonAsAndroid('{"a":1}', "hero.json");
     expect(savepicker).toHaveBeenCalledWith("hero.json", "application/json");
     expect(writeText).toHaveBeenCalledWith(SAVE_URI, '{"a":1}');
     expect(name).toBe("export.json"); // display name, not a filesystem path (Android has none)
@@ -140,7 +140,7 @@ describe("saveCharacterAsAndroid (export)", () => {
 
   it("returns null (cancelled) without writing when the user dismisses the saver", async () => {
     savepicker.mockResolvedValueOnce(null);
-    const name = await saveCharacterAsAndroid('{"a":1}', "hero.json");
+    const name = await saveJsonAsAndroid('{"a":1}', "hero.json");
     expect(name).toBeNull();
     expect(writeText).not.toHaveBeenCalled();
   });
