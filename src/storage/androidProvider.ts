@@ -159,8 +159,12 @@ export async function openCharacterFolderAndroid(): Promise<{
  * returns its display name, or null if the user cancelled. Android has no user-facing file paths,
  * so a display name is the most we can report. This is an export, independent of any bound source.
  */
-export async function saveJsonAsAndroid(json: string, defaultName: string): Promise<string | null> {
-  const uri = await AndroidFs.showSaveFilePicker(defaultName, "application/json");
+export async function saveJsonAsAndroid(
+  json: string,
+  defaultName: string,
+  mime = "application/json",
+): Promise<string | null> {
+  const uri = await AndroidFs.showSaveFilePicker(defaultName, mime);
   if (!uri) return null;
   await AndroidFs.writeTextFile(uri, json);
   return await AndroidFs.getName(uri).catch(() => defaultName);

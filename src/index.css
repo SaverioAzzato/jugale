@@ -252,6 +252,17 @@ a {
   color: var(--muted);
   line-height: 1.5;
 }
+.prompts-section-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.prompts-migrate-section {
+  margin-top: 30px;
+  padding-top: 22px;
+  border-top: 2px solid var(--border);
+}
 .prompts-params {
   margin-bottom: 18px;
   padding: 14px;

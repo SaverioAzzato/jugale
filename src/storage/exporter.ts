@@ -24,22 +24,36 @@ export type ExportOutcome =
   | { status: "cancelled" }
   | { status: "error"; message: string };
 
-/** Serialize + save a copy of `data` to a user-chosen destination, dispatching per host. */
-export async function saveJsonAs(data: unknown, defaultName: string): Promise<ExportOutcome> {
-  const json = JSON.stringify(data, null, 2);
+/** Save an already-serialized string to a user-chosen destination, dispatching per host. The
+ *  `mime` steers the host's save picker (extension/filter); the filename carries the extension. */
+async function saveStringAs(content: string, defaultName: string, mime: string): Promise<ExportOutcome> {
   try {
     if (isAndroid()) {
-      const name = await saveJsonAsAndroid(json, defaultName);
+      const name = await saveJsonAsAndroid(content, defaultName, mime);
       return name === null ? { status: "cancelled" } : { status: "saved", kind: "name", location: name };
     }
     if (isTauri()) {
-      const path = await saveJsonAsTauri(json, defaultName);
+      const path = await saveJsonAsTauri(content, defaultName);
       return path === null ? { status: "cancelled" } : { status: "saved", kind: "path", location: path };
     }
-    const res = await saveJsonAsWeb(json, defaultName);
+    const res = await saveJsonAsWeb(content, defaultName, mime);
     if (res === null) return { status: "cancelled" };
     return { status: "saved", kind: res.picked ? "name" : "download", location: res.name };
   } catch (e) {
     return { status: "error", message: e instanceof Error ? e.message : String(e) };
   }
+}
+
+/** Serialize + save a copy of `data` (a character, or the JSON Schema) to a user-chosen destination. */
+export async function saveJsonAs(data: unknown, defaultName: string): Promise<ExportOutcome> {
+  return saveStringAs(JSON.stringify(data, null, 2), defaultName, "application/json");
+}
+
+/** Save a plain-text/Markdown document (e.g. the schema changelog) to a user-chosen destination. */
+export async function saveTextAs(
+  text: string,
+  defaultName: string,
+  mime = "text/markdown",
+): Promise<ExportOutcome> {
+  return saveStringAs(text, defaultName, mime);
 }

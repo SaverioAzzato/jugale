@@ -269,14 +269,16 @@ export function isSavePickerSupported(): boolean {
 export async function saveJsonAsWeb(
   json: string,
   defaultName: string,
+  mime = "application/json",
 ): Promise<{ name: string; picked: boolean } | null> {
+  const ext = "." + (defaultName.split(".").pop() || "json");
   const picker = (window as SaveWindow).showSaveFilePicker;
   if (picker) {
     let handle: FileSystemFileHandle;
     try {
       handle = await picker({
         suggestedName: defaultName,
-        types: [{ description: "character.json", accept: { "application/json": [".json"] } }],
+        types: [{ description: defaultName, accept: { [mime]: [ext] } }],
       });
     } catch {
       return null; // user dismissed the Save picker (AbortError)
@@ -286,7 +288,7 @@ export async function saveJsonAsWeb(
     await writable.close();
     return { name: handle.name, picked: true };
   }
-  downloadText(json, defaultName);
+  downloadText(json, defaultName, mime);
   return { name: defaultName, picked: false };
 }
 

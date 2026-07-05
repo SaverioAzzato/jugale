@@ -109,9 +109,10 @@ export async function openCharacterFolderTauri(): Promise<{
  * independent of any bound source — it never rebinds live-sync.
  */
 export async function saveJsonAsTauri(json: string, defaultName: string): Promise<string | null> {
+  const ext = defaultName.split(".").pop() || "json";
   const path = await saveDialog({
     defaultPath: defaultName,
-    filters: [{ name: "character.json", extensions: ["json"] }],
+    filters: [{ name: defaultName, extensions: [ext] }],
   });
   if (!path) return null;
   await writeTextFile(path, json);

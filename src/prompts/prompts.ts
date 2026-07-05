@@ -18,7 +18,7 @@ export interface Guide {
 
 export const DEFAULT_GUIDES: Guide[] = [{ name: "SRD" }];
 
-export type PromptTask = "base" | "create" | "level-up" | "validate";
+export type PromptTask = "base" | "create" | "level-up" | "validate" | "migrate";
 
 export interface PromptParams {
   /** Rules guides in scope. Falls back to SRD-only when empty. */
@@ -53,7 +53,9 @@ const BASE_CORE = `You are a D&D 5e expert assistant that helps a user build, pl
 /** How to encode character.json so the dumb-but-faithful renderer shows the right thing. */
 const DATA_CONTRACT = `## How to edit character.json
 The renderer never computes 5e rules itself — it only sums/derives from the inputs you encode. Encode every mechanic precisely:
-- **Armor Class** — give every equipped armor/shield item its own \`ac\` object (\`{ base, addDex, dexCap, bonus, label }\`); the app combines equipped contributions and shows a provenance note. AC precedence: \`combat.armorClassOverride\` (a manual value that always wins) → else the **base** from the single worn body armor (its \`ac.base\` plus Dex per \`addDex\`/\`dexCap\`), or **10 + Dex modifier** when unarmored, → then every equipped item's \`ac.bonus\` (shield, ring…) stacks on top. Only **one** body armor (an item whose \`ac.base\` is set) may be worn at a time; shields/rings are bonus-only and always stack. There is no \`combat.armorClass\` field — never add one. Use \`armorClassOverride\` only for AC that comes from no item (e.g. an item-less class feature like Unarmored Defense; it's a frozen number, so revisit it when the relevant ability changes).
+- **Armor Class** — give every equipped armor/shield item its own \`ac\` object (\`{ base, addDex, dexCap, bonus, label }\`); the app combines equipped contributions and shows a provenance note. AC precedence: \`combat.armorClassOverride\` (a manual value that always wins) → else the **base** from the single worn body armor (its \`ac.base\` plus Dex per \`addDex\`/\`dexCap\`), or **10 + Dex modifier** when unarmored → then every equipped item's \`ac.bonus\` (shield, ring…) stacks on top. Only **one** body armor (an item whose \`ac.base\` is set) may be worn at a time; shields/rings are bonus-only and always stack. There is no \`combat.armorClass\` field — never add one.
+  - **AC that adds a second ability (Unarmored Defense & friends).** For AC like Monk 10 + Dex + Wis or Barbarian 10 + Dex + Con — a second ability modifier on top of the unarmored base — do NOT use \`armorClassOverride\`, which freezes the whole value (Dex included). Instead add a **bonus-only "armor" item, exactly like an extra shield**: an equipped item whose \`ac\` is \`{ base: null, addDex: false, dexCap: null, bonus: <that ability's current modifier>, label: "Unarmored Defense" }\`, with no body armor worn. The live 10 + Dex base stays live and only the second ability is a frozen number — put a note in that item's \`description\` to bump \`bonus\` whenever that ability's modifier changes.
+  - **Pick the encoding by shape:** a fixed base different from 10 (leather, plate, mage armor's 13 + Dex) → an item with \`ac.base\`; an extra ability on top of the unarmored base → a bonus-only \`ac\` item; a truly fixed AC with no ability scaling at all → \`armorClassOverride\`.
 - **Attacks** — a weapon's attack profiles (one-handed/two-handed/thrown/etc.) live on the item at \`inventory.items[].attacks[]\`. Use \`combat.attacks[]\` only for attacks with no item behind them (natural weapons, unarmed strikes, breath weapons). Never put a spell in either place — spells live only in \`spellSections[]\`, or they'll show twice.
 - **Spells** — each spell lives in \`spellSections[]\` (grouped however you like) with structured fields, not free text: \`castingTime\` is an object \`{ type: "action" | "bonus" | "reaction" | "time", value, condition }\` — put the amount in \`value\` for a timed cast ("10 minutes") and the trigger in \`condition\` for a reaction; \`ritual\` is a boolean (when true, fill \`duration\`); \`components\` is \`{ verbal, somatic, material }\` booleans; when \`material\` is true, list each one in \`materials[]\` as \`{ text, cost, consumable }\` — set \`consumable\` for the ones the spell uses up and a \`cost\` (in the campaign's gold unit, else null) for pricey foci (e.g. a 300-gp pearl); keep the dice in \`effect\` and the damage type in \`damageType\`; put upcast scaling in \`higherLevels\`; the single free-text field is \`description\` (there is no separate \`notes\`).
 - **Features** — every class/subclass/race/background/feat feature (invocations, metamagic, maneuvers, fighting styles, non-passive racial traits, etc.) goes in \`features[]\` with the right \`source\`. Never put features in \`customSections[]\` — that's reserved for genuinely freeform content with no other home (table rules, reminders, homebrew tables).
@@ -101,6 +103,20 @@ Review an existing \`character.json\` for problems and propose fixes for confirm
 4. **Report** grouped as **errors** (schema-invalid, breaks rendering) and **warnings** (rules-inconsistent but renders fine) — never call something broken if it's merely unusual homebrew the sources in scope allow.
 5. For each finding, propose the exact JSON change, but only apply it after the user confirms. If everything checks out, say so plainly rather than inventing issues.`;
 
+// Standalone by design: unlike create/level-up/validate, migrate does NOT compose on the base.
+// It's a mechanical, lossless file reshape driven by the changelog — no rules lookup, no guided
+// choices, no sources/focus — so the base's build-a-character role would only add noise (and its
+// "one decision at a time" style actively conflicts). It carries its own self-contained intro.
+const MIGRATE_TASK = `# Migrate a character.json to the current schema
+You are upgrading an existing \`character.json\` to the current schema version. This is a mechanical, **lossless** reshape of a file the user already has — not a rebuild, and it needs no rules lookup or design choices. Use the two attachments provided alongside this prompt: **schema-changelog.md** (what changed at each version, in order) and **character.schema.json** (the exact target shape to validate against). Keep all JSON keys in English exactly as the schema defines them; use the user's language only for your summary.
+
+1. Read the file's \`schemaVersion\` (the start) and the current target version stated at the top of the changelog. If they already match, say so and stop — there is nothing to migrate.
+2. From the changelog, take only the version sections strictly between the start and the target, **in order** (e.g. \`2.0.0 → 2.1.0\`, then \`2.1.0 → 2.2.0\`). Do not skip a step or reorder them.
+3. Apply each section's changes in sequence — add / rename / remove / reshape exactly as described — carrying every other field forward untouched. Never drop data outside the described change; unknown and custom keys are preserved too, and clickable \`link\` properties are kept.
+4. Set \`schemaVersion\` to the target, then check the whole result against \`character.schema.json\` (types, enums, required fields) and fix anything that doesn't validate. Don't hand-write derived values (ability modifiers, proficiency bonus, total level) — the app computes them.
+5. On a large file, work one top-level section at a time — name the section you're on, leave the others exactly as they were, and reassemble at the end — so nothing is truncated.
+6. Summarize what each step changed (a short per-version list) so the user can sanity-check, and flag anything you had to guess.`;
+
 /**
  * The editable building blocks of the prompts. The dynamic "Sources in scope" + "Focus"
  * header is NEVER one of these — it's always generated from the parameters at compose time.
@@ -121,6 +137,7 @@ export const DEFAULT_SEGMENTS: PromptSegments = {
     create: CREATE_TASK,
     "level-up": LEVEL_UP_TASK,
     validate: VALIDATE_TASK,
+    migrate: MIGRATE_TASK,
   },
 };
 
@@ -146,6 +163,9 @@ export function composePrompt(
   params: PromptParams,
   segments: PromptSegments = DEFAULT_SEGMENTS,
 ): string {
+  // Migrate is standalone — it deliberately skips the base (build-a-character role, sources/focus,
+  // licensing disclaimer), which is for building/playing a character, not reshaping a file.
+  if (task === "migrate") return segments.tasks.migrate;
   const prefix = [segments.baseIntro, composeHeader(params), segments.baseContract].join("\n\n");
   if (task === "base") return prefix;
   return `${prefix}\n\n${segments.tasks[task]}`;
@@ -153,7 +173,7 @@ export function composePrompt(
 
 export interface PromptDef {
   id: PromptTask;
-  titleKey: "prompts.base" | "prompts.create" | "prompts.levelUp" | "prompts.validate";
+  titleKey: "prompts.base" | "prompts.create" | "prompts.levelUp" | "prompts.validate" | "prompts.migrate";
 }
 
 export const PROMPTS: PromptDef[] = [
@@ -161,4 +181,5 @@ export const PROMPTS: PromptDef[] = [
   { id: "create", titleKey: "prompts.create" },
   { id: "level-up", titleKey: "prompts.levelUp" },
   { id: "validate", titleKey: "prompts.validate" },
+  { id: "migrate", titleKey: "prompts.migrate" },
 ];
