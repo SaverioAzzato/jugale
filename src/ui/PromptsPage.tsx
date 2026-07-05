@@ -14,7 +14,8 @@ import {
 } from "../prompts/prompts";
 import { usePromptSegments } from "./usePromptSegments";
 import { characterJsonSchema } from "../schema/jsonSchema";
-import { saveJsonAs } from "../storage/exporter";
+import { SCHEMA_CHANGELOG } from "../schema/changelog";
+import { saveJsonAs, saveTextAs } from "../storage/exporter";
 import { notifySaveOutcome } from "./saveToast";
 import { useToast } from "./useToast";
 
@@ -142,7 +143,7 @@ function SegmentEditors({
   params: PromptParams;
 }) {
   const t = useT();
-  const taskIds = ["create", "level-up", "validate"] as const;
+  const taskIds = ["create", "level-up", "validate", "migrate"] as const;
 
   return (
     <>
@@ -177,7 +178,10 @@ function SegmentEditors({
         return (
           <div className="prompt-block" key={id}>
             <h3 className="prompt-edit-label" id={labelId}>
-              {t(def.titleKey)} <span className="muted">— {t("prompts.editTaskHint")}</span>
+              {t(def.titleKey)}{" "}
+              <span className="muted">
+                — {t(id === "migrate" ? "prompts.editTaskHintStandalone" : "prompts.editTaskHint")}
+              </span>
             </h3>
             <textarea
               className="prompt-edit-area"
@@ -189,6 +193,29 @@ function SegmentEditors({
         );
       })}
     </>
+  );
+}
+
+/** The migration workflow — deliberately set apart: it's about upgrading an old file (which
+ *  attachments to download, which standalone prompt to run), not building/playing a character. */
+function MigrateSection({ params, segments }: { params: PromptParams; segments: PromptSegments }) {
+  const t = useT();
+  const migrate = PROMPTS.find((p) => p.id === "migrate")!;
+  return (
+    <section className="prompts-migrate-section">
+      <h3 className="prompts-section-title">{t("prompts.sectionMigrateTitle")}</h3>
+      <p className="prompts-intro">{t("prompts.sectionMigrateIntro")}</p>
+      <div className="prompts-actions">
+        <button
+          type="button"
+          className="btn"
+          onClick={async () => notifySaveOutcome(await saveTextAs(SCHEMA_CHANGELOG, "schema-changelog.md"))}
+        >
+          {t("prompts.downloadChangelog")}
+        </button>
+      </div>
+      <PromptBlock title={t(migrate.titleKey)} text={composePrompt(migrate.id, params, segments)} />
+    </section>
   );
 }
 
@@ -240,6 +267,7 @@ export function PromptsPage() {
         <p className="prompts-banner" role="note">
           {t("prompts.banner")}
         </p>
+        <h3 className="prompts-section-title">{t("prompts.sectionBuildTitle")}</h3>
         <p className="prompts-intro">{t("prompts.intro")}</p>
 
         <div className="prompts-params">
@@ -329,9 +357,12 @@ export function PromptsPage() {
         {editing ? (
           <SegmentEditors draft={draft} setDraft={setDraft} params={params} />
         ) : (
-          PROMPTS.map((p) => (
-            <PromptBlock key={p.id} title={t(p.titleKey)} text={composePrompt(p.id, params, segments)} />
-          ))
+          <>
+            {PROMPTS.filter((p) => p.id !== "migrate").map((p) => (
+              <PromptBlock key={p.id} title={t(p.titleKey)} text={composePrompt(p.id, params, segments)} />
+            ))}
+            <MigrateSection params={params} segments={segments} />
+          </>
         )}
       </Panel>
     </div>

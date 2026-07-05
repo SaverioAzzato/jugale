@@ -6,12 +6,13 @@
 
 ## How the prompts compose
 
-The prompts are not four unrelated blocks — they layer:
+Most prompts layer, but one stands alone:
 
 - **base** = disclaimer + role + interaction style + a **Sources in scope** header (generated from your parameters) + the `character.json` data contract.
 - **create / level-up / validate** = the full base, plus that task's own process, appended after it.
+- **migrate** is the exception — a **standalone** prompt that does *not* carry the base. Migration is a mechanical, lossless reshape of an existing file driven by the downloadable **schema changelog**, with no rules lookup or guided choices, so the build-a-character role would only add noise (and its "one decision at a time" style would fight it). It reads the file's `schemaVersion` and applies each changelog step, in order, up to the current one, validating against `character.schema.json`.
 
-Because every task prompt includes the base, the licensing disclaimer and the data contract **travel with every copied prompt** — there's no separate block you have to remember to paste.
+Because every *build/play* task prompt includes the base, the licensing disclaimer and the data contract **travel with every copied prompt** — there's no separate block you have to remember to paste. In the in-app Prompts page the two workflows are split into a **Create, modify & verify** section (base + create/level-up/validate) and a separate **Migrate an old character** section (the standalone migrate prompt + its changelog download).
 
 ## Parameters (filled in the app, printed into the prompt)
 
@@ -69,7 +70,9 @@ You are a D&D 5e expert assistant that helps a user build, play, and maintain a 
 
 ## How to edit character.json
 The renderer never computes 5e rules itself — it only sums/derives from the inputs you encode. Encode every mechanic precisely:
-- **Armor Class** — give every equipped armor/shield item its own `ac` object (`{ base, addDex, dexCap, bonus, label }`); the app combines equipped contributions and shows a provenance note. AC precedence: `combat.armorClassOverride` (a manual value that always wins) → else the **base** from the single worn body armor (its `ac.base` plus Dex per `addDex`/`dexCap`), or **10 + Dex modifier** when unarmored, → then every equipped item's `ac.bonus` (shield, ring…) stacks on top. Only **one** body armor (an item whose `ac.base` is set) may be worn at a time; shields/rings are bonus-only and always stack. There is no `combat.armorClass` field — never add one. Use `armorClassOverride` only for AC that comes from no item (e.g. an item-less class feature like Unarmored Defense; it's a frozen number, so revisit it when the relevant ability changes).
+- **Armor Class** — give every equipped armor/shield item its own `ac` object (`{ base, addDex, dexCap, bonus, label }`); the app combines equipped contributions and shows a provenance note. AC precedence: `combat.armorClassOverride` (a manual value that always wins) → else the **base** from the single worn body armor (its `ac.base` plus Dex per `addDex`/`dexCap`), or **10 + Dex modifier** when unarmored → then every equipped item's `ac.bonus` (shield, ring…) stacks on top. Only **one** body armor (an item whose `ac.base` is set) may be worn at a time; shields/rings are bonus-only and always stack. There is no `combat.armorClass` field — never add one.
+  - **AC that adds a second ability (Unarmored Defense & friends).** For AC like Monk 10 + Dex + Wis or Barbarian 10 + Dex + Con — a second ability modifier on top of the unarmored base — do NOT use `armorClassOverride`, which freezes the whole value (Dex included). Instead add a **bonus-only "armor" item, exactly like an extra shield**: an equipped item whose `ac` is `{ base: null, addDex: false, dexCap: null, bonus: <that ability's current modifier>, label: "Unarmored Defense" }`, with no body armor worn. The live 10 + Dex base stays live and only the second ability is a frozen number — put a note in that item's `description` to bump `bonus` whenever that ability's modifier changes.
+  - **Pick the encoding by shape:** a fixed base different from 10 (leather, plate, mage armor's 13 + Dex) → an item with `ac.base`; an extra ability on top of the unarmored base → a bonus-only `ac` item; a truly fixed AC with no ability scaling at all → `armorClassOverride`.
 - **Attacks** — a weapon's attack profiles (one-handed/two-handed/thrown/etc.) live on the item at `inventory.items[].attacks[]`. Use `combat.attacks[]` only for attacks with no item behind them (natural weapons, unarmed strikes, breath weapons). Never put a spell in either place — spells live only in `spellSections[]`, or they'll show twice.
 - **Spells** — each spell lives in `spellSections[]` (grouped however you like) with structured fields, not free text: `castingTime` is an object `{ type: "action" | "bonus" | "reaction" | "time", value, condition }` — put the amount in `value` for a timed cast ("10 minutes") and the trigger in `condition` for a reaction; `ritual` is a boolean (when true, fill `duration`); `components` is `{ verbal, somatic, material }` booleans; when `material` is true, list each one in `materials[]` as `{ text, cost, consumable }` — set `consumable` for the ones the spell uses up and a `cost` (in the campaign's gold unit, else null) for pricey foci (e.g. a 300-gp pearl); keep the dice in `effect` and the damage type in `damageType`; put upcast scaling in `higherLevels`; the single free-text field is `description` (there is no separate `notes`).
 - **Features** — every class/subclass/race/background/feat feature (invocations, metamagic, maneuvers, fighting styles, non-passive racial traits, etc.) goes in `features[]` with the right `source`. Never put features in `customSections[]` — that's reserved for genuinely freeform content with no other home (table rules, reminders, homebrew tables).
@@ -132,6 +135,22 @@ Review an existing `character.json` for problems and propose fixes for confirmat
 5. For each finding, propose the exact JSON change, but only apply it after the user confirms. If everything checks out, say so plainly rather than inventing issues.
 ```
 
+## Task: migrate (standalone — not composed on base)
+
+```
+# Migrate a character.json to the current schema
+You are upgrading an existing `character.json` to the current schema version. This is a mechanical, **lossless** reshape of a file the user already has — not a rebuild, and it needs no rules lookup or design choices. Use the two attachments provided alongside this prompt: **schema-changelog.md** (what changed at each version, in order) and **character.schema.json** (the exact target shape to validate against). Keep all JSON keys in English exactly as the schema defines them; use the user's language only for your summary.
+
+1. Read the file's `schemaVersion` (the start) and the current target version stated at the top of the changelog. If they already match, say so and stop — there is nothing to migrate.
+2. From the changelog, take only the version sections strictly between the start and the target, **in order** (e.g. `2.0.0 → 2.1.0`, then `2.1.0 → 2.2.0`). Do not skip a step or reorder them.
+3. Apply each section's changes in sequence — add / rename / remove / reshape exactly as described — carrying every other field forward untouched. Never drop data outside the described change; unknown and custom keys are preserved too, and clickable `link` properties are kept.
+4. Set `schemaVersion` to the target, then check the whole result against `character.schema.json` (types, enums, required fields) and fix anything that doesn't validate. Don't hand-write derived values (ability modifiers, proficiency bonus, total level) — the app computes them.
+5. On a large file, work one top-level section at a time — name the section you're on, leave the others exactly as they were, and reassemble at the end — so nothing is truncated.
+6. Summarize what each step changed (a short per-version list) so the user can sanity-check, and flag anything you had to guess.
+```
+
+The **schema changelog** it relies on is a downloadable Markdown file (**Download schema changelog** on the Prompts page), generated from `SCHEMA_CHANGELOG` in [`src/schema/changelog.ts`](../src/schema/changelog.ts) and mirrored by `docs/SCHEMA.md §4`.
+
 ## Design rules these prompts follow
 
 - **Content & licensing, up front.** Every composed prompt opens with the read-first disclaimer quoted in full above — the same substance shown as a banner at the top of the in-app Prompts page.
@@ -144,4 +163,4 @@ The full machine-readable JSON Schema (generated from the same Zod source as the
 
 ## Source of truth
 
-The prompt blocks quoted above are copied verbatim from the `DISCLAIMER`, `BASE_CORE`, `DATA_CONTRACT`, `CREATE_TASK`, `LEVEL_UP_TASK`, and `VALIDATE_TASK` constants in [`src/prompts/prompts.ts`](../src/prompts/prompts.ts); the banner quote is from `prompts.banner` in [`src/i18n/useI18n.ts`](../src/i18n/useI18n.ts). Both are what the app's Prompts page actually renders. If you change either in code, update this file in the same change — there's no automated check that they stay in sync. For actual use, copy from the in-app page (it composes the parametric header for you) rather than from here.
+The prompt blocks quoted above are copied verbatim from the `DISCLAIMER`, `BASE_CORE`, `DATA_CONTRACT`, `CREATE_TASK`, `LEVEL_UP_TASK`, `VALIDATE_TASK`, and `MIGRATE_TASK` constants in [`src/prompts/prompts.ts`](../src/prompts/prompts.ts) (with `MIGRATE_TASK` used standalone, not composed on the base); the schema changelog it references is `SCHEMA_CHANGELOG` in [`src/schema/changelog.ts`](../src/schema/changelog.ts); the banner quote is from `prompts.banner` in [`src/i18n/useI18n.ts`](../src/i18n/useI18n.ts). Both are what the app's Prompts page actually renders. If you change either in code, update this file in the same change — there's no automated check that they stay in sync. For actual use, copy from the in-app page (it composes the parametric header for you) rather than from here.

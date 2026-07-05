@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { composePrompt, DEFAULT_GUIDES, DEFAULT_SEGMENTS } from "./prompts";
+import { composePrompt, DEFAULT_GUIDES, DEFAULT_SEGMENTS, PROMPTS } from "./prompts";
 
 describe("composePrompt", () => {
   it("base includes the disclaimer, interaction style, the sources, and the data contract", () => {
@@ -20,6 +20,24 @@ describe("composePrompt", () => {
     expect(create).toContain("Content & licensing");
     expect(create).toContain("Task: create a character");
     expect(create).toContain("step by step");
+  });
+
+  it("migrate is a standalone, mechanical prompt (no base) referencing its attachments", () => {
+    expect(PROMPTS.map((p) => p.id)).toContain("migrate");
+    const migrate = composePrompt("migrate", { guides: [{ name: "SRD" }] });
+    expect(migrate).not.toContain("Content & licensing"); // base does NOT travel
+    expect(migrate).not.toContain("Sources in scope");
+    expect(migrate).toContain("Migrate a character.json to the current schema");
+    expect(migrate).toContain("schema-changelog.md");
+    expect(migrate).toContain("character.schema.json");
+    expect(migrate).toContain("in order"); // apply steps in sequence
+  });
+
+  it("base teaches modelling an extra-ability AC bonus as a bonus-only item, not an override", () => {
+    const base = composePrompt("base", { guides: [{ name: "SRD" }] });
+    expect(base).toContain("Unarmored Defense");
+    expect(base).toContain("bonus-only");
+    expect(base).toContain("stays live");
   });
 
   it("falls back to SRD-only when no guides are given", () => {
