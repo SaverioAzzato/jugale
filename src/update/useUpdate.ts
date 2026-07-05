@@ -58,6 +58,24 @@ async function checkDesktop(set: (s: UpdateState) => void, manual: boolean): Pro
   });
 }
 
+/**
+ * A GitHub asset link (`github.com/…/releases/download/…`) 302-redirects to a signed CDN URL
+ * (`objects.githubusercontent.com`). Android's DownloadManager frequently **stalls at the final
+ * chunk** on that redirect — the APK downloads to ~100% and then hangs "as if more is coming".
+ * So we resolve the final CDN URL ourselves first (the HTTP plugin follows redirects and reports
+ * the final `url`) and hand *that* redirect-free link to the browser. A HEAD is enough — we never
+ * pull the APK bytes here — and any failure falls back to the original URL (no regression).
+ */
+async function resolveDownloadUrl(url: string): Promise<string> {
+  try {
+    const { fetch } = await import("@tauri-apps/plugin-http");
+    const res = await fetch(url, { method: "HEAD" });
+    return res.url || url;
+  } catch {
+    return url;
+  }
+}
+
 async function checkAndroid(set: (s: UpdateState) => void, manual: boolean): Promise<void> {
   const { fetch } = await import("@tauri-apps/plugin-http");
   const res = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
@@ -70,16 +88,18 @@ async function checkAndroid(set: (s: UpdateState) => void, manual: boolean): Pro
     if (manual) notify("success", "update.upToDate");
     return;
   }
-  const apk = data.assets?.find((a) => a.name.toLowerCase().endsWith(".apk"));
-  const url = apk?.browser_download_url ?? data.html_url;
-  if (!url) throw new Error("release has no downloadable asset");
+  const apkUrl = data.assets?.find((a) => a.name.toLowerCase().endsWith(".apk"))?.browser_download_url;
+  const fallback = data.html_url; // the release page, if the APK asset can't be found
+  if (!apkUrl && !fallback) throw new Error("release has no downloadable asset");
   set({
     status: "available",
     version: tag,
     kind: "download",
     apply: async () => {
       const { openUrl } = await import("@tauri-apps/plugin-opener");
-      await openUrl(url);
+      // For the direct APK link, sidestep the redirect that stalls Android's downloader.
+      const target = apkUrl ? await resolveDownloadUrl(apkUrl) : fallback!;
+      await openUrl(target);
     },
   });
 }

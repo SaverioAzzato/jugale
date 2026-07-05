@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/mobile-schema.json",
   "identifier": "android-mobile",
-  "description": "Android-only capabilities (target-gated in Cargo.toml, must not apply on desktop). (1) SAF file access (tauri-plugin-android-fs): the plugin's `android-fs:default` set is `all-without-delete`, which deliberately EXCLUDES every write command — relying on it made live save silently fail (read-only fallback), so we grant the exact least-privilege set the provider uses, writes included. (2) HTTP to the GitHub API for the in-app update check, scoped to api.github.com (desktop uses the native updater instead).",
+  "description": "Android-only capabilities (target-gated in Cargo.toml, must not apply on desktop). (1) SAF file access (tauri-plugin-android-fs): the plugin's `android-fs:default` set is `all-without-delete`, which deliberately EXCLUDES every write command — relying on it made live save silently fail (read-only fallback), so we grant the exact least-privilege set the provider uses, writes included. (2) HTTP for the in-app update check: api.github.com for the release lookup, plus github.com + objects.githubusercontent.com so we can resolve the APK asset's final (post-redirect) CDN URL before opening it — Android's downloader stalls on the github.com→CDN redirect otherwise. Desktop uses the native updater instead.",
   "platforms": ["android"],
   "windows": ["main"],
   "permissions": [
@@ -17,7 +17,11 @@
     "android-fs:allow-write-text-file",
     {
       "identifier": "http:default",
-      "allow": [{ "url": "https://api.github.com/*" }]
+      "allow": [
+        { "url": "https://api.github.com/*" },
+        { "url": "https://github.com/*" },
+        { "url": "https://objects.githubusercontent.com/*" }
+      ]
     }
   ]
 }
