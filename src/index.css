@@ -1240,6 +1240,15 @@ a {
 }
 
 /* ---- interactive controls ---- */
+/* Buttons are tap targets, not text: suppress long-press text selection and the iOS callout, and
+   drop the double-tap zoom delay. Fixes text highlighting when holding a stepper +/- or a text
+   button (Damage, Heal, …) on mobile. */
+button {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
 .btn {
   background: var(--surface-2);
   color: var(--text);

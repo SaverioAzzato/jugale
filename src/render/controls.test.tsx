@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { Stepper } from "./controls";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { render, screen, fireEvent, renderHook, act } from "@testing-library/react";
+import { Stepper, useHoldRepeat } from "./controls";
 
 describe("Stepper", () => {
   it("steps on a keyboard-triggered click (no mousedown/touchstart, as a real Enter/Space activation produces)", () => {
@@ -42,5 +42,44 @@ describe("Stepper", () => {
     render(<Stepper value={1} onChange={() => {}} min={0} max={5} label="Test" />);
     expect(screen.getByRole("button", { name: "Decrease" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Increase" })).toBeInTheDocument();
+  });
+});
+
+describe("useHoldRepeat", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("fires once immediately, then accelerates while held and stops on release", () => {
+    vi.useFakeTimers();
+    const cb = vi.fn();
+    const { result } = renderHook(() => useHoldRepeat(cb));
+
+    act(() => result.current.start());
+    expect(cb).toHaveBeenCalledTimes(1); // immediate step on press
+
+    act(() => vi.advanceTimersByTime(399)); // still within the initial delay
+    expect(cb).toHaveBeenCalledTimes(1);
+    act(() => vi.advanceTimersByTime(1)); // 400ms: first auto-repeat
+    expect(cb).toHaveBeenCalledTimes(2);
+
+    // Consecutive repeats get faster: the 180ms gap fires, then the ramped ~144ms gap.
+    act(() => vi.advanceTimersByTime(180));
+    expect(cb).toHaveBeenCalledTimes(3);
+    act(() => vi.advanceTimersByTime(144));
+    expect(cb).toHaveBeenCalledTimes(4);
+
+    act(() => result.current.stop());
+    act(() => vi.advanceTimersByTime(1000));
+    expect(cb).toHaveBeenCalledTimes(4); // no more firing after release
+  });
+
+  it("stops repeating once the callback signals a bound with false", () => {
+    vi.useFakeTimers();
+    const cb = vi.fn().mockReturnValueOnce(undefined).mockReturnValue(false);
+    const { result } = renderHook(() => useHoldRepeat(cb));
+
+    act(() => result.current.start()); // 1st call: undefined → keeps going
+    act(() => vi.advanceTimersByTime(400)); // 2nd call: false → self-stops
+    act(() => vi.advanceTimersByTime(2000));
+    expect(cb).toHaveBeenCalledTimes(2);
   });
 });

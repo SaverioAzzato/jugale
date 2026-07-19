@@ -3,28 +3,41 @@
 import { useRef, useCallback } from "react";
 import { useT } from "../i18n/useI18n";
 
-/** Fires `cb` immediately, then repeatedly after a delay + interval while held.
- *  Uses a ref so the interval always sees the latest `cb` (avoids stale closures).
- *  If `cb` returns false (e.g. a bound was reached) the repeat self-stops. */
+// Hold-to-repeat with acceleration ("typematic"): a pause before auto-repeat, then intervals that
+// shrink geometrically while held, so a quick hold nudges by a few and a long hold races. Numbers in
+// the ballpark of OS key-repeat: ~400 ms initial delay, first repeat ~180 ms, accelerating to a 30 ms
+// floor over ~8 repeats. The step stays 1 — we speed up, not coarsen.
+const HOLD_DELAY_MS = 400;
+const HOLD_START_MS = 180;
+const HOLD_MIN_MS = 30;
+const HOLD_RAMP = 0.8;
+
+/** Fires `cb` immediately, then repeatedly while held — pausing HOLD_DELAY_MS, then accelerating.
+ *  Uses a ref so each repeat sees the latest `cb` (avoids stale closures). If `cb` returns false
+ *  (e.g. a bound was reached) the repeat self-stops. */
 export function useHoldRepeat(cb: () => void | boolean) {
   const cbRef = useRef(cb);
   cbRef.current = cb;
 
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const stop = useCallback(() => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
   }, []);
 
   const start = useCallback(() => {
     if (cbRef.current() === false) return; // already at a bound: don't schedule a repeat
-    timeoutRef.current = setTimeout(() => {
-      intervalRef.current = setInterval(() => {
-        if (cbRef.current() === false) stop();
-      }, 80);
-    }, 400);
+    let interval = HOLD_START_MS;
+    const tick = () => {
+      if (cbRef.current() === false) {
+        stop();
+        return;
+      }
+      timerRef.current = setTimeout(tick, interval);
+      interval = Math.max(HOLD_MIN_MS, interval * HOLD_RAMP);
+    };
+    timerRef.current = setTimeout(tick, HOLD_DELAY_MS);
   }, [stop]);
 
   return { start, stop };
