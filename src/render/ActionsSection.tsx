@@ -68,23 +68,24 @@ export function ActionsSection({ c }: { c: Character }) {
 
   return (
     <Panel title={t("actions.title")} id="actions">
-      <div className="action-buttons">
-        <button type="button" className="btn" onClick={shortRest}>
-          {t("vitals.shortRest")}
-        </button>
-        <button type="button" className="btn" onClick={longRest}>
-          {t("vitals.longRest")}
-        </button>
-        {customActions.map((a) => (
-          <button
-            key={a.id}
-            type="button"
-            className="btn"
-            title={a.info || undefined}
-            onClick={() => runAction(a.id)}
-          >
-            {a.label || a.id}
+      <div className="action-list">
+        <div className="action-row">
+          <button type="button" className="btn action-btn" onClick={shortRest}>
+            {t("vitals.shortRest")}
           </button>
+        </div>
+        <div className="action-row">
+          <button type="button" className="btn action-btn" onClick={longRest}>
+            {t("vitals.longRest")}
+          </button>
+        </div>
+        {customActions.map((a) => (
+          <div className="action-row" key={a.id}>
+            <button type="button" className="btn action-btn" onClick={() => runAction(a.id)}>
+              {a.label || a.id}
+            </button>
+            {a.info && <p className="action-desc">{a.info}</p>}
+          </div>
         ))}
       </div>
     </Panel>

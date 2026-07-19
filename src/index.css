@@ -1566,10 +1566,26 @@ button {
 }
 
 /* ---- Gioco: actions (rests + custom buttons + formula info) ---- */
-.action-buttons {
+/* Actions stack one per row; a custom action's info sits under its button. */
+.action-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
+}
+.action-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.action-btn {
+  width: 100%;
+  text-align: center;
+}
+.action-desc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
 }
 .action-info-toggle {
   background: transparent;
