@@ -186,3 +186,29 @@ describe("store — edit mode structural edits", () => {
     ).toBe(true);
   });
 });
+
+describe("store — setRawJson (raw JSON editor)", () => {
+  beforeEach(() => useCharacter.getState().loadRaw(multiclass, "test"));
+
+  it("replaces the character from raw JSON and marks it dirty", () => {
+    useCharacter.getState().setRawJson({ ...multiclass, meta: { ...multiclass.meta, name: "Renamed" } });
+    expect(c().meta.name).toBe("Renamed");
+    expect(useCharacter.getState().dirty).toBe(true);
+  });
+
+  it("stays renderable from structurally-broken input (never throws) and reports errors", () => {
+    useCharacter.getState().setRawJson({ meta: { name: "Half" }, classes: 5 });
+    expect(c()).toBeTruthy();
+    expect(c().meta.name).toBe("Half");
+    expect(useCharacter.getState().issues.some((iss) => iss.severity === "error")).toBe(true);
+  });
+
+  it("preserves live-sync + provider — only the character changes", () => {
+    const provider = { write: async () => {} } as unknown as StorageProvider;
+    useCharacter.getState().connect(provider, multiclass, "live.json");
+    useCharacter.getState().setRawJson({ ...multiclass, meta: { ...multiclass.meta, name: "Z" } });
+    expect(useCharacter.getState().liveSync).toBe(true);
+    expect(useCharacter.getState().provider).toBe(provider);
+    expect(c().meta.name).toBe("Z");
+  });
+});

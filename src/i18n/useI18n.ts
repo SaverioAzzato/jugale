@@ -18,6 +18,13 @@ export type Locale = (typeof LOCALES)[number]["id"];
 const en = {
   // chrome / toolbar
   "app.export": "Export JSON",
+  "code.toggle": "Raw JSON editor",
+  "rawjson.title": "Raw JSON",
+  "rawjson.problems": "Problems",
+  "rawjson.noProblems": "No problems",
+  "rawjson.ok": "Valid JSON",
+  "rawjson.line": "Line",
+  "rawjson.suggest": "Suggest",
   "app.open": "Open JSON",
   "app.openFolder": "Open folder",
   "dice.roll": "Roll a die",
@@ -421,6 +428,13 @@ export type StringKey = keyof typeof en;
 
 const it: Record<StringKey, string> = {
   "app.export": "Esporta JSON",
+  "code.toggle": "Editor JSON grezzo",
+  "rawjson.title": "JSON grezzo",
+  "rawjson.problems": "Problemi",
+  "rawjson.noProblems": "Nessun problema",
+  "rawjson.ok": "JSON valido",
+  "rawjson.line": "Riga",
+  "rawjson.suggest": "Suggerisci",
   "app.open": "Apri JSON",
   "app.openFolder": "Apri cartella",
   "dice.roll": "Lancia un dado",

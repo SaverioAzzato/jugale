@@ -2171,6 +2171,162 @@ code {
   border-color: var(--gold);
   background: var(--accent-weak);
 }
+.code-toggle-btn.is-on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+
+/* ---- raw JSON editor (full-page overlay) ---- */
+.rawjson-page {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* Fill the viewport under the sticky toolbar; the editor scrolls internally, not the page. */
+  height: calc(100dvh - 92px - env(safe-area-inset-top));
+  min-height: 340px;
+  padding: 10px max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
+}
+.rawjson-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rawjson-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.rawjson-ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+.rawjson-count {
+  font-weight: 600;
+}
+.rawjson-count.is-error {
+  color: var(--error);
+}
+.rawjson-count.is-warning {
+  color: var(--warn);
+}
+.rawjson-problems-btn.is-on {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+.rawjson-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rawjson-suggest-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rawjson-suggest-btn svg {
+  color: var(--gold);
+}
+/* On narrow screens the lightbulb alone is enough; keep the tap target but drop the word. */
+@media (max-width: 420px) {
+  .rawjson-suggest-label {
+    display: none;
+  }
+}
+/* The autocomplete popup itself is themed in the editor theme (jsonEditor.ts) so it beats
+   CodeMirror's injected base theme. */
+.rawjson-editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface);
+}
+.rawjson-editor .cm-editor {
+  height: 100%;
+}
+/* Severity gutter (left of the code, by the line number): red circle = error, amber triangle =
+   warning. Marks a line with a diagnostic, and a collapsed section whose hidden content has one
+   (error wins over warning; open the section to see the specifics). */
+.rawjson-sev-gutter {
+  padding: 0 3px;
+  min-width: 12px;
+}
+.rawjson-sev-gutter .cm-gutterElement {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rawjson-sev-marker {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+}
+.rawjson-sev-marker.is-error {
+  border-radius: 50%;
+  background: var(--error);
+}
+.rawjson-sev-marker.is-warning {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 9px solid var(--warn);
+}
+.rawjson-problems {
+  flex: 0 0 auto;
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  max-height: 34vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.rawjson-problem-empty {
+  padding: 12px 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.rawjson-problem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 14px;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+}
+.rawjson-problem:hover {
+  background: var(--surface-2);
+}
+.rawjson-problem-line {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.rawjson-problem.is-error .rawjson-problem-line {
+  color: var(--error);
+}
+.rawjson-problem.is-warning .rawjson-problem-line {
+  color: var(--warn);
+}
+.rawjson-problem-msg {
+  color: var(--muted);
+}
 
 /* Shared input look for text/number/select editors. */
 .edit-input {

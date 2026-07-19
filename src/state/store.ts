@@ -131,6 +131,11 @@ interface CharacterState {
   /** Save a copy of the character to a user-chosen destination (native picker where available),
    *  then confirm it — with the path/filename where the host can report one. */
   exportCharacter: () => Promise<void>;
+  /** Replace the whole character from raw JSON (the raw-JSON editor). Runs the normal load
+   *  pipeline (migrate → validate) so the sheet stays renderable even from half-edited input,
+   *  marks dirty, and saves through the same debounced path (live-sync, else in-memory → export).
+   *  The caller commits only already-parsed, valid JSON; syntax errors never reach here. */
+  setRawJson: (raw: unknown) => void;
   /** Return to welcome state (no loaded character). */
   clear: () => void;
 
@@ -323,6 +328,15 @@ export const useCharacter = create<CharacterState>((set, get) => {
       if (!character) return;
       const outcome = await saveJsonAs(character, `${slug(character.meta.name)}.json`);
       if (notifySaveOutcome(outcome)) set({ dirty: false }); // clear dirty only on a real write
+    },
+
+    setRawJson: (raw) => {
+      if (!get().character) return;
+      const r = loadCharacter(raw);
+      // Keep provider/liveSync/sourceName/images/editMode/readOnly as they are — only the
+      // character (and its issues) change, then the usual debounced save fires.
+      set({ character: r.character, issues: r.issues, migrated: r.migrated, ok: r.ok, dirty: true });
+      scheduleSave();
     },
 
     clear: () => {

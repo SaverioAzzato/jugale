@@ -47,6 +47,12 @@
   --warn: #e0a44c;
   --error: #e06c6c;
   --on-accent: #0c0c16;
+  /* raw-JSON editor syntax colors */
+  --json-key: #9db4ff;
+  --json-string: #a3d99b;
+  --json-number: #e0a44c;
+  --json-keyword: #d29bf0;
+  --json-punct: #8a8aa2;
 }
 
 /* ---- Night (near-black, low-light table use) ---- */
@@ -68,6 +74,12 @@
   --warn: #c9923f;
   --error: #cf5f5f;
   --on-accent: #050507;
+  /* raw-JSON editor syntax colors */
+  --json-key: #8aa2e8;
+  --json-string: #8fc98a;
+  --json-number: #c9923f;
+  --json-keyword: #b98fd8;
+  --json-punct: #7a7a8e;
 }
 
 /* ---- Parchment (warm light, scroll/spellbook feel) ---- */
@@ -89,4 +101,10 @@
   --warn: #8a5f1b; /* was #9a6a1e — see --gold above (same value, same fix) */
   --error: #b03a3a;
   --on-accent: #fbf6ea;
+  /* raw-JSON editor syntax colors */
+  --json-key: #4a5fb0;
+  --json-string: #357445;
+  --json-number: #8a5f1b;
+  --json-keyword: #7a3f9a;
+  --json-punct: #6a5b46;
 }

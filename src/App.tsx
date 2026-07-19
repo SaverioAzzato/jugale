@@ -27,6 +27,7 @@ import {
 import { useT } from "./i18n/useI18n";
 import { SettingsButton, SettingsPage } from "./ui/SettingsMenu";
 import { PromptsButton, PromptsPage } from "./ui/PromptsPage";
+import { RawJsonPage } from "./ui/RawJsonPage";
 import { HelpButton, HelpPage } from "./ui/HelpPage";
 import { DicePalette } from "./ui/DicePalette";
 import { IssuesChip } from "./ui/IssuesChip";
@@ -67,7 +68,7 @@ export function App() {
   }, []);
 
   const [activeTab, setActiveTab] = useState("gioco");
-  const [overlay, setOverlay] = useState<"settings" | "prompts" | "help" | null>(null);
+  const [overlay, setOverlay] = useState<"settings" | "prompts" | "help" | "json" | null>(null);
   const overlayBackRef = useRef<HTMLButtonElement>(null);
 
   // Settings/Prompts are full-page overlays, not floating popovers — nothing else behind
@@ -81,7 +82,11 @@ export function App() {
     if (!overlay) return;
     overlayBackRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOverlay(null);
+      if (e.key !== "Escape") return;
+      // In the raw-JSON editor, Escape first dismisses an open completion popup / active snippet
+      // (CodeMirror handles it but doesn't stop propagation) — only exit the editor otherwise.
+      if (overlay === "json" && document.querySelector(".cm-tooltip-autocomplete, .cm-snippetField")) return;
+      setOverlay(null);
     };
     document.addEventListener("keydown", onKey);
     return () => {
@@ -301,16 +306,32 @@ export function App() {
             )}
             {overlay && (
               <span className="toolbar-title">
-                {t(overlay === "settings" ? "settings.title" : overlay === "prompts" ? "prompts.title" : "help.title")}
+                {t(
+                  overlay === "settings"
+                    ? "settings.title"
+                    : overlay === "prompts"
+                      ? "prompts.title"
+                      : overlay === "json"
+                        ? "rawjson.title"
+                        : "help.title",
+                )}
               </span>
             )}
           </div>
           <div className="toolbar-right">
+            {overlay === "json" && character && (
+              <RawJsonButton active onClick={() => setOverlay(null)} label={t("code.toggle")} />
+            )}
             {!overlay && (
               <>
                 {character && (
-                  <button className="btn" onClick={exportCharacter} title={t("app.export")}>
-                    {t("app.export")}
+                  <button
+                    className="btn btn-icon"
+                    onClick={exportCharacter}
+                    title={t("app.export")}
+                    aria-label={t("app.export")}
+                  >
+                    <DownloadIcon />
                   </button>
                 )}
                 {character && (
@@ -325,6 +346,9 @@ export function App() {
                   </button>
                 )}
                 {!character && <HelpButton onClick={() => setOverlay("help")} />}
+                {character && (
+                  <RawJsonButton active={false} onClick={() => setOverlay("json")} label={t("code.toggle")} />
+                )}
                 <DicePalette />
                 <PromptsButton onClick={() => setOverlay("prompts")} />
                 <SettingsButton onClick={() => setOverlay("settings")} />
@@ -367,6 +391,8 @@ export function App() {
         <PromptsPage />
       ) : overlay === "help" ? (
         <HelpPage />
+      ) : overlay === "json" ? (
+        <RawJsonPage />
       ) : character ? (
         <Sheet c={character} tab={tab} />
       ) : (
@@ -432,5 +458,52 @@ function PencilIcon() {
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+/** `</>` glyph for the raw-JSON toggle. */
+function CodeIcon() {
+  return (
+    <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M8.5 8 4.5 12l4 4 M15.5 8 19.5 12l-4 4 M13.5 5l-3 14"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** Down-arrow-into-tray glyph for the Export action. */
+function DownloadIcon() {
+  return (
+    <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M12 4v9 M8.5 10.5 12 14l3.5-3.5 M5 15v3a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** The raw-JSON toggle button (shown both in the sheet and, highlighted, in the JSON view). */
+function RawJsonButton({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      className={active ? "btn btn-icon code-toggle-btn is-on" : "btn btn-icon code-toggle-btn"}
+      onClick={onClick}
+      aria-pressed={active}
+      title={label}
+      aria-label={label}
+    >
+      <CodeIcon />
+    </button>
   );
 }
