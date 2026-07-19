@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useCharacter } from "./state/store";
 import { Sheet } from "./render/Sheet";
 import { getVisibleTabs } from "./render/tabs";
+import { useHorizontalSwipe } from "./render/useSwipeNav";
 import {
   isFileAccessSupported,
   isDirectoryAccessSupported,
@@ -101,6 +102,14 @@ export function App() {
   const tab = tabs.some((t) => t.id === activeTab)
     ? activeTab
     : (tabs[0]?.id ?? "gioco");
+
+  // Mobile: swipe left/right on the sheet to page between tabs (a text field or the JSON editor
+  // keeps priority — see useHorizontalSwipe). Clamped at the ends.
+  const swipeTabs = useHorizontalSwipe((dir) => {
+    const idx = tabs.findIndex((tb) => tb.id === tab);
+    const next = idx + dir;
+    if (idx >= 0 && next >= 0 && next < tabs.length) setActiveTab(tabs[next].id);
+  });
 
   // Check for a newer release once at startup (no-op on the web build, silent on failure).
   useEffect(() => {
@@ -410,7 +419,9 @@ export function App() {
       ) : overlay === "json" ? (
         <RawJsonPage />
       ) : character ? (
-        <Sheet c={character} tab={tab} />
+        <div className="sheet-swipe" onTouchStart={swipeTabs.onTouchStart} onTouchEnd={swipeTabs.onTouchEnd}>
+          <Sheet c={character} tab={tab} />
+        </div>
       ) : (
         <EmptyState
           onNewCharacter={handleNewCharacter}
