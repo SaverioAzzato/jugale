@@ -7,6 +7,7 @@
  */
 
 import type { Character } from "../schema";
+import { loadCharacter } from "../schema";
 
 type ClassEntry = Character["classes"][number];
 type Resource = Character["resources"][number];
@@ -137,3 +138,10 @@ export const newAction = (): Action => ({ id: uid(), label: "", kind: "custom", 
 export const newSkill = (id: string): Skill => ({ id, proficient: false, expertise: false, modifierOverride: null });
 
 export const newRaceTrait = (): NamedDesc => ({ name: "", description: "", link: null });
+
+/** A brand-new character: the full skeleton with schema defaults everywhere, just the name filled.
+ *  Runs the minimal input through loadCharacter so every section gets its real default (never drifts
+ *  from the schema) and the result is guaranteed renderable. */
+export function newCharacter(name: string): Character {
+  return loadCharacter({ meta: { name } }).character;
+}

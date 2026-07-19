@@ -37,6 +37,7 @@ const SAMPLES = [
 
 /** The welcome screen shown when no character is loaded: open actions, recents, samples, footer. */
 export function EmptyState({
+  onNewCharacter,
   onOpenJson,
   onOpenFolder,
   onSample,
@@ -45,6 +46,7 @@ export function EmptyState({
   onClearRecents,
   t,
 }: {
+  onNewCharacter: () => void;
   onOpenJson: () => void;
   onOpenFolder: () => void;
   onSample: (data: unknown, label: string, images: GalleryImage[]) => void;
@@ -59,7 +61,10 @@ export function EmptyState({
       <div className="empty-card">
         <h1>{t("empty.title")}</h1>
         <div className="empty-actions">
-          <button className="btn btn-primary" onClick={onOpenFolder}>
+          <button className="btn btn-primary" onClick={onNewCharacter}>
+            {t("home.newCharacter")}
+          </button>
+          <button className="btn" onClick={onOpenFolder}>
             {t("app.openFolder")}
           </button>
           <button className="btn" onClick={onOpenJson}>
