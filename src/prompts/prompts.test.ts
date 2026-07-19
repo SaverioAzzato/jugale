@@ -113,3 +113,31 @@ describe("prompt localization (EN / IT)", () => {
     expect(it).not.toContain("Fonti ammesse"); // base doesn't travel
   });
 });
+
+describe("custom instruction + base-prompt guidance", () => {
+  const params = { guides: [{ name: "SRD" }] };
+
+  it("appends the custom instruction (with a localized heading) to base and task prompts", () => {
+    const base = composePrompt("base", params, DEFAULT_SEGMENTS, "en", "Always offer a backup.");
+    expect(base).toContain("## Custom instruction");
+    expect(base).toContain("Always offer a backup.");
+    const create = composePrompt("create", params, DEFAULT_SEGMENTS, "en", "Always offer a backup.");
+    expect(create).toContain("Always offer a backup."); // travels via base
+    const it = composePrompt("base", params, defaultSegments("it"), "it", "Sempre un piano B.");
+    expect(it).toContain("## Istruzione personalizzata");
+  });
+
+  it("adds nothing for an empty/whitespace custom instruction, and skips standalone migrate", () => {
+    expect(composePrompt("base", params, DEFAULT_SEGMENTS, "en", "   ")).not.toContain("Custom instruction");
+    expect(composePrompt("migrate", params, DEFAULT_SEGMENTS, "en", "ignored here")).not.toContain("ignored here");
+  });
+
+  it("teaches the export filename, proactive placement, and spaced-minus formula rule", () => {
+    for (const seg of [DEFAULT_SEGMENTS, defaultSegments("it")]) {
+      const text = seg.baseIntro + seg.baseContract;
+      expect(text).toContain("character.json");
+      expect(/proactive|propositiv/i.test(text)).toBe(true);
+      expect(text).toContain("resources.sorcery-points.current"); // hyphen-in-id example
+    }
+  });
+});

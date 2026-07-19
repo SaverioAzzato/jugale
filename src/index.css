@@ -298,6 +298,14 @@ a {
   font-size: 13px;
   min-width: 0;
 }
+.prompts-custom-area {
+  display: block;
+  width: 100%;
+  min-height: 68px;
+  margin-top: 6px;
+  resize: vertical;
+  line-height: 1.4;
+}
 .prompts-guide-row .prompts-input:first-child {
   flex: 0 0 38%;
 }

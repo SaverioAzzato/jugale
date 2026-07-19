@@ -231,6 +231,8 @@ export function PromptsPage() {
   const customized = usePromptSegments((s) => s.customized);
   const saveSegments = usePromptSegments((s) => s.save);
   const resetSegments = usePromptSegments((s) => s.reset);
+  const custom = usePromptSegments((s) => s.custom);
+  const setCustom = usePromptSegments((s) => s.setCustom);
   // Customized → the user's frozen set; otherwise the shipped defaults for the current UI language.
   const segments = customized && saved ? saved : defaultSegments(locale);
 
@@ -322,6 +324,18 @@ export function PromptsPage() {
             </label>
           </div>
           <p className="prompts-focus-hint muted">{t("prompts.focusHint")}</p>
+
+          <label className="prompts-field-label" htmlFor="prompt-custom">
+            {t("prompts.custom")}
+          </label>
+          <textarea
+            id="prompt-custom"
+            className="prompts-input prompts-custom-area"
+            value={custom}
+            placeholder={t("prompts.customPlaceholder")}
+            onChange={(e) => setCustom(e.target.value)}
+          />
+          <p className="prompts-focus-hint muted">{t("prompts.customHint")}</p>
         </div>
 
         <div className="prompts-actions">
@@ -366,7 +380,7 @@ export function PromptsPage() {
         ) : (
           <>
             {PROMPTS.filter((p) => p.id !== "migrate").map((p) => (
-              <PromptBlock key={p.id} title={t(p.titleKey)} text={composePrompt(p.id, params, segments, locale)} />
+              <PromptBlock key={p.id} title={t(p.titleKey)} text={composePrompt(p.id, params, segments, locale, custom)} />
             ))}
             <MigrateSection params={params} segments={segments} locale={locale} />
           </>
