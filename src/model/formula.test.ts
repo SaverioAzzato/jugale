@@ -60,6 +60,21 @@ describe("evalExpression", () => {
     expect(evalExpression(c, "2d6", hi)).toBe(12);
     expect(evalExpression(c, "d8 + 1", lo)).toBe(2);
   });
+  it("keeps hyphens inside ids (a bare - is part of the term, not subtraction)", () => {
+    const h = CharacterSchema.parse({
+      meta: { name: "H" },
+      resources: [{ id: "sorcery-points", label: "SP", max: 5, current: 4, resetOn: "longRest" }],
+    });
+    expect(evalExpression(h, "resources.sorcery-points.current", lo)).toBe(4);
+    expect(evalExpression(h, "resources.sorcery-points.current + 2", lo)).toBe(6);
+    // A spaced minus still subtracts, even next to a hyphenated id.
+    expect(evalExpression(h, "resources.sorcery-points.current - 1", lo)).toBe(3);
+  });
+  it("still treats + (spaced or not) and a spaced - as operators", () => {
+    expect(evalExpression(c, "1 + 1", lo)).toBe(2);
+    expect(evalExpression(c, "3 - 1", lo)).toBe(2);
+    expect(evalExpression(c, "d8+1", lo)).toBe(2); // unspaced + still splits
+  });
 });
 
 describe("applyFormula", () => {

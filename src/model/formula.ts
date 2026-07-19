@@ -115,15 +115,23 @@ export function evalExpression(
   rolls?: string[],
   faces?: RolledFace[],
 ): number {
-  const tokens = expr.match(/[+-]?\s*[^+-]+/g) ?? [];
+  // Tokenize on operators. `+` is always an operator; `-` is an operator ONLY when surrounded by
+  // whitespace, so a hyphen inside an id (e.g. resources.my-res.current) is kept as part of the term
+  // rather than read as subtraction. (The base prompt tells authors to space a subtraction `-`.)
+  const parts = expr.split(/(\+|\s+-\s+)/);
   let total = 0;
-  for (const raw of tokens) {
-    let tk = raw.trim();
+  for (let i = 0; i < parts.length; i += 2) {
+    let tk = parts[i].trim();
     let sign = 1;
-    if (tk.startsWith("+")) tk = tk.slice(1).trim();
-    else if (tk.startsWith("-")) {
-      sign = -1;
-      tk = tk.slice(1).trim();
+    if (i === 0) {
+      // A sign attached to the very first term ("-5", "- 5") is a unary sign, not an operator.
+      const lead = tk.match(/^([+-])\s*(.*)$/);
+      if (lead) {
+        sign = lead[1] === "-" ? -1 : 1;
+        tk = lead[2].trim();
+      }
+    } else {
+      sign = parts[i - 1].trim() === "-" ? -1 : 1;
     }
     if (tk) total += sign * evalTerm(c, tk, rng, errors, rolls, faces);
   }
