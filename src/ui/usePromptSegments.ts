@@ -1,30 +1,34 @@
 import { create } from "zustand";
 import { DEFAULT_SEGMENTS, type PromptSegments } from "../prompts/prompts";
 
-/** Persisted user edits to the prompt building blocks. Reset clears back to DEFAULT_SEGMENTS. */
+/**
+ * Persisted user edits to the prompt building blocks (per device). While the user hasn't
+ * customized anything, the page shows the shipped defaults for the current UI language and they
+ * follow a language switch. Once the user saves an edit, that whole set is frozen exactly as saved
+ * (in whatever language they wrote) and no longer auto-translates — Reset clears back to defaults.
+ */
 const KEY = "dndm.prompts";
 
-function load(): { segments: PromptSegments; customized: boolean } {
-  if (typeof localStorage === "undefined") return { segments: DEFAULT_SEGMENTS, customized: false };
+function load(): { saved: PromptSegments | null; customized: boolean } {
+  if (typeof localStorage === "undefined") return { saved: null, customized: false };
   try {
-    const saved = JSON.parse(localStorage.getItem(KEY) || "null");
-    if (!saved || typeof saved !== "object") return { segments: DEFAULT_SEGMENTS, customized: false };
-    return {
-      customized: true,
-      segments: {
-        baseIntro: typeof saved.baseIntro === "string" ? saved.baseIntro : DEFAULT_SEGMENTS.baseIntro,
-        baseContract: typeof saved.baseContract === "string" ? saved.baseContract : DEFAULT_SEGMENTS.baseContract,
-        tasks: { ...DEFAULT_SEGMENTS.tasks, ...(saved.tasks && typeof saved.tasks === "object" ? saved.tasks : {}) },
-      },
+    const raw = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (!raw || typeof raw !== "object") return { saved: null, customized: false };
+    const saved: PromptSegments = {
+      baseIntro: typeof raw.baseIntro === "string" ? raw.baseIntro : DEFAULT_SEGMENTS.baseIntro,
+      baseContract: typeof raw.baseContract === "string" ? raw.baseContract : DEFAULT_SEGMENTS.baseContract,
+      tasks: { ...DEFAULT_SEGMENTS.tasks, ...(raw.tasks && typeof raw.tasks === "object" ? raw.tasks : {}) },
     };
+    return { saved, customized: true };
   } catch {
-    return { segments: DEFAULT_SEGMENTS, customized: false };
+    return { saved: null, customized: false };
   }
 }
 
 interface PromptSegmentsState {
-  segments: PromptSegments;
-  /** Whether the segments differ from the shipped defaults (i.e. there's something to reset). */
+  /** The user's saved segments, or null when they haven't customized (→ use language defaults). */
+  saved: PromptSegments | null;
+  /** Whether there's a saved customization to reset. */
   customized: boolean;
   save: (segments: PromptSegments) => void;
   reset: () => void;
@@ -33,11 +37,11 @@ interface PromptSegmentsState {
 export const usePromptSegments = create<PromptSegmentsState>((set) => ({
   ...load(),
   save: (segments) => {
-    set({ segments, customized: true });
+    set({ saved: segments, customized: true });
     if (typeof localStorage !== "undefined") localStorage.setItem(KEY, JSON.stringify(segments));
   },
   reset: () => {
-    set({ segments: DEFAULT_SEGMENTS, customized: false });
+    set({ saved: null, customized: false });
     if (typeof localStorage !== "undefined") localStorage.removeItem(KEY);
   },
 }));

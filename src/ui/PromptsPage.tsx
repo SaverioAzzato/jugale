@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Panel } from "../render/primitives";
-import { useT } from "../i18n/useI18n";
+import { useT, useI18n } from "../i18n/useI18n";
+import type { Locale } from "../i18n/useI18n";
 import { useCharacter } from "../state/store";
 import type { Character } from "../schema";
 import {
   PROMPTS,
   composePrompt,
   composeHeader,
+  defaultSegments,
   DEFAULT_GUIDES,
   type Guide,
   type PromptParams,
@@ -137,10 +139,12 @@ function SegmentEditors({
   draft,
   setDraft,
   params,
+  locale,
 }: {
   draft: PromptSegments;
   setDraft: (updater: (d: PromptSegments) => PromptSegments) => void;
   params: PromptParams;
+  locale: Locale;
 }) {
   const t = useT();
   const taskIds = ["create", "level-up", "validate", "migrate"] as const;
@@ -159,7 +163,7 @@ function SegmentEditors({
         />
 
         <p className="prompt-locked-note">{t("prompts.lockedHeader")}</p>
-        <pre className="prompt-text prompt-locked">{composeHeader(params)}</pre>
+        <pre className="prompt-text prompt-locked">{composeHeader(params, locale)}</pre>
 
         <h3 className="prompt-edit-label" id="prompt-edit-label-base-contract">
           {t("prompts.editBaseContract")}
@@ -198,7 +202,7 @@ function SegmentEditors({
 
 /** The migration workflow — deliberately set apart: it's about upgrading an old file (which
  *  attachments to download, which standalone prompt to run), not building/playing a character. */
-function MigrateSection({ params, segments }: { params: PromptParams; segments: PromptSegments }) {
+function MigrateSection({ params, segments, locale }: { params: PromptParams; segments: PromptSegments; locale: Locale }) {
   const t = useT();
   const migrate = PROMPTS.find((p) => p.id === "migrate")!;
   return (
@@ -214,18 +218,21 @@ function MigrateSection({ params, segments }: { params: PromptParams; segments: 
           {t("prompts.downloadChangelog")}
         </button>
       </div>
-      <PromptBlock title={t(migrate.titleKey)} text={composePrompt(migrate.id, params, segments)} />
+      <PromptBlock title={t(migrate.titleKey)} text={composePrompt(migrate.id, params, segments, locale)} />
     </section>
   );
 }
 
 export function PromptsPage() {
   const t = useT();
+  const locale = useI18n((s) => s.locale);
   const character = useCharacter((s) => s.character);
-  const segments = usePromptSegments((s) => s.segments);
+  const saved = usePromptSegments((s) => s.saved);
   const customized = usePromptSegments((s) => s.customized);
   const saveSegments = usePromptSegments((s) => s.save);
   const resetSegments = usePromptSegments((s) => s.reset);
+  // Customized → the user's frozen set; otherwise the shipped defaults for the current UI language.
+  const segments = customized && saved ? saved : defaultSegments(locale);
 
   const [guides, setGuides] = useState<Guide[]>(() => guidesFromCharacter(character));
   const [className, setClassName] = useState(() => character?.classes?.[0]?.name ?? "");
@@ -355,13 +362,13 @@ export function PromptsPage() {
         </div>
 
         {editing ? (
-          <SegmentEditors draft={draft} setDraft={setDraft} params={params} />
+          <SegmentEditors draft={draft} setDraft={setDraft} params={params} locale={locale} />
         ) : (
           <>
             {PROMPTS.filter((p) => p.id !== "migrate").map((p) => (
-              <PromptBlock key={p.id} title={t(p.titleKey)} text={composePrompt(p.id, params, segments)} />
+              <PromptBlock key={p.id} title={t(p.titleKey)} text={composePrompt(p.id, params, segments, locale)} />
             ))}
-            <MigrateSection params={params} segments={segments} />
+            <MigrateSection params={params} segments={segments} locale={locale} />
           </>
         )}
       </Panel>

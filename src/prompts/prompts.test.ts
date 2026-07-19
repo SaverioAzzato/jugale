@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { composePrompt, DEFAULT_GUIDES, DEFAULT_SEGMENTS, PROMPTS } from "./prompts";
+import { composePrompt, composeHeader, defaultSegments, DEFAULT_GUIDES, DEFAULT_SEGMENTS, PROMPTS } from "./prompts";
 
 describe("composePrompt", () => {
   it("base includes the disclaimer, interaction style, the sources, and the data contract", () => {
@@ -74,5 +74,42 @@ describe("composePrompt", () => {
     expect(focused).toContain("## Focus");
     expect(focused).toContain("**Warlock**");
     expect(focused).toContain("**Tiefling**");
+  });
+});
+
+describe("prompt localization (EN / IT)", () => {
+  it("ships distinct English and Italian default segments", () => {
+    expect(defaultSegments("it").baseIntro).not.toBe(defaultSegments("en").baseIntro);
+    expect(defaultSegments("it").baseContract).toContain("Come modificare character.json");
+    expect(defaultSegments("en").baseContract).toContain("How to edit character.json");
+  });
+
+  it("composes an Italian prompt from Italian segments + a localized header", () => {
+    const it = composePrompt("base", { guides: [{ name: "SRD" }] }, defaultSegments("it"), "it");
+    expect(it).toContain("Contenuti e licenze"); // disclaimer
+    expect(it).toContain("Fonti ammesse"); // generated header, localized
+    expect(it).toContain("Come modificare character.json"); // data contract
+    expect(it).not.toContain("Sources in scope");
+  });
+
+  it("keeps JSON keys in English even in the Italian prompt", () => {
+    const it = defaultSegments("it").baseContract;
+    expect(it).toContain("`combat.hp.current`");
+    expect(it).toContain("spellSections[]");
+    expect(it).toContain("`armorClassOverride`");
+  });
+
+  it("localizes the generated header's Focus labels", () => {
+    const it = composeHeader({ guides: [{ name: "SRD" }], className: "Warlock", race: "Tiefling" }, "it");
+    expect(it).toContain("Fonti ammesse");
+    expect(it).toContain("la classe **Warlock**");
+    expect(it).toContain("la razza/specie **Tiefling**");
+  });
+
+  it("the Italian migrate task is standalone and references its attachments", () => {
+    const it = composePrompt("migrate", { guides: [] }, defaultSegments("it"), "it");
+    expect(it).toContain("Migra un character.json allo schema corrente");
+    expect(it).toContain("schema-changelog.md");
+    expect(it).not.toContain("Fonti ammesse"); // base doesn't travel
   });
 });
