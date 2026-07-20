@@ -1316,9 +1316,70 @@ button {
 }
 .empty-actions {
   display: flex;
-  justify-content: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
   margin: 20px 0 8px;
+}
+.empty-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  background: var(--surface-2, var(--surface));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--speed), background var(--speed);
+}
+.empty-action:hover {
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+.empty-action svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+/* ---- generic small modal (backdrop + centered card) ---- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.6);
+}
+.modal-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.modal-label {
+  font-size: 13px;
+  color: var(--muted);
+}
+.modal-input {
+  width: 100%;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
 }
 /* Recents — last-opened characters, between the central card and the samples. */
 .empty-recents {

@@ -197,9 +197,9 @@ export function App() {
   // Create a fresh character (full skeleton, defaults everywhere), ask where to save it, then load
   // it. saveJsonAs handles folder+filename on capable hosts and falls back to a download (with the
   // usual toast) where a save picker isn't available; either way we open it so editing starts now.
-  async function handleNewCharacter() {
-    const name = window.prompt(t("home.newCharacterNamePrompt"))?.trim();
-    if (!name) return; // cancelled or empty
+  // The name comes from EmptyState's own dialog, not window.prompt() — Tauri's webviews (desktop
+  // and, especially, mobile) don't reliably implement it, so the button would silently do nothing.
+  async function handleNewCharacter(name: string) {
     const created = newCharacter(name);
     const outcome = await saveJsonAs(created, "character.json");
     if (outcome.status === "cancelled") return; // didn't save anywhere → don't load a phantom
