@@ -261,8 +261,8 @@ function LightbulbIcon() {
 }
 
 const ICON_PROPS = {
-  width: 20,
-  height: 20,
+  width: 22,
+  height: 22,
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
@@ -276,8 +276,8 @@ const ICON_PROPS = {
 function SearchIcon() {
   return (
     <svg {...ICON_PROPS}>
-      <circle cx="10.5" cy="10.5" r="6.5" />
-      <path d="M20 20l-4.5-4.5" />
+      <circle cx="10" cy="10" r="7" />
+      <path d="M21 21l-5-5" />
     </svg>
   );
 }
@@ -321,24 +321,25 @@ function ChevronDownIcon() {
   );
 }
 
-/** One line + arrow — replace the current match. */
+/** Arrow into a single box — replace the current match. */
 function ReplaceIcon() {
   return (
     <svg {...ICON_PROPS}>
-      <path d="M4 12h9" />
-      <path d="M13 8l4 4-4 4" />
+      <rect x="12" y="8" width="9" height="9" rx="2" />
+      <path d="M3 12.5h6" />
+      <path d="M6.5 9l3.5 3.5-3.5 3.5" />
     </svg>
   );
 }
 
-/** Several lines + arrow — replace every match. */
+/** Arrow into a stack of boxes — replace every match. */
 function ReplaceAllIcon() {
   return (
     <svg {...ICON_PROPS}>
-      <path d="M4 6h8" />
-      <path d="M4 12h8" />
-      <path d="M4 18h8" />
-      <path d="M14 8l4 4-4 4" />
+      <path d="M12 6h4a2 2 0 0 1 2 2v4" />
+      <rect x="9" y="9" width="9" height="9" rx="2" />
+      <path d="M2 13.5h5" />
+      <path d="M5 10l3.5 3.5-3.5 3.5" />
     </svg>
   );
 }

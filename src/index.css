@@ -2269,12 +2269,12 @@ code {
   border-color: var(--accent);
   background: var(--accent-weak);
 }
-/* Custom find / replace bar (drives CodeMirror's search from the app's own UI). */
+/* Custom find / replace bar (drives CodeMirror's search from the app's own UI). Fixed two-row grid
+   at any width: find + prev + next on top, replace + replace + replace-all below. */
 .rawjson-search {
   flex: 0 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
   gap: 6px;
   padding: 8px;
   border: 1px solid var(--border);
@@ -2282,13 +2282,13 @@ code {
   background: var(--surface);
 }
 .rawjson-search-input {
-  flex: 1 1 140px;
-  min-width: 100px;
+  min-width: 0;
+  width: 100%;
   background: var(--surface-2);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 6px 10px;
+  padding: 7px 10px;
   font-size: 13px;
 }
 .rawjson-search-input:focus {
@@ -2296,8 +2296,8 @@ code {
   border-color: var(--accent);
 }
 .rawjson-search-btn {
-  width: 34px;
-  height: 34px;
+  width: 38px;
+  height: 38px;
   flex: 0 0 auto;
 }
 .rawjson-suggest-btn {
