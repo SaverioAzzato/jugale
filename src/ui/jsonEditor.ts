@@ -24,13 +24,14 @@ import {
   type DecorationSet,
   type ViewUpdate,
 } from "@codemirror/view";
-import { EditorState, Prec, RangeSetBuilder } from "@codemirror/state";
+import { EditorState, Prec, RangeSetBuilder, type StateEffect } from "@codemirror/state";
 import { history, historyKeymap, defaultKeymap, indentWithTab } from "@codemirror/commands";
 import {
   bracketMatching,
   foldGutter,
   foldKeymap,
-  foldAll,
+  foldable,
+  foldEffect,
   unfoldAll,
   foldedRanges,
   indentOnInput,
@@ -661,6 +662,24 @@ const searchHighlighter = ViewPlugin.fromClass(
   { decorations: (v) => v.decorations },
 );
 
+/** Collapse every foldable section EXCEPT the outermost object — folding the root to `{ … }` is
+ *  useless. We leave the root open and fold everything inside it, recursively: a fold effect on a
+ *  now-hidden inner range still applies, so expanding a section later reveals its children folded. */
+function collapseInner(view: EditorView) {
+  const { state } = view;
+  const effects: StateEffect<{ from: number; to: number }>[] = [];
+  for (let pos = 0; pos < state.doc.length; ) {
+    const line = state.doc.lineAt(pos);
+    // The root object/array opens on line 1; skip its fold so only the sections inside collapse.
+    if (line.number > 1) {
+      const range = foldable(state, line.from, line.to);
+      if (range) effects.push(foldEffect.of(range));
+    }
+    pos = line.to + 1;
+  }
+  if (effects.length) view.dispatch({ effects });
+}
+
 export function createJsonEditor(parent: HTMLElement, opts: JsonEditorOptions): JsonEditorHandle {
   const reportDiagnostics = (view: EditorView) => {
     const out: PanelDiagnostic[] = [];
@@ -736,7 +755,7 @@ export function createJsonEditor(parent: HTMLElement, opts: JsonEditorOptions): 
       view.focus();
       startCompletion(view);
     },
-    foldAll: () => foldAll(view),
+    foldAll: () => collapseInner(view),
     unfoldAll: () => unfoldAll(view),
     setSearch: (search, replace) => {
       view.dispatch({
