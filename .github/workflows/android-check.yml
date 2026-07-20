@@ -1,8 +1,19 @@
 name: Android Update Check
 
 # Desktop cargo check cannot compile Kotlin or merge the Android manifest. Build a debug APK when
-# updater wiring changes, so failures are caught on the PR instead of in a tagged release.
+# updater wiring changes, so failures are caught on PRs and direct main pushes before a tag.
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src-tauri/plugins/android-updater/**"
+      - "src-tauri/capabilities/android.json"
+      - "src-tauri/src/lib.rs"
+      - "src-tauri/Cargo.toml"
+      - "src-tauri/Cargo.lock"
+      - "src/update/**"
+      - ".github/workflows/android-check.yml"
   pull_request:
     paths:
       - "src-tauri/plugins/android-updater/**"
