@@ -73,11 +73,13 @@ export function ActionsSection({ c }: { c: Character }) {
           <button type="button" className="btn action-btn" onClick={shortRest}>
             {t("vitals.shortRest")}
           </button>
+          <p className="action-desc">{t("actions.shortRestInfo")}</p>
         </div>
         <div className="action-row">
           <button type="button" className="btn action-btn" onClick={longRest}>
             {t("vitals.longRest")}
           </button>
+          <p className="action-desc">{t("actions.longRestInfo")}</p>
         </div>
         {customActions.map((a) => (
           <div className="action-row" key={a.id}>
