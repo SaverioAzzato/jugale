@@ -1,6 +1,6 @@
 [package]
 name = "jugale"
-version = "1.9.1"
+version = "1.10.0"
 description = "JUGALE — your character, always yours. A character-sheet platform where character.json is the single source of truth."
 authors = ["Saverio Azzato"]
 license = "MIT"
