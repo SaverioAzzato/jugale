@@ -294,27 +294,33 @@ export function composeHeader({ guides, className, race }: PromptParams, locale:
 }
 
 /** Builds the full prompt text for a task, from (optionally customized) segments + parameters.
- *  `locale` only drives the generated header — the segments already carry their own language.
- *  `custom` is the user's free-text instruction, appended to the base (so it travels to every
- *  composed task prompt); empty adds nothing. */
+ *  `locale` only drives the generated header — the segments already carry their own language. */
 export function composePrompt(
   task: PromptTask,
   params: PromptParams,
   segments: PromptSegments = DEFAULT_SEGMENTS,
   locale: Locale = "en",
-  custom = "",
 ): string {
   // Migrate is standalone — it deliberately skips the base (build-a-character role, sources/focus,
   // licensing disclaimer), which is for building/playing a character, not reshaping a file.
   if (task === "migrate") return segments.tasks.migrate;
-  const parts = [segments.baseIntro, composeHeader(params, locale), segments.baseContract];
-  if (custom.trim()) {
-    const s = HEADER_I18N[locale] ?? HEADER_I18N.en;
-    parts.push(`## ${s.customTitle}\n${custom.trim()}`);
-  }
-  const prefix = parts.join("\n\n");
+  const prefix = [segments.baseIntro, composeHeader(params, locale), segments.baseContract].join("\n\n");
   if (task === "base") return prefix;
   return `${prefix}\n\n${segments.tasks[task]}`;
+}
+
+/** The base prompt followed by the user's free-text custom instruction as its own section — the copy
+ *  target for the Custom block on the Prompts page. Empty custom copies just the base. */
+export function composeCustom(
+  params: PromptParams,
+  segments: PromptSegments = DEFAULT_SEGMENTS,
+  locale: Locale = "en",
+  custom = "",
+): string {
+  const base = composePrompt("base", params, segments, locale);
+  if (!custom.trim()) return base;
+  const s = HEADER_I18N[locale] ?? HEADER_I18N.en;
+  return `${base}\n\n## ${s.customTitle}\n${custom.trim()}`;
 }
 
 export interface PromptDef {

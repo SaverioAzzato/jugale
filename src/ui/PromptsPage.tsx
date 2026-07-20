@@ -7,6 +7,7 @@ import type { Character } from "../schema";
 import {
   PROMPTS,
   composePrompt,
+  composeCustom,
   composeHeader,
   defaultSegments,
   DEFAULT_GUIDES,
@@ -72,6 +73,23 @@ function ResetIcon() {
   );
 }
 
+function CopyIcon() {
+  return (
+    <svg className="inline-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M5 15V5a2 2 0 0 1 2-2h10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg className="inline-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M4 12.5l5 5 11-11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /** navigator.clipboard needs a secure context/permission; fall back to a hidden textarea + execCommand. */
 async function copyToClipboard(text: string): Promise<boolean> {
   if (navigator.clipboard?.writeText) {
@@ -107,7 +125,9 @@ function guidesFromCharacter(character: Character | null): Guide[] {
   );
 }
 
-function PromptBlock({ title, text }: { title: string; text: string }) {
+/** A copy-to-clipboard icon button that toasts on success. `withBase` tells the user the copied text
+ *  already carries the base prompt (true for everything except the standalone Migrate prompt). */
+function CopyButton({ text, withBase = true }: { text: string; withBase?: boolean }) {
   const t = useT();
   const [copied, setCopied] = useState(false);
 
@@ -117,19 +137,62 @@ function PromptBlock({ title, text }: { title: string; text: string }) {
       useToast.getState().push("error", t("prompts.copyFailed"));
       return;
     }
+    useToast.getState().push("success", t(withBase ? "prompts.copiedWithBase" : "prompts.copied"));
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }
 
   return (
+    <button
+      type="button"
+      className="btn btn-icon prompt-copy-btn"
+      onClick={copy}
+      aria-label={t("prompts.copy")}
+      title={t("prompts.copy")}
+    >
+      {copied ? <CheckIcon /> : <CopyIcon />}
+    </button>
+  );
+}
+
+function PromptBlock({ title, text, withBase = true }: { title: string; text: string; withBase?: boolean }) {
+  return (
     <div className="prompt-block">
       <div className="prompt-block-head">
         <h3>{title}</h3>
-        <button type="button" className="btn" onClick={copy}>
-          {copied ? t("prompts.copied") : t("prompts.copy")}
-        </button>
+        <CopyButton text={text} withBase={withBase} />
       </div>
       <pre className="prompt-text">{text}</pre>
+    </div>
+  );
+}
+
+/** The user's own free-text instruction as its own block below Validate: an always-editable box whose
+ *  Copy prepends the base prompt (so it's a self-contained prompt you can paste on its own). */
+function CustomSection({
+  custom,
+  setCustom,
+  copyText,
+}: {
+  custom: string;
+  setCustom: (v: string) => void;
+  copyText: string;
+}) {
+  const t = useT();
+  return (
+    <div className="prompt-block">
+      <div className="prompt-block-head">
+        <h3>{t("prompts.custom")}</h3>
+        <CopyButton text={copyText} withBase />
+      </div>
+      <p className="prompts-focus-hint muted">{t("prompts.customHint")}</p>
+      <textarea
+        className="prompt-edit-area"
+        aria-label={t("prompts.custom")}
+        value={custom}
+        placeholder={t("prompts.customPlaceholder")}
+        onChange={(e) => setCustom(e.target.value)}
+      />
     </div>
   );
 }
@@ -218,7 +281,7 @@ function MigrateSection({ params, segments, locale }: { params: PromptParams; se
           {t("prompts.downloadChangelog")}
         </button>
       </div>
-      <PromptBlock title={t(migrate.titleKey)} text={composePrompt(migrate.id, params, segments, locale)} />
+      <PromptBlock title={t(migrate.titleKey)} text={composePrompt(migrate.id, params, segments, locale)} withBase={false} />
     </section>
   );
 }
@@ -324,18 +387,6 @@ export function PromptsPage() {
             </label>
           </div>
           <p className="prompts-focus-hint muted">{t("prompts.focusHint")}</p>
-
-          <label className="prompts-field-label" htmlFor="prompt-custom">
-            {t("prompts.custom")}
-          </label>
-          <textarea
-            id="prompt-custom"
-            className="prompts-input prompts-custom-area"
-            value={custom}
-            placeholder={t("prompts.customPlaceholder")}
-            onChange={(e) => setCustom(e.target.value)}
-          />
-          <p className="prompts-focus-hint muted">{t("prompts.customHint")}</p>
         </div>
 
         <div className="prompts-actions">
@@ -380,8 +431,9 @@ export function PromptsPage() {
         ) : (
           <>
             {PROMPTS.filter((p) => p.id !== "migrate").map((p) => (
-              <PromptBlock key={p.id} title={t(p.titleKey)} text={composePrompt(p.id, params, segments, locale, custom)} />
+              <PromptBlock key={p.id} title={t(p.titleKey)} text={composePrompt(p.id, params, segments, locale)} />
             ))}
+            <CustomSection custom={custom} setCustom={setCustom} copyText={composeCustom(params, segments, locale, custom)} />
             <MigrateSection params={params} segments={segments} locale={locale} />
           </>
         )}

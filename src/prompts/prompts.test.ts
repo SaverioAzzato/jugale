@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { composePrompt, composeHeader, defaultSegments, DEFAULT_GUIDES, DEFAULT_SEGMENTS, PROMPTS } from "./prompts";
+import { composePrompt, composeCustom, composeHeader, defaultSegments, DEFAULT_GUIDES, DEFAULT_SEGMENTS, PROMPTS } from "./prompts";
 
 describe("composePrompt", () => {
   it("base includes the disclaimer, interaction style, the sources, and the data contract", () => {
@@ -117,19 +117,24 @@ describe("prompt localization (EN / IT)", () => {
 describe("custom instruction + base-prompt guidance", () => {
   const params = { guides: [{ name: "SRD" }] };
 
-  it("appends the custom instruction (with a localized heading) to base and task prompts", () => {
-    const base = composePrompt("base", params, DEFAULT_SEGMENTS, "en", "Always offer a backup.");
-    expect(base).toContain("## Custom instruction");
-    expect(base).toContain("Always offer a backup.");
-    const create = composePrompt("create", params, DEFAULT_SEGMENTS, "en", "Always offer a backup.");
-    expect(create).toContain("Always offer a backup."); // travels via base
-    const it = composePrompt("base", params, defaultSegments("it"), "it", "Sempre un piano B.");
+  it("composeCustom prepends the base prompt and adds a localized custom heading", () => {
+    const en = composeCustom(params, DEFAULT_SEGMENTS, "en", "Always offer a backup.");
+    expect(en).toContain("## Custom instruction");
+    expect(en).toContain("Always offer a backup.");
+    expect(en).toContain("Sources in scope"); // base travels with it
+    const it = composeCustom(params, defaultSegments("it"), "it", "Sempre un piano B.");
     expect(it).toContain("## Istruzione personalizzata");
   });
 
-  it("adds nothing for an empty/whitespace custom instruction, and skips standalone migrate", () => {
-    expect(composePrompt("base", params, DEFAULT_SEGMENTS, "en", "   ")).not.toContain("Custom instruction");
-    expect(composePrompt("migrate", params, DEFAULT_SEGMENTS, "en", "ignored here")).not.toContain("ignored here");
+  it("composeCustom is just the base prompt when the instruction is empty/whitespace", () => {
+    const empty = composeCustom(params, DEFAULT_SEGMENTS, "en", "   ");
+    expect(empty).not.toContain("Custom instruction");
+    expect(empty).toBe(composePrompt("base", params, DEFAULT_SEGMENTS, "en"));
+  });
+
+  it("the custom instruction no longer leaks into the other task prompts", () => {
+    // It's its own block now, not appended to base/create/validate.
+    expect(composePrompt("create", params, DEFAULT_SEGMENTS, "en")).not.toContain("Custom instruction");
   });
 
   it("teaches the export filename, proactive placement, and spaced-minus formula rule", () => {
