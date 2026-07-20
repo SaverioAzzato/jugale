@@ -2259,14 +2259,46 @@ code {
   flex-wrap: wrap;
   justify-content: flex-end;
 }
-/* Compact icon buttons for the editor tools (search / collapse / expand). */
+/* Icon buttons for the editor tools (search toggle / collapse / expand). */
 .rawjson-tool-btn {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
 }
-.rawjson-tool-btn svg {
-  width: 18px;
-  height: 18px;
+.rawjson-tool-btn.is-on {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+/* Custom find / replace bar (drives CodeMirror's search from the app's own UI). */
+.rawjson-search {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.rawjson-search-input {
+  flex: 1 1 140px;
+  min-width: 100px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.rawjson-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.rawjson-search-btn {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
 }
 .rawjson-suggest-btn {
   display: inline-flex;

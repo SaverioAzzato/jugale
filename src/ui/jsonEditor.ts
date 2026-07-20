@@ -18,9 +18,13 @@ import {
   highlightActiveLineGutter,
   gutter,
   GutterMarker,
+  ViewPlugin,
+  Decoration,
   type BlockInfo,
+  type DecorationSet,
+  type ViewUpdate,
 } from "@codemirror/view";
-import { EditorState, Prec } from "@codemirror/state";
+import { EditorState, Prec, RangeSetBuilder } from "@codemirror/state";
 import { history, historyKeymap, defaultKeymap, indentWithTab } from "@codemirror/commands";
 import {
   bracketMatching,
@@ -36,7 +40,16 @@ import {
 } from "@codemirror/language";
 import { json, jsonParseLinter } from "@codemirror/lang-json";
 import { linter, lintKeymap, forEachDiagnostic, type Diagnostic } from "@codemirror/lint";
-import { search, searchKeymap, openSearchPanel } from "@codemirror/search";
+import {
+  search,
+  SearchQuery,
+  setSearchQuery,
+  getSearchQuery,
+  findNext,
+  findPrevious,
+  replaceNext,
+  replaceAll,
+} from "@codemirror/search";
 import {
   autocompletion,
   startCompletion,
@@ -85,8 +98,14 @@ export interface JsonEditorHandle {
   foldAll: () => void;
   /** Expand every folded section (the Expand-all button). */
   unfoldAll: () => void;
-  /** Open the find / find-and-replace panel (Ctrl/Cmd-F, and the Search button for mobile). */
-  openSearch: () => void;
+  /** Set the current find/replace terms (drives match highlighting; case-insensitive, plain text). */
+  setSearch: (search: string, replace: string) => void;
+  /** Move to the next / previous match of the current find term. */
+  findNext: () => void;
+  findPrevious: () => void;
+  /** Replace the current match, or every match, with the replace term. */
+  replaceNext: () => void;
+  replaceAll: () => void;
 }
 
 export interface JsonEditorOptions {
@@ -95,6 +114,8 @@ export interface JsonEditorOptions {
   onDocChange: (text: string) => void;
   /** Fires whenever the diagnostics set changes (drives the Problems panel). */
   onDiagnostics: (diagnostics: PanelDiagnostic[]) => void;
+  /** Fires on Ctrl/Cmd-F inside the editor, so the page can toggle its own search bar. */
+  onToggleSearch?: () => void;
 }
 
 /** JSON token colors, all pulled from theme tokens so the editor re-themes with the app. */
@@ -144,35 +165,9 @@ const editorTheme = EditorView.theme({
   },
   ".cm-tooltip-autocomplete > ul > li[aria-selected]": { backgroundColor: "var(--accent-weak)", color: "var(--text)" },
   ".cm-completionDetail": { color: "var(--muted)", fontStyle: "normal", fontSize: "0.82em" },
-  // Find / find-and-replace panel: themed to match the app and roomy enough to tap on mobile.
-  ".cm-panels": { backgroundColor: "var(--surface-2)", color: "var(--text)", borderBottom: "1px solid var(--border)" },
-  ".cm-panel.cm-search": { padding: "8px 10px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" },
-  ".cm-panel.cm-search label": { fontSize: "12px", color: "var(--muted)", display: "inline-flex", alignItems: "center", gap: "3px" },
-  ".cm-textfield": {
-    backgroundColor: "var(--surface)",
-    color: "var(--text)",
-    border: "1px solid var(--border)",
-    borderRadius: "6px",
-    padding: "5px 8px",
-    fontSize: "13px",
-  },
-  ".cm-button": {
-    backgroundColor: "var(--surface)",
-    backgroundImage: "none",
-    color: "var(--text)",
-    border: "1px solid var(--border)",
-    borderRadius: "6px",
-    padding: "5px 10px",
-    fontSize: "12px",
-    cursor: "pointer",
-  },
-  ".cm-button:hover": { borderColor: "var(--accent)" },
-  ".cm-panel.cm-search [name=close]": {
-    color: "var(--muted)",
-    fontSize: "18px",
-    cursor: "pointer",
-    outlineOffset: "2px",
-  },
+  // Find matches (the page's own search bar drives these; CodeMirror only highlights them).
+  ".cm-searchMatch": { backgroundColor: "var(--accent-weak)", outline: "1px solid var(--accent)", borderRadius: "2px" },
+  ".cm-searchMatch-selected": { backgroundColor: "var(--gold)", color: "var(--on-accent)" },
 });
 
 /** A minimal structural view of a Lezer syntax node — avoids a direct @lezer/common import. */
@@ -628,6 +623,44 @@ function climbTo(node: SyntaxNode, name: string): SyntaxNode | null {
   return null;
 }
 
+// ---- find-match highlighting -----------------------------------------------------------------
+// CodeMirror only paints all matches while its own search panel is open; the page drives search
+// from its own bar, so we highlight matches of the current query ourselves (viewport only, for perf).
+const matchMark = Decoration.mark({ class: "cm-searchMatch" });
+
+function buildSearchMatches(view: EditorView): DecorationSet {
+  const query = getSearchQuery(view.state);
+  const builder = new RangeSetBuilder<Decoration>();
+  if (query.search && query.valid) {
+    for (const { from, to } of view.visibleRanges) {
+      const cursor = query.getCursor(view.state, from, to);
+      for (let next = cursor.next(); !next.done; next = cursor.next()) {
+        builder.add(next.value.from, next.value.to, matchMark);
+      }
+    }
+  }
+  return builder.finish();
+}
+
+const searchHighlighter = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+    constructor(view: EditorView) {
+      this.decorations = buildSearchMatches(view);
+    }
+    update(update: ViewUpdate) {
+      if (
+        update.docChanged ||
+        update.viewportChanged ||
+        update.transactions.some((tr) => tr.effects.some((e) => e.is(setSearchQuery)))
+      ) {
+        this.decorations = buildSearchMatches(update.view);
+      }
+    }
+  },
+  { decorations: (v) => v.decorations },
+);
+
 export function createJsonEditor(parent: HTMLElement, opts: JsonEditorOptions): JsonEditorHandle {
   const reportDiagnostics = (view: EditorView) => {
     const out: PanelDiagnostic[] = [];
@@ -660,7 +693,10 @@ export function createJsonEditor(parent: HTMLElement, opts: JsonEditorOptions): 
         json(),
         syntaxHighlighting(highlightStyle),
         autocompletion({ activateOnTyping: true, override: [jsonCompletions], icons: false, maxRenderedOptions: 30 }),
-        search({ top: true }),
+        // Search state only — the page renders its own compact search bar and drives it through the
+        // handle, so CodeMirror's default panel is never opened; searchHighlighter paints the matches.
+        search(),
+        searchHighlighter,
         linter(jsonParseLinter()),
         linter((view) => schemaDiagnosticsForText(view.state.doc.toString()), { delay: 400 }),
         // Tab first accepts an open completion, then steps between snippet fields, and only then
@@ -672,7 +708,14 @@ export function createJsonEditor(parent: HTMLElement, opts: JsonEditorOptions): 
             { key: "Shift-Tab", run: prevSnippetField },
           ]),
         ),
-        keymap.of([...defaultKeymap, ...historyKeymap, ...foldKeymap, ...searchKeymap, ...lintKeymap, indentWithTab]),
+        keymap.of([
+          { key: "Mod-f", run: () => (opts.onToggleSearch?.(), true) },
+          ...defaultKeymap,
+          ...historyKeymap,
+          ...foldKeymap,
+          ...lintKeymap,
+          indentWithTab,
+        ]),
         editorTheme,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) opts.onDocChange(update.state.doc.toString());
@@ -695,9 +738,20 @@ export function createJsonEditor(parent: HTMLElement, opts: JsonEditorOptions): 
     },
     foldAll: () => foldAll(view),
     unfoldAll: () => unfoldAll(view),
-    openSearch: () => {
-      view.focus();
-      openSearchPanel(view);
+    setSearch: (search, replace) => {
+      view.dispatch({
+        effects: setSearchQuery.of(new SearchQuery({ search, replace, caseSensitive: false, regexp: false })),
+      });
     },
+    findNext: () => {
+      findNext(view);
+      view.focus();
+    },
+    findPrevious: () => {
+      findPrevious(view);
+      view.focus();
+    },
+    replaceNext: () => replaceNext(view),
+    replaceAll: () => replaceAll(view),
   };
 }

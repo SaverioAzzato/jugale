@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useCharacter } from "../state/store";
 import { useT } from "../i18n/useI18n";
 import type { JsonEditorHandle, PanelDiagnostic } from "./jsonEditor";
@@ -20,6 +20,26 @@ export function RawJsonPage() {
 
   const [diagnostics, setDiagnostics] = useState<PanelDiagnostic[]>([]);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [find, setFind] = useState("");
+  const [replace, setReplace] = useState("");
+  const findRef = useRef<HTMLInputElement>(null);
+
+  // The search button toggles the bar; closing clears the current query so highlights disappear.
+  const toggleSearch = useCallback(() => {
+    setSearchOpen((open) => {
+      if (open) handleRef.current?.setSearch("", "");
+      return !open;
+    });
+  }, []);
+
+  // Keep the editor's find/replace terms in sync with the bar while it's open, and focus the field.
+  useEffect(() => {
+    if (searchOpen) handleRef.current?.setSearch(find, replace);
+  }, [find, replace, searchOpen]);
+  useEffect(() => {
+    if (searchOpen) findRef.current?.focus();
+  }, [searchOpen]);
 
   // Commit valid JSON to the store (debounced). Invalid JSON is left uncommitted — the squiggles
   // and the Problems panel already show why — so the sheet keeps the last good state.
@@ -46,6 +66,7 @@ export function RawJsonPage() {
           commitTimer.current = setTimeout(() => commit(text), 400);
         },
         onDiagnostics: setDiagnostics,
+        onToggleSearch: toggleSearch,
       });
     });
 
@@ -80,10 +101,11 @@ export function RawJsonPage() {
         <div className="rawjson-actions">
           <button
             type="button"
-            className="btn btn-icon rawjson-tool-btn"
-            onClick={() => handleRef.current?.openSearch()}
+            className={`btn btn-icon rawjson-tool-btn${searchOpen ? " is-on" : ""}`}
+            onClick={toggleSearch}
             title={t("rawjson.search")}
             aria-label={t("rawjson.search")}
+            aria-pressed={searchOpen}
           >
             <SearchIcon />
           </button>
@@ -126,6 +148,81 @@ export function RawJsonPage() {
         </div>
       </div>
 
+      {searchOpen && (
+        <div className="rawjson-search">
+          <input
+            ref={findRef}
+            type="text"
+            className="rawjson-search-input"
+            value={find}
+            placeholder={t("rawjson.find")}
+            aria-label={t("rawjson.find")}
+            onChange={(e) => setFind(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (e.shiftKey) handleRef.current?.findPrevious();
+                else handleRef.current?.findNext();
+              } else if (e.key === "Escape") {
+                toggleSearch();
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="btn btn-icon rawjson-search-btn"
+            onClick={() => handleRef.current?.findPrevious()}
+            title={t("rawjson.findPrev")}
+            aria-label={t("rawjson.findPrev")}
+          >
+            <ChevronUpIcon />
+          </button>
+          <button
+            type="button"
+            className="btn btn-icon rawjson-search-btn"
+            onClick={() => handleRef.current?.findNext()}
+            title={t("rawjson.findNext")}
+            aria-label={t("rawjson.findNext")}
+          >
+            <ChevronDownIcon />
+          </button>
+          <input
+            type="text"
+            className="rawjson-search-input"
+            value={replace}
+            placeholder={t("rawjson.replace")}
+            aria-label={t("rawjson.replace")}
+            onChange={(e) => setReplace(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleRef.current?.replaceNext();
+              } else if (e.key === "Escape") {
+                toggleSearch();
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="btn btn-icon rawjson-search-btn"
+            onClick={() => handleRef.current?.replaceNext()}
+            title={t("rawjson.replaceOne")}
+            aria-label={t("rawjson.replaceOne")}
+          >
+            <ReplaceIcon />
+          </button>
+          <button
+            type="button"
+            className="btn btn-icon rawjson-search-btn"
+            onClick={() => handleRef.current?.replaceAll()}
+            title={t("rawjson.replaceAll")}
+            aria-label={t("rawjson.replaceAll")}
+          >
+            <ReplaceAllIcon />
+          </button>
+        </div>
+      )}
+
       <div className="rawjson-editor" ref={hostRef} />
 
       {panelOpen && (
@@ -164,8 +261,8 @@ function LightbulbIcon() {
 }
 
 const ICON_PROPS = {
-  width: 18,
-  height: 18,
+  width: 20,
+  height: 20,
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
@@ -175,32 +272,73 @@ const ICON_PROPS = {
   "aria-hidden": true,
 };
 
-/** Magnifier — open the find / replace panel. */
+/** Magnifier — toggle the search bar. */
 function SearchIcon() {
   return (
     <svg {...ICON_PROPS}>
-      <circle cx="11" cy="11" r="7" />
-      <path d="M21 21l-4.3-4.3" />
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="M20 20l-4.5-4.5" />
     </svg>
   );
 }
 
-/** Chevrons pointing inward — collapse every section. */
+/** Boxed minus — collapse every section (the universal tree-collapse glyph). */
 function CollapseIcon() {
   return (
     <svg {...ICON_PROPS}>
-      <path d="M7 4l5 5 5-5" />
-      <path d="M7 20l5-5 5 5" />
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <path d="M8 12h8" />
     </svg>
   );
 }
 
-/** Chevrons pointing outward — expand every section. */
+/** Boxed plus — expand every section (the universal tree-expand glyph). */
 function ExpandIcon() {
   return (
     <svg {...ICON_PROPS}>
-      <path d="M7 9l5-5 5 5" />
-      <path d="M7 15l5 5 5-5" />
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <path d="M12 8v8" />
+      <path d="M8 12h8" />
+    </svg>
+  );
+}
+
+/** Chevron up — previous match. */
+function ChevronUpIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M6 15l6-6 6 6" />
+    </svg>
+  );
+}
+
+/** Chevron down — next match. */
+function ChevronDownIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+/** One line + arrow — replace the current match. */
+function ReplaceIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M4 12h9" />
+      <path d="M13 8l4 4-4 4" />
+    </svg>
+  );
+}
+
+/** Several lines + arrow — replace every match. */
+function ReplaceAllIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M4 6h8" />
+      <path d="M4 12h8" />
+      <path d="M4 18h8" />
+      <path d="M14 8l4 4-4 4" />
     </svg>
   );
 }
