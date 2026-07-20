@@ -12,10 +12,9 @@ const REPO = "SaverioAzzato/jugale";
  * - **Desktop**: Tauri's signed updater (`plugin-updater`) can download+install and relaunch in
  *   place — `kind: "install"`.
  * - **Android**: Tauri's updater doesn't support mobile, so we ask the GitHub API for the latest
- *   release and, if it's newer, offer to open the APK in the browser — `kind: "download"`. The
- *   request goes through Tauri's **HTTP plugin** (from Rust), not the webview's `fetch`: a raw
- *   webview fetch to api.github.com is unreliable on Android (CORS/CSP/webview quirks), which is
- *   why the banner never appeared there.
+ *   release and, if it's newer, download through our native Android plugin — `kind: "download"`.
+ *   Metadata uses Tauri's HTTP plugin; the APK is streamed into private cache, size/hash verified,
+ *   and passed to Package Installer without involving a browser or DownloadManager.
  * - **Web**: nothing to do, the page is always the latest.
  *
  * The automatic check at startup is best-effort and **silent** on failure (offline, rate-limited):
@@ -58,22 +57,24 @@ async function checkDesktop(set: (s: UpdateState) => void, manual: boolean): Pro
   });
 }
 
-/**
- * A GitHub asset link (`github.com/…/releases/download/…`) 302-redirects to a signed CDN URL
- * (`objects.githubusercontent.com`). Android's DownloadManager frequently **stalls at the final
- * chunk** on that redirect — the APK downloads to ~100% and then hangs "as if more is coming".
- * So we resolve the final CDN URL ourselves first (the HTTP plugin follows redirects and reports
- * the final `url`) and hand *that* redirect-free link to the browser. A HEAD is enough — we never
- * pull the APK bytes here — and any failure falls back to the original URL (no regression).
- */
-async function resolveDownloadUrl(url: string): Promise<string> {
-  try {
-    const { fetch } = await import("@tauri-apps/plugin-http");
-    const res = await fetch(url, { method: "HEAD" });
-    return res.url || url;
-  } catch {
-    return url;
-  }
+export interface AndroidReleaseAsset {
+  name: string;
+  browser_download_url: string;
+  size: number;
+  digest?: string | null;
+}
+
+/** Native Android download: stream to private cache, verify size/SHA-256, then open Package Installer. */
+export async function installAndroidUpdate(asset: AndroidReleaseAsset): Promise<void> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("plugin:android-updater|download_and_install", {
+    payload: {
+      url: asset.browser_download_url,
+      fileName: asset.name,
+      expectedSize: asset.size,
+      expectedDigest: asset.digest ?? null,
+    },
+  });
 }
 
 async function checkAndroid(set: (s: UpdateState) => void, manual: boolean): Promise<void> {
@@ -82,24 +83,26 @@ async function checkAndroid(set: (s: UpdateState) => void, manual: boolean): Pro
     headers: { Accept: "application/vnd.github+json" },
   });
   if (!res.ok) throw new Error(`GitHub API ${res.status}`); // surfaced only on a manual check
-  const data = (await res.json()) as { tag_name?: string; html_url?: string; assets?: { name: string; browser_download_url: string }[] };
+  const data = (await res.json()) as { tag_name?: string; assets?: AndroidReleaseAsset[] };
   const tag = data.tag_name;
   if (!tag || !isNewer(tag, __APP_VERSION__)) {
     if (manual) notify("success", "update.upToDate");
     return;
   }
-  const apkUrl = data.assets?.find((a) => a.name.toLowerCase().endsWith(".apk"))?.browser_download_url;
-  const fallback = data.html_url; // the release page, if the APK asset can't be found
-  if (!apkUrl && !fallback) throw new Error("release has no downloadable asset");
+  const apk = data.assets?.find((a) => a.name.toLowerCase().endsWith(".apk"));
+  if (!apk || !Number.isSafeInteger(apk.size) || apk.size <= 0) {
+    throw new Error("release has no valid APK asset");
+  }
   set({
     status: "available",
     version: tag,
     kind: "download",
     apply: async () => {
-      const { openUrl } = await import("@tauri-apps/plugin-opener");
-      // For the direct APK link, sidestep the redirect that stalls Android's downloader.
-      const target = apkUrl ? await resolveDownloadUrl(apkUrl) : fallback!;
-      await openUrl(target);
+      try {
+        await installAndroidUpdate(apk);
+      } catch (e) {
+        notify("error", "update.checkFailed", e instanceof Error ? e.message : String(e));
+      }
     },
   });
 }

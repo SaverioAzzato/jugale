@@ -189,8 +189,7 @@ function PromptBlock({ title, text, withBase = true }: { title: string; text: st
   );
 }
 
-/** The user's own free-text instruction as its own block below Validate: an always-editable box whose
- *  Copy prepends the base prompt (so it's a self-contained prompt you can paste on its own). */
+/** A user-authored task, composed exactly like Create/Level up/Validate: base + task instruction. */
 function CustomSection({
   custom,
   setCustom,
@@ -296,14 +295,12 @@ function SegmentEditors({
   );
 }
 
-/** The migration workflow — deliberately set apart: it's about upgrading an old file (which
- *  attachments to download, which standalone prompt to run), not building/playing a character. */
+/** The migration workflow is a separate top-level panel because it uses a standalone prompt. */
 function MigrateSection({ params, segments, locale }: { params: PromptParams; segments: PromptSegments; locale: Locale }) {
   const t = useT();
   const migrate = PROMPTS.find((p) => p.id === "migrate")!;
   return (
-    <section className="prompts-migrate-section">
-      <h3 className="prompts-section-title">{t("prompts.sectionMigrateTitle")}</h3>
+    <Panel title={t("prompts.sectionMigrateTitle")}>
       <p className="prompts-intro">{t("prompts.sectionMigrateIntro")}</p>
       <div className="prompts-actions">
         <button
@@ -315,7 +312,7 @@ function MigrateSection({ params, segments, locale }: { params: PromptParams; se
         </button>
       </div>
       <PromptBlock title={t(migrate.titleKey)} text={composePrompt(migrate.id, params, segments, locale)} withBase={false} />
-    </section>
+    </Panel>
   );
 }
 
@@ -368,11 +365,10 @@ export function PromptsPage() {
 
   return (
     <div className="settings-page prompts-page">
-      <Panel title={t("prompts.title")}>
+      <Panel title={t("prompts.sectionBuildTitle")}>
         <p className="prompts-banner" role="note">
           {t("prompts.banner")}
         </p>
-        <h3 className="prompts-section-title">{t("prompts.sectionBuildTitle")}</h3>
         <p className="prompts-intro">{t("prompts.intro")}</p>
 
         <div className="prompts-params">
@@ -467,10 +463,10 @@ export function PromptsPage() {
               <PromptBlock key={p.id} title={t(p.titleKey)} text={composePrompt(p.id, params, segments, locale)} />
             ))}
             <CustomSection custom={custom} setCustom={setCustom} copyText={composeCustom(params, segments, locale, custom)} />
-            <MigrateSection params={params} segments={segments} locale={locale} />
           </>
         )}
       </Panel>
+      {!editing && <MigrateSection params={params} segments={segments} locale={locale} />}
     </div>
   );
 }

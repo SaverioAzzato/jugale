@@ -3,8 +3,7 @@ pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
-        // Opens external URLs (e.g. the Releases page for the Android update banner) in the
-        // system browser. All platforms.
+        // Opens external links from character data in the system browser. All platforms.
         .plugin(tauri_plugin_opener::init());
 
     // Android has no real file paths — only SAF content:// URIs, which the stock fs/dialog
@@ -12,6 +11,11 @@ pub fn run() {
     // permissions; the JS side (src/storage/androidProvider.ts) drives it. Android-only.
     #[cfg(target_os = "android")]
     let builder = builder.plugin(tauri_plugin_android_fs::init());
+
+    // Downloads a release APK into private app cache, verifies it, then hands the local file to
+    // Android's package installer. This deliberately bypasses browsers and DownloadManager.
+    #[cfg(target_os = "android")]
+    let builder = builder.plugin(tauri_plugin_android_updater::init());
 
     // The Android update check calls the GitHub API through this HTTP plugin (from Rust) instead
     // of the webview's `fetch`, which is unreliable there. Desktop uses the native updater below,

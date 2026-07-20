@@ -36,7 +36,7 @@ interface PromptSegmentsState {
   saved: PromptSegments | null;
   /** Whether there's a saved customization to reset. */
   customized: boolean;
-  /** Free-text instruction appended to the base of every composed prompt (independent of `saved`). */
+  /** User-authored task composed with the base when copied (independent of `saved`). */
   custom: string;
   save: (segments: PromptSegments) => void;
   reset: () => void;

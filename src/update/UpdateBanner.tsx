@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useUpdate } from "./useUpdate";
 import { useT } from "../i18n/useI18n";
 
@@ -7,16 +8,29 @@ export function UpdateBanner() {
   const state = useUpdate((s) => s.state);
   const dismiss = useUpdate((s) => s.dismiss);
   const t = useT();
+  const [applying, setApplying] = useState(false);
 
   if (state.status !== "available") return null;
-  const actionLabel = state.kind === "install" ? t("update.install") : t("update.download");
+  const actionLabel = applying
+    ? t(state.kind === "install" ? "update.installing" : "update.downloading")
+    : t(state.kind === "install" ? "update.install" : "update.download");
+
+  async function apply() {
+    if (state.status !== "available" || applying) return;
+    setApplying(true);
+    try {
+      await state.apply();
+    } finally {
+      setApplying(false);
+    }
+  }
 
   return (
     <div className="update-banner" role="status" aria-live="polite">
       <span className="update-banner-text">
         {t("update.available")} <strong>{state.version}</strong>
       </span>
-      <button type="button" className="btn update-banner-action" onClick={() => void state.apply()}>
+      <button type="button" className="btn update-banner-action" onClick={() => void apply()} disabled={applying}>
         {actionLabel}
       </button>
       <button

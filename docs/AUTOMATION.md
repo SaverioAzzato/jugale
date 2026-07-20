@@ -8,12 +8,13 @@
 | `release.yml` *(added in M4)* | tag `v*` | builds desktop + a release-signed Android APK, attaches them to a **draft** GitHub Release. |
 | `pages.yml` *(added in M4)* | tag `v*` | deploys the web build to GitHub Pages. |
 | `tauri-check.yml` | PR touching `src-tauri/` | fast Rust `cargo check` (no bundling). |
+| `android-check.yml` | PR touching the native updater/update wiring | builds a debug APK, including Kotlin and the merged Android manifest. |
 
 There is intentionally **no `claude.yml`** — see "ticket → PR" below for why.
 
 ## Repository secrets (the whole list)
 
-Every secret CI relies on, in one place. All are **one-time setup** (create once, reuse for every release) and only used by `release.yml`; `ci.yml`/`pages.yml`/`tauri-check.yml` need none. **Back up each value outside GitHub** — GitHub won't show it again, and losing the signing ones means you can't ship compatible updates. Set them at *Repo → Settings → Secrets and variables → Actions*.
+Every secret CI relies on, in one place. All are **one-time setup** (create once, reuse for every release) and only used by `release.yml`; `ci.yml`/`pages.yml`/`tauri-check.yml`/`android-check.yml` need none. **Back up each value outside GitHub** — GitHub won't show it again, and losing the signing ones means you can't ship compatible updates. Set them at *Repo → Settings → Secrets and variables → Actions*.
 
 | Secret | Purpose | Consumed by | Details |
 |---|---|---|---|
@@ -63,7 +64,7 @@ Desktop builds self-update from GitHub Releases via Tauri's `updater` plugin. `r
 | `TAURI_SIGNING_PRIVATE_KEY` | contents of the updater private key (`tauri signer generate`) |
 | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | its password |
 
-The **public** key lives in `tauri.conf.json` → `plugins.updater.pubkey` (safe to commit). **Back up the private key + password outside GitHub** — losing them means installed apps can no longer verify updates. Two caveats: the endpoint (`.../releases/latest/download/latest.json`) only resolves once a release is **published** (not left as a draft); and auto-update only kicks in from the *next* release onward — a version that predates the updater has no client to check. **Android** can't use this (Tauri's updater is desktop-only), so it does a lightweight in-app GitHub-API version check that offers to open the newer APK (`src/update/`); this needs `https://api.github.com` in the Tauri CSP `connect-src`.
+The **public** key lives in `tauri.conf.json` → `plugins.updater.pubkey` (safe to commit). **Back up the private key + password outside GitHub** — losing them means installed apps can no longer verify updates. Two caveats: the endpoint (`.../releases/latest/download/latest.json`) only resolves once a release is **published** (not left as a draft); and auto-update only kicks in from the *next* release onward — a version that predates the updater has no client to check. **Android** can't use this (Tauri's updater is desktop-only), so it does a lightweight in-app GitHub-API version check (`src/update/`) and hands the selected asset metadata to `src-tauri/plugins/android-updater/`. That local Kotlin plugin downloads to private cache, follows GitHub's HTTPS redirects itself, verifies byte count plus the optional SHA-256 digest, then opens Package Installer through `FileProvider`. The browser and Android `DownloadManager` are deliberately not involved. Only release metadata needs `https://api.github.com` in the frontend HTTP capability/CSP; CDN domains are not exposed to the webview.
 
 ## Cutting a release
 

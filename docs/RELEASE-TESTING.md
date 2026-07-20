@@ -50,7 +50,14 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
 
 ## Auto-update (once shipped)
 - ☐ Desktop: install the previous version, then release a newer tag → the app detects the update.
-- ☐ Android: previous version installed → in-app banner points to the new APK on Releases.
+- ☐ Android: install the previous release, publish a newer one, then tap the in-app update banner.
+  The button reads “Download in corso…”, Android's browser/download notification never opens, and
+  Package Installer appears only after the APK has been fully downloaded and verified.
+- ☐ Refuse or cancel “install unknown apps”, then retry: the app remains usable and no endless
+  100% download remains in Android's Downloads UI.
+- ☐ Before publishing, verify the release asset has a non-zero size and preferably a `sha256:`
+  digest in GitHub's API metadata. The updater always enforces size and verifies the digest whenever
+  GitHub supplies it.
 
 ---
 
