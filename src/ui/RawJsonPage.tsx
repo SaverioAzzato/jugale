@@ -261,8 +261,8 @@ function LightbulbIcon() {
 }
 
 const ICON_PROPS = {
-  width: 22,
-  height: 22,
+  width: 19,
+  height: 19,
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
@@ -321,25 +321,34 @@ function ChevronDownIcon() {
   );
 }
 
-/** Arrow into a single box — replace the current match. */
+/** Replace the current match (Lucide "replace": a source box, an arrow, a target box). */
 function ReplaceIcon() {
   return (
     <svg {...ICON_PROPS}>
-      <rect x="12" y="8" width="9" height="9" rx="2" />
-      <path d="M3 12.5h6" />
-      <path d="M6.5 9l3.5 3.5-3.5 3.5" />
+      <path d="M14 4a1 1 0 0 1 1-1" />
+      <path d="M15 10a1 1 0 0 1-1-1" />
+      <path d="M21 4a1 1 0 0 0-1-1" />
+      <path d="M21 9a1 1 0 0 1-1 1" />
+      <path d="m3 7 3 3 3-3" />
+      <path d="M6 10V5a2 2 0 0 1 2-2h2" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
     </svg>
   );
 }
 
-/** Arrow into a stack of boxes — replace every match. */
+/** Replace every match (Lucide "replace-all": the replace icon plus a second target box). */
 function ReplaceAllIcon() {
   return (
     <svg {...ICON_PROPS}>
-      <path d="M12 6h4a2 2 0 0 1 2 2v4" />
-      <rect x="9" y="9" width="9" height="9" rx="2" />
-      <path d="M2 13.5h5" />
-      <path d="M5 10l3.5 3.5-3.5 3.5" />
+      <path d="M14 14a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1" />
+      <path d="M14 4a1 1 0 0 1 1-1" />
+      <path d="M15 10a1 1 0 0 1-1-1" />
+      <path d="M19 14a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1" />
+      <path d="M21 4a1 1 0 0 0-1-1" />
+      <path d="M21 9a1 1 0 0 1-1 1" />
+      <path d="m3 7 3 3 3-3" />
+      <path d="M6 10V5a2 2 0 0 1 2-2h2" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
     </svg>
   );
 }
