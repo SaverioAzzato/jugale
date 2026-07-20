@@ -361,6 +361,11 @@ a {
   letter-spacing: 0.5px;
   color: var(--accent);
 }
+.prompt-block-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .prompt-text {
   margin: 0;
   padding: 12px 14px;
@@ -410,6 +415,11 @@ a {
   font-family: var(--font-sans);
   font-size: 12.5px;
   line-height: 1.5;
+}
+/* The custom instruction is a short standing note, not a multi-paragraph prompt — no need for
+   the 160px the base/task edit boxes reserve. */
+.prompt-custom-area {
+  min-height: 70px;
 }
 .prompt-locked-note {
   margin: 12px 0 4px;

@@ -102,6 +102,16 @@ function CheckIcon() {
   );
 }
 
+/** Lucide "x" — clears the custom instruction. */
+function ClearIcon() {
+  return (
+    <svg className="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
+  );
+}
+
 /** navigator.clipboard needs a secure context/permission; fall back to a hidden textarea + execCommand. */
 async function copyToClipboard(text: string): Promise<boolean> {
   if (navigator.clipboard?.writeText) {
@@ -195,11 +205,22 @@ function CustomSection({
     <div className="prompt-block">
       <div className="prompt-block-head">
         <h3>{t("prompts.custom")}</h3>
-        <CopyButton text={copyText} withBase />
+        <div className="prompt-block-tools">
+          <button
+            type="button"
+            className="btn btn-icon"
+            onClick={() => setCustom("")}
+            disabled={!custom}
+            aria-label={t("prompts.clearCustom")}
+            title={t("prompts.clearCustom")}
+          >
+            <ClearIcon />
+          </button>
+          <CopyButton text={copyText} withBase />
+        </div>
       </div>
-      <p className="prompts-focus-hint muted">{t("prompts.customHint")}</p>
       <textarea
-        className="prompt-edit-area"
+        className="prompt-edit-area prompt-custom-area"
         aria-label={t("prompts.custom")}
         value={custom}
         placeholder={t("prompts.customPlaceholder")}
