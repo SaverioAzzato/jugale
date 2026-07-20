@@ -11,7 +11,6 @@ import {
   newInnateAttack,
   newCustomSection,
   newAction,
-  newCharacter,
 } from "./factories";
 
 describe("factories — new entries are schema-clean", () => {
@@ -43,17 +42,5 @@ describe("factories — new entries are schema-clean", () => {
     expect(cl.level).toBe(1);
     expect(cl.spellcasting.ability).toBeNull();
     expect(cl.spellcasting.slotProgression).toBe("none");
-  });
-
-  it("newCharacter yields a fully-defaulted, issue-free character with the given name", () => {
-    const c = newCharacter("Vex");
-    expect(c.meta.name).toBe("Vex");
-    // Sections are present with schema defaults, ready to render/edit.
-    expect(c.abilities.str.score).toBe(10);
-    expect(Array.isArray(c.classes)).toBe(true);
-    // And it round-trips cleanly through the load pipeline (no schema errors/warnings).
-    const { ok, issues } = loadCharacter(c);
-    expect(ok).toBe(true);
-    expect(issues).toEqual([]);
   });
 });

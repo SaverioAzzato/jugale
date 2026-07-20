@@ -1350,43 +1350,6 @@ button {
   flex: 0 0 auto;
   color: var(--accent);
 }
-
-/* ---- generic small modal (backdrop + centered card) ---- */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 70;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(0, 0, 0, 0.6);
-}
-.modal-card {
-  width: 100%;
-  max-width: 360px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.modal-label {
-  font-size: 13px;
-  color: var(--muted);
-}
-.modal-input {
-  width: 100%;
-}
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 4px;
-}
 /* Recents — last-opened characters, between the central card and the samples. */
 .empty-recents {
   max-width: 520px;

@@ -35,9 +35,6 @@ import { IssuesChip } from "./ui/IssuesChip";
 import { DiceCanvas } from "./ui/dice/DiceCanvas";
 import { Toasts } from "./ui/Toasts";
 import { useToast } from "./ui/useToast";
-import { notifySaveOutcome } from "./ui/saveToast";
-import { saveJsonAs } from "./storage/exporter";
-import { newCharacter } from "./model/factories";
 import { EmptyState } from "./ui/EmptyState";
 import { UpdateBanner } from "./update/UpdateBanner";
 import { useUpdate } from "./update/useUpdate";
@@ -192,19 +189,6 @@ export function App() {
       return;
     }
     folderInput.current?.click();
-  }
-
-  // Create a fresh character (full skeleton, defaults everywhere), ask where to save it, then load
-  // it. saveJsonAs handles folder+filename on capable hosts and falls back to a download (with the
-  // usual toast) where a save picker isn't available; either way we open it so editing starts now.
-  // The name comes from EmptyState's own dialog, not window.prompt() — Tauri's webviews (desktop
-  // and, especially, mobile) don't reliably implement it, so the button would silently do nothing.
-  async function handleNewCharacter(name: string) {
-    const created = newCharacter(name);
-    const outcome = await saveJsonAs(created, "character.json");
-    if (outcome.status === "cancelled") return; // didn't save anywhere → don't load a phantom
-    notifySaveOutcome(outcome);
-    loadRaw(created, name);
   }
 
   async function handleImportFile(e: ChangeEvent<HTMLInputElement>) {
@@ -424,7 +408,6 @@ export function App() {
         </div>
       ) : (
         <EmptyState
-          onNewCharacter={handleNewCharacter}
           onOpenJson={handleOpenJson}
           onOpenFolder={handleOpenFolder}
           onSample={(d, l, imgs) => loadRaw(d, l, imgs)}

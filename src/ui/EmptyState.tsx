@@ -1,4 +1,3 @@
-import { useState, useRef, useEffect, type FormEvent } from "react";
 import { Caret } from "../render/primitives";
 import { isTauri } from "../storage/tauriProvider";
 import type { GalleryImage } from "../storage/provider";
@@ -38,7 +37,6 @@ const SAMPLES = [
 
 /** The welcome screen shown when no character is loaded: open actions, recents, samples, footer. */
 export function EmptyState({
-  onNewCharacter,
   onOpenJson,
   onOpenFolder,
   onSample,
@@ -47,7 +45,6 @@ export function EmptyState({
   onClearRecents,
   t,
 }: {
-  onNewCharacter: (name: string) => void;
   onOpenJson: () => void;
   onOpenFolder: () => void;
   onSample: (data: unknown, label: string, images: GalleryImage[]) => void;
@@ -56,18 +53,12 @@ export function EmptyState({
   onClearRecents: () => void;
   t: TFn;
 }) {
-  const [namingNew, setNamingNew] = useState(false);
-
   return (
     <div className="empty-state">
       <div className="empty-brand">:JUGALE</div>
       <div className="empty-card">
         <h1>{t("empty.title")}</h1>
         <div className="empty-actions">
-          <button type="button" className="empty-action" onClick={() => setNamingNew(true)}>
-            <PlusIcon />
-            {t("home.newCharacter")}
-          </button>
           <button type="button" className="empty-action" onClick={onOpenFolder}>
             <FolderIcon />
             {t("app.openFolder")}
@@ -78,16 +69,6 @@ export function EmptyState({
           </button>
         </div>
       </div>
-      {namingNew && (
-        <NewCharacterDialog
-          t={t}
-          onCancel={() => setNamingNew(false)}
-          onCreate={(name) => {
-            setNamingNew(false);
-            onNewCharacter(name);
-          }}
-        />
-      )}
       {recents.length > 0 && (
         <div className="empty-recents">
           <div className="empty-recents-head">
@@ -165,62 +146,6 @@ export function EmptyState({
   );
 }
 
-/**
- * Asks for the new character's name in-app. Replaces window.prompt(), which Tauri's webviews
- * (desktop and especially mobile) don't reliably implement — the button would silently do nothing.
- */
-function NewCharacterDialog({
-  t,
-  onCancel,
-  onCreate,
-}: {
-  t: TFn;
-  onCancel: () => void;
-  onCreate: (name: string) => void;
-}) {
-  const [name, setName] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
-
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    const trimmed = name.trim();
-    if (trimmed) onCreate(trimmed);
-  };
-
-  return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={onCancel}>
-      <form className="modal-card" onClick={(e) => e.stopPropagation()} onSubmit={submit}>
-        <label className="modal-label" htmlFor="new-character-name">
-          {t("home.newCharacterNamePrompt")}
-        </label>
-        <input
-          id="new-character-name"
-          ref={inputRef}
-          type="text"
-          className="modal-input"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") onCancel();
-          }}
-        />
-        <div className="modal-actions">
-          <button type="button" className="btn" onClick={onCancel}>
-            {t("home.newCharacterCancel")}
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={!name.trim()}>
-            {t("home.newCharacterCreate")}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
 const ICON_PROPS = {
   width: 18,
   height: 18,
@@ -232,16 +157,6 @@ const ICON_PROPS = {
   strokeLinejoin: "round" as const,
   "aria-hidden": true,
 };
-
-/** Lucide "plus". */
-function PlusIcon() {
-  return (
-    <svg {...ICON_PROPS}>
-      <path d="M5 12h14" />
-      <path d="M12 5v14" />
-    </svg>
-  );
-}
 
 /** Lucide "folder". */
 function FolderIcon() {
