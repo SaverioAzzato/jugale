@@ -43,17 +43,22 @@ export function PromptsButton({ onClick }: { onClick: () => void }) {
   );
 }
 
+/** Lucide "pencil". */
 function PencilIcon() {
   return (
-    <svg className="inline-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d="M16.5 3.5l4 4M4 20l1-4L17 4l3 3L8 19l-4 1Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg
+      className="inline-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+      <path d="m15 5 4 4" />
     </svg>
   );
 }
