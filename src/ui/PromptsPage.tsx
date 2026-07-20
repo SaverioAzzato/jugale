@@ -63,17 +63,24 @@ function PencilIcon() {
   );
 }
 
+/** Lucide "refresh-cw". */
 function ResetIcon() {
   return (
-    <svg className="inline-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d="M4 4v5h5M20 20v-5h-5M19.5 9a8 8 0 0 0-14.13-3M4.5 15a8 8 0 0 0 14.13 3"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg
+      className="inline-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+      <path d="M8 16H3v5" />
     </svg>
   );
 }
