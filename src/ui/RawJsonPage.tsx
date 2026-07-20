@@ -80,6 +80,33 @@ export function RawJsonPage() {
         <div className="rawjson-actions">
           <button
             type="button"
+            className="btn btn-icon rawjson-tool-btn"
+            onClick={() => handleRef.current?.openSearch()}
+            title={t("rawjson.search")}
+            aria-label={t("rawjson.search")}
+          >
+            <SearchIcon />
+          </button>
+          <button
+            type="button"
+            className="btn btn-icon rawjson-tool-btn"
+            onClick={() => handleRef.current?.foldAll()}
+            title={t("rawjson.collapseAll")}
+            aria-label={t("rawjson.collapseAll")}
+          >
+            <CollapseIcon />
+          </button>
+          <button
+            type="button"
+            className="btn btn-icon rawjson-tool-btn"
+            onClick={() => handleRef.current?.unfoldAll()}
+            title={t("rawjson.expandAll")}
+            aria-label={t("rawjson.expandAll")}
+          >
+            <ExpandIcon />
+          </button>
+          <button
+            type="button"
             className="btn rawjson-suggest-btn"
             onClick={() => handleRef.current?.triggerCompletion()}
             title={t("rawjson.suggest")}
@@ -132,6 +159,48 @@ function LightbulbIcon() {
       <path d="M9 18h6" />
       <path d="M10 22h4" />
       <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1v.2h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z" />
+    </svg>
+  );
+}
+
+const ICON_PROPS = {
+  width: 18,
+  height: 18,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+};
+
+/** Magnifier — open the find / replace panel. */
+function SearchIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.3-4.3" />
+    </svg>
+  );
+}
+
+/** Chevrons pointing inward — collapse every section. */
+function CollapseIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M7 4l5 5 5-5" />
+      <path d="M7 20l5-5 5 5" />
+    </svg>
+  );
+}
+
+/** Chevrons pointing outward — expand every section. */
+function ExpandIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M7 9l5-5 5 5" />
+      <path d="M7 15l5 5 5-5" />
     </svg>
   );
 }

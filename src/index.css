@@ -2225,7 +2225,8 @@ code {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 12px 8px;
+  flex-wrap: wrap;
 }
 .rawjson-summary {
   display: flex;
@@ -2254,7 +2255,18 @@ code {
 .rawjson-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+/* Compact icon buttons for the editor tools (search / collapse / expand). */
+.rawjson-tool-btn {
+  width: 32px;
+  height: 32px;
+}
+.rawjson-tool-btn svg {
+  width: 18px;
+  height: 18px;
 }
 .rawjson-suggest-btn {
   display: inline-flex;

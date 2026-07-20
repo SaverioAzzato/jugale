@@ -26,6 +26,8 @@ import {
   bracketMatching,
   foldGutter,
   foldKeymap,
+  foldAll,
+  unfoldAll,
   foldedRanges,
   indentOnInput,
   syntaxHighlighting,
@@ -34,6 +36,7 @@ import {
 } from "@codemirror/language";
 import { json, jsonParseLinter } from "@codemirror/lang-json";
 import { linter, lintKeymap, forEachDiagnostic, type Diagnostic } from "@codemirror/lint";
+import { search, searchKeymap, openSearchPanel } from "@codemirror/search";
 import {
   autocompletion,
   startCompletion,
@@ -78,6 +81,12 @@ export interface JsonEditorHandle {
   reveal: (from: number, to: number) => void;
   /** Open schema-aware suggestions at the cursor (the Suggest button; the universal mobile trigger). */
   triggerCompletion: () => void;
+  /** Collapse every foldable section (the Collapse-all button). */
+  foldAll: () => void;
+  /** Expand every folded section (the Expand-all button). */
+  unfoldAll: () => void;
+  /** Open the find / find-and-replace panel (Ctrl/Cmd-F, and the Search button for mobile). */
+  openSearch: () => void;
 }
 
 export interface JsonEditorOptions {
@@ -135,6 +144,35 @@ const editorTheme = EditorView.theme({
   },
   ".cm-tooltip-autocomplete > ul > li[aria-selected]": { backgroundColor: "var(--accent-weak)", color: "var(--text)" },
   ".cm-completionDetail": { color: "var(--muted)", fontStyle: "normal", fontSize: "0.82em" },
+  // Find / find-and-replace panel: themed to match the app and roomy enough to tap on mobile.
+  ".cm-panels": { backgroundColor: "var(--surface-2)", color: "var(--text)", borderBottom: "1px solid var(--border)" },
+  ".cm-panel.cm-search": { padding: "8px 10px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" },
+  ".cm-panel.cm-search label": { fontSize: "12px", color: "var(--muted)", display: "inline-flex", alignItems: "center", gap: "3px" },
+  ".cm-textfield": {
+    backgroundColor: "var(--surface)",
+    color: "var(--text)",
+    border: "1px solid var(--border)",
+    borderRadius: "6px",
+    padding: "5px 8px",
+    fontSize: "13px",
+  },
+  ".cm-button": {
+    backgroundColor: "var(--surface)",
+    backgroundImage: "none",
+    color: "var(--text)",
+    border: "1px solid var(--border)",
+    borderRadius: "6px",
+    padding: "5px 10px",
+    fontSize: "12px",
+    cursor: "pointer",
+  },
+  ".cm-button:hover": { borderColor: "var(--accent)" },
+  ".cm-panel.cm-search [name=close]": {
+    color: "var(--muted)",
+    fontSize: "18px",
+    cursor: "pointer",
+    outlineOffset: "2px",
+  },
 });
 
 /** A minimal structural view of a Lezer syntax node — avoids a direct @lezer/common import. */
@@ -622,6 +660,7 @@ export function createJsonEditor(parent: HTMLElement, opts: JsonEditorOptions): 
         json(),
         syntaxHighlighting(highlightStyle),
         autocompletion({ activateOnTyping: true, override: [jsonCompletions], icons: false, maxRenderedOptions: 30 }),
+        search({ top: true }),
         linter(jsonParseLinter()),
         linter((view) => schemaDiagnosticsForText(view.state.doc.toString()), { delay: 400 }),
         // Tab first accepts an open completion, then steps between snippet fields, and only then
@@ -633,7 +672,7 @@ export function createJsonEditor(parent: HTMLElement, opts: JsonEditorOptions): 
             { key: "Shift-Tab", run: prevSnippetField },
           ]),
         ),
-        keymap.of([...defaultKeymap, ...historyKeymap, ...foldKeymap, ...lintKeymap, indentWithTab]),
+        keymap.of([...defaultKeymap, ...historyKeymap, ...foldKeymap, ...searchKeymap, ...lintKeymap, indentWithTab]),
         editorTheme,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) opts.onDocChange(update.state.doc.toString());
@@ -653,6 +692,12 @@ export function createJsonEditor(parent: HTMLElement, opts: JsonEditorOptions): 
     triggerCompletion: () => {
       view.focus();
       startCompletion(view);
+    },
+    foldAll: () => foldAll(view),
+    unfoldAll: () => unfoldAll(view),
+    openSearch: () => {
+      view.focus();
+      openSearchPanel(view);
     },
   };
 }
