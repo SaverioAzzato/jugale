@@ -473,18 +473,22 @@ export function App() {
   );
 }
 
-/** Pencil glyph for the Edit-mode toggle. */
+/** Pencil glyph for the Edit-mode toggle (Lucide "pencil"). */
 function PencilIcon() {
   return (
-    <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path
-        d="M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3z M13.5 6.5l3 3"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg
+      className="settings-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+      <path d="m15 5 4 4" />
     </svg>
   );
 }
