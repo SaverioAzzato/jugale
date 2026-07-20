@@ -23,6 +23,10 @@ class DownloadArgs {
     var expectedDigest: String? = null
 }
 
+// A distinct provider class prevents Android's manifest merger from treating this provider as
+// the app's existing FileProvider and trying to combine their authorities and path metadata.
+class AndroidUpdaterFileProvider : FileProvider()
+
 @TauriPlugin
 class AndroidUpdaterPlugin(private val activity: Activity) : Plugin(activity) {
     @Command

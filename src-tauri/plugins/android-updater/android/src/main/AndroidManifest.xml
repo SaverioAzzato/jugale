@@ -5,7 +5,7 @@
 
     <application>
         <provider
-            android:name="androidx.core.content.FileProvider"
+            android:name="it.azzato.jugale.androidupdater.AndroidUpdaterFileProvider"
             android:authorities="${applicationId}.android-updater.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
