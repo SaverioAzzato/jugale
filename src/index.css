@@ -138,6 +138,12 @@ a {
   height: 24px;
   flex-shrink: 0;
 }
+/* The pencil glyph draws edge-to-edge in its 24px box, so at the same nominal size it reads
+   larger than its siblings (gear, book, `</>`) which have more internal padding. Nudge it down. */
+.edit-toggle-btn .settings-icon {
+  width: 21px;
+  height: 21px;
+}
 .toolbar-title {
   font-weight: 600;
   font-size: 15px;
