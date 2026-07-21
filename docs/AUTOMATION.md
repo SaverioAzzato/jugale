@@ -68,7 +68,7 @@ The **public** key lives in `tauri.conf.json` → `plugins.updater.pubkey` (safe
 
 ## Cutting a release
 
-The app version lives in **three files that don't read from each other**, and all must match the release tag:
+The app version lives in **four files that don't read from each other**, and all must match the release tag:
 
 | File | Why it has a version |
 | --- | --- |

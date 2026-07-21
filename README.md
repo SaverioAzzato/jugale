@@ -18,7 +18,7 @@ Then, on the welcome screen:
 1. **Have a character already?** Open its `character.json` (or its folder, to get the portrait too). Recently-opened characters are one click away.
 2. **Starting fresh?** Build one with any chatbot using the in-app **Prompts** (the book icon) — they walk you through 5e rules one decision at a time — or turn on **Edit mode** (the pencil) and fill the sheet in by hand. New to the format? See the in-app **Help** (the **?**) or [docs/SCHEMA.md](docs/SCHEMA.md).
 
-> **Status:** mid-rewrite. The generalized v2 engine lives at the repo root (React + Vite + TypeScript). The original vanilla-JS prototype was retired when the rewrite began — it's tagged [`prototype-v1`](https://github.com/SaverioAzzato/jugale/releases/tag/prototype-v1) in git if you need it. See the [roadmap](docs/ROADMAP.md).
+> **Status:** the generalized v2 app is live on web, desktop, and Android. The original vanilla-JS prototype is retired and preserved at [`prototype-v1`](https://github.com/SaverioAzzato/jugale/releases/tag/prototype-v1). The [roadmap](docs/ROADMAP.md) records the completed milestones and remaining polish.
 
 ## Why
 
@@ -31,8 +31,10 @@ For development or building it yourself (end users don't need any of this — ju
 ```bash
 npm install
 npm run dev        # Vite dev server
+npm run preview    # preview the production build locally
 npm test           # Vitest unit tests
 npm run typecheck  # tsc --noEmit
+npm run lint       # ESLint
 npm run build      # production web build
 ```
 
@@ -53,10 +55,12 @@ Android (`npm run tauri android dev` / `build`) shares the same config and requi
 
 ```
 src/
-  schema/        # Zod character schema (v2) + types, derived stats, v1→v2 migration, validation
-  storage/       # StorageProvider interface + browser (File System Access) + Tauri (native fs) implementations
-  …              # model/ render/ arrive in later milestones
-src-tauri/       # Tauri 2 desktop/mobile shell — config + thin Rust (fs/dialog plugins only)
+  schema/        # Zod contract (v2.2), migrations, derivation, validation, JSON Schema
+  model/ state/  # game operations and the live Zustand character store
+  render/ ui/    # data-driven sheet, editor, dice, settings, prompts, updates
+  storage/       # browser, desktop and Android StorageProvider implementations
+  i18n/ theme/   # localization and visual themes
+src-tauri/       # Tauri 2 desktop/mobile shell + Android filesystem/updater plugins
 docs/            # spec-first: ARCHITECTURE, SCHEMA, ROADMAP, AUTOMATION
 characters/      # sample characters (also test fixtures); your real PGs go in pg/ (gitignored)
 index.html       # Vite entry
@@ -113,7 +117,7 @@ By default, characters ship with `meta.ruleset: ["SRD"]` — the freely-licensed
 
 ## Distribution
 
-Free and open: the **web app is the GitHub Pages site** ([live](https://saverioazzato.github.io/jugale/)); desktop and Android binaries are attached to **GitHub Releases**. Both are built and shipped by GitHub Actions, and both happen on the same trigger: **pushing a version tag** (`v*`) — [`pages.yml`](.github/workflows/pages.yml) redeploys the web app, [`release.yml`](.github/workflows/release.yml) builds Mac/Win/Linux installers plus an Android APK and attaches them to a (draft) GitHub Release. The Android APK is release-signed with our own keystore (from repo secrets; see [Android signing](docs/AUTOMATION.md#android-signing)) — a real installable build you sideload, not a Play Store upload yet. Merging PRs to `main` doesn't ship anything by itself; tag when you want a release — first **bump the version in `package.json`, `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml` to match the tag** (run [`scripts/set-version.sh`](scripts/set-version.sh) to do all three at once; see [Cutting a release](docs/AUTOMATION.md#cutting-a-release)). No app stores, no hosting bills.
+Free and open: the **web app is the GitHub Pages site** ([live](https://saverioazzato.github.io/jugale/)); desktop and Android binaries are attached to **GitHub Releases**. Both are built and shipped by GitHub Actions, and both happen on the same trigger: **pushing a version tag** (`v*`) — [`pages.yml`](.github/workflows/pages.yml) redeploys the web app, [`release.yml`](.github/workflows/release.yml) builds Mac/Win/Linux installers plus an Android APK and attaches them to a draft GitHub Release. Desktop uses signed Tauri updater artifacts; Android checks the same releases in-app and installs a release-signed APK through its native updater. Merging to `main` alone does not ship a release. Before tagging, run [`scripts/set-version.sh`](scripts/set-version.sh) to keep `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock` aligned with the tag; see [Cutting a release](docs/AUTOMATION.md#cutting-a-release). No app stores, no hosting bills.
 
 ## Contributing & automation
 
