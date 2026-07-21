@@ -69,6 +69,7 @@ export function App() {
   }, []);
 
   const [activeTab, setActiveTab] = useState("gioco");
+  const [swipeDirection, setSwipeDirection] = useState<-1 | 1 | null>(null);
   const [overlay, setOverlay] = useState<"settings" | "prompts" | "help" | "json" | null>(null);
   const overlayBackRef = useRef<HTMLButtonElement>(null);
 
@@ -105,7 +106,10 @@ export function App() {
   const swipeTabs = useHorizontalSwipe((dir) => {
     const idx = tabs.findIndex((tb) => tb.id === tab);
     const next = idx + dir;
-    if (idx >= 0 && next >= 0 && next < tabs.length) setActiveTab(tabs[next].id);
+    if (idx >= 0 && next >= 0 && next < tabs.length) {
+      setSwipeDirection(dir);
+      setActiveTab(tabs[next].id);
+    }
   });
 
   // Check for a newer release once at startup (no-op on the web build, silent on failure).
@@ -385,7 +389,10 @@ export function App() {
                 aria-selected={tab === tabDef.id}
                 aria-controls={`tabpanel-${tabDef.id}`}
                 className={tab === tabDef.id ? "tab is-active" : "tab"}
-                onClick={() => setActiveTab(tabDef.id)}
+                onClick={() => {
+                  setSwipeDirection(null);
+                  setActiveTab(tabDef.id);
+                }}
               >
                 {t(tabDef.labelKey)}
               </button>
@@ -403,7 +410,16 @@ export function App() {
       ) : overlay === "json" ? (
         <RawJsonPage />
       ) : character ? (
-        <div className="sheet-swipe" onTouchStart={swipeTabs.onTouchStart} onTouchEnd={swipeTabs.onTouchEnd}>
+        <div
+          key={tab}
+          className={
+            swipeDirection === null
+              ? "sheet-swipe"
+              : `sheet-swipe sheet-swipe-${swipeDirection > 0 ? "from-right" : "from-left"}`
+          }
+          onTouchStart={swipeTabs.onTouchStart}
+          onTouchEnd={swipeTabs.onTouchEnd}
+        >
           <Sheet c={character} tab={tab} />
         </div>
       ) : (

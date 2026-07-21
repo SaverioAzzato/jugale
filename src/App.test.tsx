@@ -62,6 +62,24 @@ describe("App — empty state + live editing wiring", () => {
     expect(screen.getByRole("button", { name: /Add resource/ })).toBeInTheDocument();
   });
 
+  it("animates a swiped tab in from the gesture direction, but not a clicked tab", () => {
+    const { container } = render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
+
+    const sheet = container.querySelector(".sheet-swipe");
+    expect(sheet).toBeInTheDocument();
+    fireEvent.touchStart(sheet!, { touches: [{ clientX: 240, clientY: 120 }] });
+    fireEvent.touchEnd(sheet!, { changedTouches: [{ clientX: 100, clientY: 125 }] });
+
+    expect(screen.getByRole("tab", { name: "Attributes" })).toHaveAttribute("aria-selected", "true");
+    expect(container.querySelector(".sheet-swipe")).toHaveClass("sheet-swipe-from-right");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Play" }));
+    expect(container.querySelector(".sheet-swipe")).toHaveClass("sheet-swipe");
+    expect(container.querySelector(".sheet-swipe")).not.toHaveClass("sheet-swipe-from-left");
+    expect(container.querySelector(".sheet-swipe")).not.toHaveClass("sheet-swipe-from-right");
+  });
+
   it("shows a read-only badge with an export shortcut once live sync has failed", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Warlock" }));

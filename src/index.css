@@ -69,8 +69,29 @@ a {
 }
 .app {
   min-height: 100vh;
-  /* clear the home indicator / gesture bar on mobile; 34px everywhere else */
+  /* Reserve the fixed status bar plus the home-indicator / gesture safe area. */
   padding-bottom: calc(34px + env(safe-area-inset-bottom));
+}
+
+/* A completed horizontal gesture pages in the new tab from the same direction as the swipe.
+   Keeping this on the remounted wrapper avoids animating ordinary edits inside a tab. */
+.sheet-swipe-from-right {
+  animation: sheet-swipe-from-right 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sheet-swipe-from-left {
+  animation: sheet-swipe-from-left 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes sheet-swipe-from-right {
+  from {
+    opacity: 0.72;
+    transform: translateX(12vw);
+  }
+}
+@keyframes sheet-swipe-from-left {
+  from {
+    opacity: 0.72;
+    transform: translateX(-12vw);
+  }
 }
 .toolbar-right {
   margin-left: auto;
@@ -1726,7 +1747,10 @@ input[type="number"] {
   justify-content: space-between;
   gap: 8px;
   min-height: 28px;
-  padding: 4px 12px;
+  /* The fixed bar itself must clear Android's gesture navigation area. Reserving that space
+     only on .app leaves the home indicator painted on top of the footer. */
+  padding: 4px max(12px, env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
   font-size: 12px;
   color: var(--muted);
   background: var(--surface);
@@ -2045,6 +2069,10 @@ code {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .sheet-swipe-from-right,
+  .sheet-swipe-from-left {
+    animation: none;
+  }
   .toast {
     animation: none;
   }
