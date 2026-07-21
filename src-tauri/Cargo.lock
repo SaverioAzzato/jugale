@@ -2143,7 +2143,7 @@ dependencies = [
 
 [[package]]
 name = "jugale"
-version = "1.12.2"
+version = "1.12.3"
 dependencies = [
  "log",
  "serde",

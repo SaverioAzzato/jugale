@@ -1480,17 +1480,49 @@ button {
 .empty-recents-clear:hover {
   color: var(--muted);
 }
+.empty-recents-scroll {
+  position: relative;
+}
+.empty-recents-scroll::before,
+.empty-recents-scroll::after {
+  position: absolute;
+  z-index: 2;
+  right: 10px;
+  left: 0;
+  height: 26px;
+  pointer-events: none;
+  content: "";
+}
+.empty-recents-scroll::before {
+  top: 0;
+  background: linear-gradient(to bottom, var(--bg), transparent);
+}
+.empty-recents-scroll::after {
+  bottom: 0;
+  background: linear-gradient(to top, var(--bg), transparent);
+}
+.empty-recents-scroll:not(.can-scroll-up)::before,
+.empty-recents-scroll:not(.can-scroll-down)::after {
+  content: none;
+}
 .empty-recents-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  max-height: 158px; /* Four rows; additional recents remain available by scrolling. */
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-gutter: stable;
+}
+.recent-row {
+  position: relative;
 }
 .recent-item {
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 8px 12px;
+  padding: 8px 42px 8px 12px;
   text-align: left;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1502,6 +1534,29 @@ button {
 .recent-item:hover {
   border-color: var(--accent);
   background: var(--surface-2);
+}
+.recent-remove {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dim);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.recent-remove:hover,
+.recent-remove:focus-visible {
+  background: var(--accent-weak);
+  color: var(--text);
 }
 .recent-icon {
   flex: 0 0 auto;

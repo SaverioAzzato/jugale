@@ -385,6 +385,11 @@ export function App() {
     refreshRecents();
   }
 
+  async function handleRemoveRecent(key: string) {
+    await removeRecent(key);
+    setRecents((current) => current.filter((entry) => entry.key !== key));
+  }
+
   return (
     <div className={overlay === "json" ? "app app-rawjson" : "app"}>
       <header className="appbar">
@@ -557,6 +562,7 @@ export function App() {
           onSample={(d, l, imgs) => loadRaw(d, l, imgs)}
           recents={recents}
           onReopenRecent={handleReopenRecent}
+          onRemoveRecent={handleRemoveRecent}
           onClearRecents={handleClearRecents}
           t={t}
         />

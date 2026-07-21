@@ -1,3 +1,4 @@
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { Caret } from "../render/primitives";
 import { isTauri } from "../storage/tauriProvider";
 import type { GalleryImage } from "../storage/provider";
@@ -42,6 +43,7 @@ export function EmptyState({
   onSample,
   recents,
   onReopenRecent,
+  onRemoveRecent,
   onClearRecents,
   t,
 }: {
@@ -50,9 +52,33 @@ export function EmptyState({
   onSample: (data: unknown, label: string, images: GalleryImage[]) => void;
   recents: RecentEntry[];
   onReopenRecent: (entry: RecentEntry) => void;
+  onRemoveRecent: (key: string) => void;
   onClearRecents: () => void;
   t: TFn;
 }) {
+  const recentListRef = useRef<HTMLDivElement>(null);
+  const [recentScrollEdges, setRecentScrollEdges] = useState({ up: false, down: false });
+  const updateRecentScrollEdges = useCallback(() => {
+    const list = recentListRef.current;
+    if (!list) return;
+    const maxScrollTop = list.scrollHeight - list.clientHeight;
+    setRecentScrollEdges({
+      up: list.scrollTop > 1,
+      down: maxScrollTop > 1 && list.scrollTop < maxScrollTop - 1,
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    updateRecentScrollEdges();
+    window.addEventListener("resize", updateRecentScrollEdges);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateRecentScrollEdges);
+    if (recentListRef.current) observer?.observe(recentListRef.current);
+    return () => {
+      window.removeEventListener("resize", updateRecentScrollEdges);
+      observer?.disconnect();
+    };
+  }, [recents, updateRecentScrollEdges]);
+
   return (
     <div className="empty-state">
       <div className="empty-brand">:JUGALE</div>
@@ -77,21 +103,35 @@ export function EmptyState({
               {t("recents.clear")}
             </button>
           </div>
-          <div className="empty-recents-list">
-            {recents.map((e) => (
-              <button
-                key={e.key}
-                type="button"
-                className="recent-item"
-                onClick={() => onReopenRecent(e)}
-                title={e.path ?? e.name}
-              >
-                <span className="recent-icon" aria-hidden>
-                  {e.kind === "folder" ? "🗂" : "📄"}
-                </span>
-                <span className="recent-name">{e.name}</span>
-              </button>
-            ))}
+          <div
+            className={`empty-recents-scroll${recentScrollEdges.up ? " can-scroll-up" : ""}${recentScrollEdges.down ? " can-scroll-down" : ""}`}
+          >
+            <div ref={recentListRef} className="empty-recents-list" onScroll={updateRecentScrollEdges}>
+              {recents.map((e) => (
+                <div key={e.key} className="recent-row">
+                  <button
+                    type="button"
+                    className="recent-item"
+                    onClick={() => onReopenRecent(e)}
+                    title={e.path ?? e.name}
+                  >
+                    <span className="recent-icon" aria-hidden>
+                      {e.kind === "folder" ? "🗂" : "📄"}
+                    </span>
+                    <span className="recent-name">{e.name}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="recent-remove"
+                    onClick={() => onRemoveRecent(e.key)}
+                    aria-label={`${t("recents.remove")}: ${e.name}`}
+                    title={t("recents.remove")}
+                  >
+                    <span aria-hidden>×</span>
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
