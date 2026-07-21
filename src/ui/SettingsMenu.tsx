@@ -1,6 +1,6 @@
 import { THEMES, useTheme, type ThemeId } from "../theme/useTheme";
 import { LOCALES, useI18n, useT, type Locale } from "../i18n/useI18n";
-import { useSettings, type UnitSystem } from "./useSettings";
+import { UI_SCALES, useSettings, type UiScale, type UnitSystem } from "./useSettings";
 import { Panel } from "../render/primitives";
 import { isTauri } from "../storage/tauriProvider";
 import { useUpdate } from "../update/useUpdate";
@@ -46,6 +46,8 @@ export function SettingsPage() {
   const setToastSeconds = useSettings((s) => s.setToastSeconds);
   const units = useSettings((s) => s.units);
   const setUnits = useSettings((s) => s.setUnits);
+  const uiScale = useSettings((s) => s.uiScale);
+  const setUiScale = useSettings((s) => s.setUiScale);
   const checking = useUpdate((s) => s.state.status === "checking");
   const checkForUpdates = useUpdate((s) => s.check);
 
@@ -87,6 +89,16 @@ export function SettingsPage() {
           <select value={units} onChange={(e) => setUnits(e.target.value as UnitSystem)}>
             <option value="imperial">{t("settings.unitsImperial")}</option>
             <option value="metric">{t("settings.unitsMetric")}</option>
+          </select>
+        </label>
+        <label className="settings-row">
+          <span>{t("settings.uiScale")}</span>
+          <select value={uiScale} onChange={(e) => setUiScale(Number(e.target.value) as UiScale)}>
+            {UI_SCALES.map((scale) => (
+              <option key={scale} value={scale}>
+                {scale}%{scale === 100 ? ` · ${t("settings.uiScaleDefault")}` : ""}
+              </option>
+            ))}
           </select>
         </label>
         {isTauri() && (

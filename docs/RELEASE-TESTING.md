@@ -40,6 +40,17 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
 - ☐ A genuine open failure now shows its **real message** ("Couldn't open the character: …"), and
   only a truly malformed file says "Invalid JSON file".
 - ☐ Top bar clears the status bar / notch (safe-area).
+- ☐ The sheet itself does not pinch-zoom or double-tap-zoom.
+- ☐ Story gallery: open an image, swipe left/right to change it, pinch/double-tap to zoom, then
+  pan it. None of those gestures may switch the underlying sheet tab.
+- ☐ Settings → Interface scale: check 80%, 100%, and 120% on welcome, sheet, Settings, a modal,
+  and Raw JSON. Text, icons, buttons and spacing scale together; no horizontal page overflow or
+  inaccessible fixed bar appears. The background reaches the bottom without a color seam. Close/
+  reopen the app and confirm the selected scale persists.
+- ☐ At a narrow viewport / 120% scale, toolbar actions that do not fit move into `…`: Settings,
+  prompts, Raw JSON, Export and Edit disappear in that order; dice disappears last. Back remains.
+- ☐ Make the tab row overflow, then swipe between sheet pages: the active tab label automatically
+  scrolls into view without moving the document vertically.
 - ☐ **Dice on a button**: roll a die so it rests over a button; tap/hold the die → only the die
   reacts, the button underneath does **not** fire.
 
@@ -47,9 +58,12 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
 - ☐ Open the live site on a phone.
 - ☐ **Dice on a button**: same as above — tapping a die over a button must not trigger the button.
 - ☐ Open a `character.json` (read-only import path); dice work.
+- ☐ The page does not pinch/double-tap zoom; the Story gallery still supports its own zoom/swipe.
 
 ## Auto-update (once shipped)
 - ☐ Desktop: install the previous version, then release a newer tag → the app detects the update.
+- ☐ Settings → Check for updates uses the same updater path as startup: when a release is found,
+  the fixed update banner appears at the top; when current, a success toast appears.
 - ☐ Android: install the previous release, publish a newer one, then tap the in-app update banner.
   The button reads “Download in corso…”, Android's browser/download notification never opens, and
   Package Installer appears only after the APK has been fully downloaded and verified.

@@ -6,12 +6,17 @@
 
 body {
   margin: 0;
-  min-height: 100vh;
+  /* Root zoom scales viewport units too; divide them back so the painted app still reaches the
+     physical bottom edge at every Interface scale (the old 80% view exposed a visible seam). */
+  min-height: calc(100vh / var(--ui-scale));
   color: var(--text);
   font-family: var(--font-sans);
   background:
     radial-gradient(1200px 600px at 50% -10%, var(--bg-glow), transparent 60%),
     var(--bg);
+  background-repeat: no-repeat;
+  /* Prevent double-tap browser zoom on app chrome; individual components can still own gestures. */
+  touch-action: manipulation;
 }
 
 a {
@@ -39,7 +44,7 @@ a {
   gap: 16px;
   padding: 10px max(20px, env(safe-area-inset-right)) 10px max(20px, env(safe-area-inset-left));
   flex-wrap: nowrap;
-  overflow-x: auto;
+  overflow: visible;
 }
 .tabbar {
   display: flex;
@@ -68,7 +73,7 @@ a {
   border-bottom-color: var(--accent);
 }
 .app {
-  min-height: 100vh;
+  min-height: calc(100vh / var(--ui-scale));
   /* Reserve the fixed status bar plus the home-indicator / gesture safe area. */
   padding-bottom: calc(34px + env(safe-area-inset-bottom));
 }
@@ -98,12 +103,70 @@ a {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 .toolbar-left {
   display: flex;
   align-items: center;
   gap: 8px;
   min-height: 28px;
+  flex: 0 0 auto;
+}
+
+/* Lower-priority actions collapse here when the measured toolbar width is exhausted. */
+.toolbar-overflow {
+  position: relative;
+  flex: 0 0 auto;
+}
+.toolbar-overflow > summary {
+  list-style: none;
+}
+.toolbar-overflow > summary::-webkit-details-marker {
+  display: none;
+}
+.toolbar-more span {
+  display: block;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 1px;
+  transform: translateY(-1px);
+}
+.toolbar-overflow[open] .toolbar-more {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+.toolbar-overflow-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  box-shadow: var(--shadow);
+}
+.toolbar-overflow-menu button {
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  padding: 9px 10px;
+  color: var(--text);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.toolbar-overflow-menu button:hover,
+.toolbar-overflow-menu button:focus-visible {
+  outline: none;
+  background: var(--accent-weak);
 }
 .btn-back {
   width: 34px;
@@ -1103,6 +1166,9 @@ a {
   padding: 32px;
   background: rgba(0, 0, 0, 0.82);
   cursor: zoom-out;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
 }
 .lightbox-img {
   max-width: min(92vw, 1100px);
@@ -1111,6 +1177,16 @@ a {
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow);
   cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transform-origin: center;
+  transition: transform 120ms ease-out;
+  will-change: transform;
+}
+.lightbox-img.is-zoomed {
+  cursor: grab;
+  transition: none;
 }
 .lightbox-close,
 .lightbox-nav {
@@ -2306,7 +2382,7 @@ code {
   padding: 10px max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
 }
 .app-rawjson {
-  height: 100dvh;
+  height: calc(100dvh / var(--ui-scale));
   min-height: 0;
   padding-bottom: 0;
   overflow: hidden;

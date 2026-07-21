@@ -70,7 +70,14 @@ Four tabs; each auto-hides if it would have no content.
 - **Personality** — traits, ideals, bonds, flaws.
 - **Background** + background feature.
 - **Narrative** — backstory, allies, organizations/factions.
-- **Portrait & gallery** — the character's `images/` folder with a lightbox (the prototype feature worth keeping); the active portrait also appears in the header across all tabs.
+- **Portrait & gallery** — the character's `images/` folder with a gesture-aware lightbox; the active portrait also appears in the header across all tabs. In the lightbox, horizontal swipe/trackpad scroll changes image, pinch or double-tap zooms, and a zoomed image pans. Its gesture region owns the interaction so swiping the gallery never changes the sheet tab.
+
+## Mobile interaction and interface scale
+
+- Page-level pinch/double-tap zoom is disabled in the mobile viewport: the native-app surface stays stable while the gallery lightbox provides its own intentional zoom.
+- Settings persists an **Interface scale** from 80% to 120%. It is applied at the document layout level, so typography, spacing, buttons, form controls, icons, panels, overlays, sticky/fixed chrome, the JSON editor and empty/settings/help screens all scale together. It is not a visual transform: layout and hit testing use the scaled sizes and responsive wrapping is recalculated.
+- The character toolbar measures its rendered space after Interface scale is applied. When actions no longer fit, lower-priority ones move into **More (`…`)** in this survival order: dice, Edit, Export, Raw JSON, prompts, Settings. The Back button is independent and always remains visible.
+- The tab row may scroll horizontally. Whenever a click or sheet swipe selects an off-screen tab, the row scrolls only far enough to reveal its active label; it never moves the page vertically.
 
 ## Cross-cutting data model
 

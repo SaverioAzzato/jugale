@@ -18,6 +18,7 @@ export type Locale = (typeof LOCALES)[number]["id"];
 const en = {
   // chrome / toolbar
   "app.export": "Export JSON",
+  "toolbar.more": "More actions",
   "code.toggle": "Raw JSON editor",
   "rawjson.title": "Raw JSON",
   "rawjson.problems": "Problems",
@@ -84,6 +85,7 @@ const en = {
   "portrait.close": "Close",
   "portrait.prev": "Previous image",
   "portrait.next": "Next image",
+  "portrait.viewer": "Image viewer: pinch or double-tap to zoom, swipe to change image",
   // header
   "header.level": "Level",
   "header.proficiency": "Proficiency",
@@ -115,6 +117,8 @@ const en = {
   "settings.units": "Units",
   "settings.unitsImperial": "Imperial (ft, lb)",
   "settings.unitsMetric": "Metric (m, kg)",
+  "settings.uiScale": "Interface scale",
+  "settings.uiScaleDefault": "Default",
   // prompts page
   "prompts.title": "GPT prompts",
   "prompts.banner": "Only use SRD content, or content whose terms of use permit free and automated/AI access. Don't point a chatbot at sources that prohibit scraping. You're responsible for using your chosen guides legally and within their terms.",
@@ -447,6 +451,7 @@ export type StringKey = keyof typeof en;
 
 const it: Record<StringKey, string> = {
   "app.export": "Esporta JSON",
+  "toolbar.more": "Altre azioni",
   "code.toggle": "Editor JSON grezzo",
   "rawjson.title": "JSON grezzo",
   "rawjson.problems": "Problemi",
@@ -512,6 +517,7 @@ const it: Record<StringKey, string> = {
   "portrait.close": "Chiudi",
   "portrait.prev": "Immagine precedente",
   "portrait.next": "Immagine successiva",
+  "portrait.viewer": "Galleria: pizzica o tocca due volte per ingrandire, scorri per cambiare immagine",
   "header.level": "Livello",
   "header.proficiency": "Competenza",
   "header.profShort": "Comp.",
@@ -541,6 +547,8 @@ const it: Record<StringKey, string> = {
   "settings.units": "Unità",
   "settings.unitsImperial": "Imperiale (ft, lb)",
   "settings.unitsMetric": "Metrico (m, kg)",
+  "settings.uiScale": "Scala interfaccia",
+  "settings.uiScaleDefault": "Predefinita",
   "prompts.title": "Prompt per chatbot",
   "prompts.banner": "Usa solo contenuto SRD, o contenuto i cui termini d'uso consentono l'accesso libero e automatico/AI. Non puntare un chatbot a fonti che vietano lo scraping. Sei responsabile di usare le guide scelte legalmente e nei loro termini d'uso.",
   "prompts.sectionBuildTitle": "Crea, modifica e verifica un personaggio",

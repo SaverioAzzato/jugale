@@ -1,10 +1,14 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { App } from "./App";
 import { useCharacter } from "./state/store";
+import { useSettings } from "./ui/useSettings";
 
 describe("App — empty state + live editing wiring", () => {
-  beforeEach(() => useCharacter.setState({ character: null, liveSync: false, dirty: false }));
+  beforeEach(() => {
+    useCharacter.setState({ character: null, liveSync: false, dirty: false });
+    useSettings.getState().setUiScale(100);
+  });
 
   it("starts on the welcome screen and loads a sample on demand", () => {
     render(<App />);
@@ -78,6 +82,49 @@ describe("App — empty state + live editing wiring", () => {
     expect(container.querySelector(".sheet-swipe")).toHaveClass("sheet-swipe");
     expect(container.querySelector(".sheet-swipe")).not.toHaveClass("sheet-swipe-from-left");
     expect(container.querySelector(".sheet-swipe")).not.toHaveClass("sheet-swipe-from-right");
+  });
+
+  it("scrolls an overflowing tab row just enough to reveal the selected tab", () => {
+    const { container } = render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
+    const tabbar = container.querySelector<HTMLElement>(".tabbar")!;
+    const story = screen.getByRole("tab", { name: "Story" });
+    const scrollTo = vi.fn();
+    Object.defineProperties(tabbar, {
+      clientWidth: { configurable: true, value: 150 },
+      scrollLeft: { configurable: true, writable: true, value: 0 },
+      scrollTo: { configurable: true, value: scrollTo },
+    });
+    Object.defineProperties(story, {
+      offsetLeft: { configurable: true, value: 240 },
+      offsetWidth: { configurable: true, value: 70 },
+    });
+
+    fireEvent.click(story);
+
+    expect(scrollTo).toHaveBeenCalledWith({ left: 168, behavior: "smooth" });
+  });
+
+  it("moves low-priority toolbar actions into More when scaled controls no longer fit", () => {
+    const { container } = render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
+    const toolbar = container.querySelector<HTMLElement>(".toolbar")!;
+    const left = container.querySelector<HTMLDivElement>(".toolbar-left")!;
+    vi.spyOn(toolbar, "getBoundingClientRect").mockReturnValue({ width: 390 } as DOMRect);
+    vi.spyOn(left, "getBoundingClientRect").mockReturnValue({ width: 40.8 } as DOMRect);
+
+    act(() => useSettings.getState().setUiScale(120));
+
+    expect(screen.getByRole("button", { name: "Roll a die" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Edit sheet" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Export JSON" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Raw JSON editor" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "GPT prompts" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Settings" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("•••"));
+    expect(screen.getByRole("menuitem", { name: "GPT prompts" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Settings" })).toBeInTheDocument();
   });
 
   it("locks page scrolling while the raw JSON editor owns the viewport", () => {

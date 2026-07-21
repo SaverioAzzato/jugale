@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type RefObject,
+} from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useCharacter } from "./state/store";
 import { Sheet } from "./render/Sheet";
@@ -38,6 +47,42 @@ import { useToast } from "./ui/useToast";
 import { EmptyState } from "./ui/EmptyState";
 import { UpdateBanner } from "./update/UpdateBanner";
 import { useUpdate } from "./update/useUpdate";
+import { useSettings } from "./ui/useSettings";
+import { toolbarCapacity } from "./ui/toolbarLayout";
+
+type ToolbarActionId = "dice" | "edit" | "export" | "raw" | "prompts" | "settings";
+
+const TOOLBAR_PRIORITY: ToolbarActionId[] = ["dice", "edit", "export", "raw", "prompts", "settings"];
+
+function useToolbarCapacity(
+  toolbarRef: RefObject<HTMLElement>,
+  leftRef: RefObject<HTMLDivElement>,
+  actionCount: number,
+  fixedActionCount: number,
+): number {
+  const uiScale = useSettings((s) => s.uiScale);
+  const [capacity, setCapacity] = useState(actionCount);
+
+  useLayoutEffect(() => {
+    const toolbar = toolbarRef.current;
+    const left = leftRef.current;
+    if (!toolbar || !left) return;
+    const measure = () => {
+      setCapacity(toolbarCapacity(toolbar.getBoundingClientRect().width, left.getBoundingClientRect().width, uiScale / 100, actionCount, fixedActionCount));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    observer?.observe(toolbar);
+    observer?.observe(left);
+    return () => {
+      window.removeEventListener("resize", measure);
+      observer?.disconnect();
+    };
+  }, [actionCount, fixedActionCount, leftRef, toolbarRef, uiScale]);
+
+  return actionCount > 0 ? Math.max(1, Math.min(capacity, actionCount)) : 0;
+}
 
 export function App() {
   const { character, sourceName, images, liveSync, dirty, saveError, readOnly, editMode, issues } = useCharacter(
@@ -72,6 +117,9 @@ export function App() {
   const [swipeDirection, setSwipeDirection] = useState<-1 | 1 | null>(null);
   const [overlay, setOverlay] = useState<"settings" | "prompts" | "help" | "json" | null>(null);
   const overlayBackRef = useRef<HTMLButtonElement>(null);
+  const toolbarRef = useRef<HTMLElement>(null);
+  const toolbarLeftRef = useRef<HTMLDivElement>(null);
+  const tabbarRef = useRef<HTMLElement>(null);
 
   // Settings/Prompts are full-page overlays, not floating popovers — nothing else behind
   // them is reachable (the toolbar's other buttons and the footer all unmount while one is
@@ -101,6 +149,25 @@ export function App() {
     ? activeTab
     : (tabs[0]?.id ?? "gioco");
 
+  const presentToolbarActions = useMemo<ToolbarActionId[]>(
+    () => character ? TOOLBAR_PRIORITY : ["dice", "prompts", "settings"],
+    [character],
+  );
+  const toolbarActionCapacity = useToolbarCapacity(
+    toolbarRef,
+    toolbarLeftRef,
+    overlay ? 0 : presentToolbarActions.length,
+    !overlay && !character ? 1 : 0, // Help stays visible on the welcome screen.
+  );
+  const visibleToolbarActions = useMemo(
+    () => new Set(presentToolbarActions.slice(0, toolbarActionCapacity)),
+    [presentToolbarActions, toolbarActionCapacity],
+  );
+  const overflowToolbarActions = useMemo(
+    () => presentToolbarActions.filter((id) => !visibleToolbarActions.has(id)),
+    [presentToolbarActions, visibleToolbarActions],
+  );
+
   // Mobile: swipe left/right on the sheet to page between tabs (a text field or the JSON editor
   // keeps priority — see useHorizontalSwipe). Clamped at the ends.
   const swipeTabs = useHorizontalSwipe((dir) => {
@@ -111,6 +178,22 @@ export function App() {
       setActiveTab(tabs[next].id);
     }
   });
+
+  // If the tab row overflows on mobile, keep the selected label in view after both a click and a
+  // sheet swipe. Manipulating only scrollLeft avoids vertically moving the sticky app header.
+  useEffect(() => {
+    const bar = tabbarRef.current;
+    const selected = document.getElementById(`tab-${tab}`);
+    if (!bar || !selected) return;
+    const left = selected.offsetLeft;
+    const right = left + selected.offsetWidth;
+    let target: number | null = null;
+    if (left < bar.scrollLeft) target = left - 8;
+    else if (right > bar.scrollLeft + bar.clientWidth) target = right - bar.clientWidth + 8;
+    if (target === null) return;
+    if (typeof bar.scrollTo === "function") bar.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+    else bar.scrollLeft = Math.max(0, target);
+  }, [overlay, tab]);
 
   // Check for a newer release once at startup (no-op on the web build, silent on failure).
   useEffect(() => {
@@ -270,8 +353,8 @@ export function App() {
   return (
     <div className={overlay === "json" ? "app app-rawjson" : "app"}>
       <header className="appbar">
-        <nav className="toolbar">
-          <div className="toolbar-left">
+        <nav className="toolbar" ref={toolbarRef}>
+          <div className="toolbar-left" ref={toolbarLeftRef}>
             {overlay ? (
               <button
                 ref={overlayBackRef}
@@ -337,7 +420,7 @@ export function App() {
             )}
             {!overlay && (
               <>
-                {character && (
+                {character && visibleToolbarActions.has("export") && (
                   <button
                     className="btn btn-icon"
                     onClick={exportCharacter}
@@ -347,7 +430,7 @@ export function App() {
                     <DownloadIcon />
                   </button>
                 )}
-                {character && (
+                {character && visibleToolbarActions.has("edit") && (
                   <button
                     className={editMode ? "btn btn-icon edit-toggle-btn is-on" : "btn btn-icon edit-toggle-btn"}
                     onClick={toggleEditMode}
@@ -359,12 +442,22 @@ export function App() {
                   </button>
                 )}
                 {!character && <HelpButton onClick={() => setOverlay("help")} />}
-                {character && (
+                {character && visibleToolbarActions.has("raw") && (
                   <RawJsonButton active={false} onClick={() => setOverlay("json")} label={t("code.toggle")} />
                 )}
-                <DicePalette />
-                <PromptsButton onClick={() => setOverlay("prompts")} />
-                <SettingsButton onClick={() => setOverlay("settings")} />
+                {visibleToolbarActions.has("dice") && <DicePalette />}
+                {visibleToolbarActions.has("prompts") && <PromptsButton onClick={() => setOverlay("prompts")} />}
+                {visibleToolbarActions.has("settings") && <SettingsButton onClick={() => setOverlay("settings")} />}
+                {overflowToolbarActions.length > 0 && (
+                  <ToolbarOverflow
+                    actions={overflowToolbarActions}
+                    onExport={exportCharacter}
+                    onEdit={toggleEditMode}
+                    onRaw={() => setOverlay("json")}
+                    onPrompts={() => setOverlay("prompts")}
+                    onSettings={() => setOverlay("settings")}
+                  />
+                )}
               </>
             )}
           </div>
@@ -380,7 +473,7 @@ export function App() {
         <input ref={folderInput} type="file" hidden multiple onChange={handleImportFolder} />
 
         {!overlay && character && tabs.length > 0 && (
-          <nav className="tabbar" role="tablist" aria-label="Sections">
+          <nav className="tabbar" ref={tabbarRef} role="tablist" aria-label="Sections">
             {tabs.map((tabDef) => (
               <button
                 key={tabDef.id}
@@ -489,6 +582,78 @@ function PencilIcon() {
       <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
       <path d="m15 5 4 4" />
     </svg>
+  );
+}
+
+interface ToolbarOverflowProps {
+  actions: ToolbarActionId[];
+  onExport: () => void;
+  onEdit: () => void;
+  onRaw: () => void;
+  onPrompts: () => void;
+  onSettings: () => void;
+}
+
+/** Compact home for lower-priority toolbar actions when the viewport cannot hold every icon. */
+function ToolbarOverflow({ actions, onExport, onEdit, onRaw, onPrompts, onSettings }: ToolbarOverflowProps) {
+  const t = useT();
+  const ref = useRef<HTMLDetailsElement>(null);
+
+  useEffect(() => {
+    const closeOutside = (e: PointerEvent) => {
+      if (ref.current?.open && !ref.current.contains(e.target as Node)) ref.current.open = false;
+    };
+    const closeOnEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && ref.current?.open) ref.current.open = false;
+    };
+    document.addEventListener("pointerdown", closeOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
+
+  const definitions: Partial<Record<ToolbarActionId, { label: string; run: () => void; trigger?: string }>> = {
+    edit: { label: t("edit.toggle"), run: onEdit },
+    export: { label: t("app.export"), run: onExport },
+    raw: { label: t("code.toggle"), run: onRaw, trigger: "json" },
+    prompts: { label: t("prompts.title"), run: onPrompts, trigger: "prompts" },
+    settings: { label: t("settings.title"), run: onSettings, trigger: "settings" },
+  };
+
+  return (
+    <details className="toolbar-overflow" ref={ref}>
+      <summary
+        className="btn btn-icon toolbar-more"
+        role="button"
+        aria-haspopup="menu"
+        aria-label={t("toolbar.more")}
+        title={t("toolbar.more")}
+      >
+        <span aria-hidden="true">•••</span>
+      </summary>
+      <div className="toolbar-overflow-menu" role="menu">
+        {actions.map((id) => {
+          const action = definitions[id];
+          if (!action) return null;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="menuitem"
+              data-overlay-trigger={action.trigger}
+              onClick={() => {
+                if (ref.current) ref.current.open = false;
+                action.run();
+              }}
+            >
+              {action.label}
+            </button>
+          );
+        })}
+      </div>
+    </details>
   );
 }
 

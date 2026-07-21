@@ -34,6 +34,14 @@ describe("useHorizontalSwipe", () => {
     expect(swipe({ clientX: 200, clientY: 100 }, { clientX: 60, clientY: 100 }, input)).not.toHaveBeenCalled();
   });
 
+  it("gives gesture-owning regions priority over tab navigation", () => {
+    const gallery = document.createElement("div");
+    gallery.className = "no-swipe";
+    const image = document.createElement("img");
+    gallery.appendChild(image);
+    expect(swipe({ clientX: 200, clientY: 100 }, { clientX: 60, clientY: 100 }, image)).not.toHaveBeenCalled();
+  });
+
   it("ignores multi-touch gestures (pinch/zoom)", () => {
     const onSwipe = vi.fn();
     const { result } = renderHook(() => useHorizontalSwipe(onSwipe));
