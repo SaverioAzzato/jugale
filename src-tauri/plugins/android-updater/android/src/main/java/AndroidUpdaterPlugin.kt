@@ -7,6 +7,7 @@ import app.tauri.annotation.Command
 import app.tauri.annotation.InvokeArg
 import app.tauri.annotation.TauriPlugin
 import app.tauri.plugin.Invoke
+import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
 import java.io.File
 import java.io.FileOutputStream
@@ -81,6 +82,7 @@ class AndroidUpdaterPlugin(private val activity: Activity) : Plugin(activity) {
             }
 
             var downloaded = 0L
+            var lastReportedPercent = -1L
             val signature = ByteArray(4)
             var signatureBytes = 0
             connection.inputStream.use { input ->
@@ -98,6 +100,14 @@ class AndroidUpdaterPlugin(private val activity: Activity) : Plugin(activity) {
                         digest.update(buffer, 0, count)
                         downloaded += count
                         if (downloaded > args.expectedSize) error("APK is larger than GitHub metadata")
+                        val percent = downloaded * 100 / args.expectedSize
+                        if (percent > lastReportedPercent) {
+                            lastReportedPercent = percent
+                            trigger("download-progress", JSObject().apply {
+                                put("downloaded", downloaded)
+                                put("total", args.expectedSize)
+                            })
+                        }
                     }
                     output.fd.sync()
                 }

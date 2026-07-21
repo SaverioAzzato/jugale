@@ -268,7 +268,7 @@ export function App() {
   }
 
   return (
-    <div className="app">
+    <div className={overlay === "json" ? "app app-rawjson" : "app"}>
       <header className="appbar">
         <nav className="toolbar">
           <div className="toolbar-left">

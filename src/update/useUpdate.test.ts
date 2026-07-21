@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import androidCapability from "../../src-tauri/capabilities/android.json";
 
 const invoke = vi.fn();
-vi.mock("@tauri-apps/api/core", () => ({ invoke }));
+const unregister = vi.fn();
+const addPluginListener = vi.fn();
+vi.mock("@tauri-apps/api/core", () => ({ invoke, addPluginListener }));
 
 import { installAndroidUpdate, type AndroidReleaseAsset } from "./useUpdate";
 
@@ -14,7 +16,12 @@ const asset: AndroidReleaseAsset = {
 };
 
 describe("native Android updater", () => {
-  beforeEach(() => invoke.mockReset());
+  beforeEach(() => {
+    invoke.mockReset();
+    unregister.mockReset();
+    addPluginListener.mockReset();
+    addPluginListener.mockResolvedValue({ unregister });
+  });
 
   it("hands trusted GitHub metadata to the native verified downloader", async () => {
     invoke.mockResolvedValue(undefined);
@@ -29,6 +36,21 @@ describe("native Android updater", () => {
         expectedDigest: asset.digest,
       },
     });
+  });
+
+  it("forwards native byte progress and removes the listener after the installer opens", async () => {
+    const onProgress = vi.fn();
+    invoke.mockImplementation(async () => {
+      const listener = addPluginListener.mock.calls[0][2] as (progress: { downloaded: number; total: number }) => void;
+      listener({ downloaded: 21_000_000, total: asset.size });
+    });
+
+    await installAndroidUpdate(asset, onProgress);
+
+    expect(addPluginListener).toHaveBeenCalledWith("android-updater", "download-progress", expect.any(Function));
+    expect(onProgress).toHaveBeenNthCalledWith(1, { downloaded: 0, total: asset.size });
+    expect(onProgress).toHaveBeenNthCalledWith(2, { downloaded: 21_000_000, total: asset.size });
+    expect(unregister).toHaveBeenCalledOnce();
   });
 
   it("allows the native updater command but no longer grants frontend access to CDN hosts", () => {

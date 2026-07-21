@@ -24,7 +24,17 @@ const REPO = "SaverioAzzato/jugale";
  */
 export type UpdateState =
   | { status: "idle" | "checking" }
-  | { status: "available"; version: string; kind: "install" | "download"; apply: () => Promise<void> };
+  | {
+      status: "available";
+      version: string;
+      kind: "install" | "download";
+      apply: (onProgress?: (progress: UpdateProgress) => void) => Promise<void>;
+    };
+
+export interface UpdateProgress {
+  downloaded: number;
+  total: number;
+}
 
 interface UpdateStore {
   state: UpdateState;
@@ -49,8 +59,20 @@ async function checkDesktop(set: (s: UpdateState) => void, manual: boolean): Pro
     status: "available",
     version: update.version,
     kind: "install",
-    apply: async () => {
-      await update.downloadAndInstall();
+    apply: async (onProgress) => {
+      let downloaded = 0;
+      let total = 0;
+      await update.downloadAndInstall((event) => {
+        if (event.event === "Started") {
+          total = event.data.contentLength ?? 0;
+          onProgress?.({ downloaded: 0, total });
+        } else if (event.event === "Progress") {
+          downloaded += event.data.chunkLength;
+          onProgress?.({ downloaded, total });
+        } else if (total > 0) {
+          onProgress?.({ downloaded: total, total });
+        }
+      });
       const { relaunch } = await import("@tauri-apps/plugin-process");
       await relaunch();
     },
@@ -65,16 +87,27 @@ export interface AndroidReleaseAsset {
 }
 
 /** Native Android download: stream to private cache, verify size/SHA-256, then open Package Installer. */
-export async function installAndroidUpdate(asset: AndroidReleaseAsset): Promise<void> {
-  const { invoke } = await import("@tauri-apps/api/core");
-  await invoke("plugin:android-updater|download_and_install", {
-    payload: {
-      url: asset.browser_download_url,
-      fileName: asset.name,
-      expectedSize: asset.size,
-      expectedDigest: asset.digest ?? null,
-    },
-  });
+export async function installAndroidUpdate(
+  asset: AndroidReleaseAsset,
+  onProgress?: (progress: UpdateProgress) => void,
+): Promise<void> {
+  const { addPluginListener, invoke } = await import("@tauri-apps/api/core");
+  const listener = onProgress
+    ? await addPluginListener<UpdateProgress>("android-updater", "download-progress", onProgress)
+    : null;
+  onProgress?.({ downloaded: 0, total: asset.size });
+  try {
+    await invoke("plugin:android-updater|download_and_install", {
+      payload: {
+        url: asset.browser_download_url,
+        fileName: asset.name,
+        expectedSize: asset.size,
+        expectedDigest: asset.digest ?? null,
+      },
+    });
+  } finally {
+    await listener?.unregister();
+  }
 }
 
 async function checkAndroid(set: (s: UpdateState) => void, manual: boolean): Promise<void> {
@@ -97,13 +130,7 @@ async function checkAndroid(set: (s: UpdateState) => void, manual: boolean): Pro
     status: "available",
     version: tag,
     kind: "download",
-    apply: async () => {
-      try {
-        await installAndroidUpdate(apk);
-      } catch (e) {
-        notify("error", "update.checkFailed", e instanceof Error ? e.message : String(e));
-      }
-    },
+    apply: (onProgress) => installAndroidUpdate(apk, onProgress),
   });
 }
 

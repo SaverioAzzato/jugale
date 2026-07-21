@@ -80,6 +80,15 @@ describe("App — empty state + live editing wiring", () => {
     expect(container.querySelector(".sheet-swipe")).not.toHaveClass("sheet-swipe-from-right");
   });
 
+  it("locks page scrolling while the raw JSON editor owns the viewport", () => {
+    const { container } = render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
+    fireEvent.click(screen.getByRole("button", { name: "Raw JSON editor" }));
+
+    expect(container.querySelector(".app")).toHaveClass("app-rawjson");
+    expect(container.querySelector(".rawjson-page")).toBeInTheDocument();
+  });
+
   it("shows a read-only badge with an export shortcut once live sync has failed", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
