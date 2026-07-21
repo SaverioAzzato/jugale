@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { makeDie, type DieObject, type ThemeColors } from "./geometry";
 import type { RolledDie } from "../useDice";
+import { pointToNdc, type ViewportRect } from "../zoomCoordinates";
 
 const DIE_PX = 52; // bounding-sphere radius in px → dice ~104px across
 const DRAG_THRESH = 6; // px of movement before a press becomes a drag (vs a tap)
@@ -46,6 +47,7 @@ export class DiceScene {
   onTap: ((id: string) => void) | null = null;
 
   private renderer: THREE.WebGLRenderer;
+  private container: HTMLElement;
   private scene = new THREE.Scene();
   private camera: THREE.OrthographicCamera;
   private raycaster = new THREE.Raycaster();
@@ -65,16 +67,18 @@ export class DiceScene {
   } | null = null;
 
   constructor(container: HTMLElement) {
+    this.container = container;
     this.theme = readTheme();
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const { width: w, height: h } = this.viewportRect();
     this.camera = new THREE.OrthographicCamera(-w / 2, w / 2, h / 2, -h / 2, 0.1, 2000);
     this.camera.position.set(0, 0, 600);
     this.camera.lookAt(0, 0, 0);
 
     this.renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    this.renderer.setSize(w, h);
+    // Keep CSS sizing with the container. Passing `false` is essential: Three's inline CSS
+    // width/height would be zoomed a second time by the root Interface scale.
+    this.renderer.setSize(w, h, false);
     this.renderer.domElement.className = "dice-canvas-gl";
     container.appendChild(this.renderer.domElement);
 
@@ -87,6 +91,7 @@ export class DiceScene {
     this.scene.add(fill);
 
     window.addEventListener("resize", this.onResize);
+    window.visualViewport?.addEventListener("resize", this.onResize);
     window.addEventListener("pointerdown", this.onPointerDown, true);
     // Touch needs its own capture listener: on touch devices the canvas is pointer-events:none,
     // so a tap on a die also lands on whatever button sits underneath. stopPropagation on the
@@ -119,6 +124,7 @@ export class DiceScene {
   dispose(): void {
     cancelAnimationFrame(this.raf);
     window.removeEventListener("resize", this.onResize);
+    window.visualViewport?.removeEventListener("resize", this.onResize);
     window.removeEventListener("pointerdown", this.onPointerDown, true);
     window.removeEventListener("touchstart", this.onTouchStart, true);
     window.removeEventListener("pointermove", this.onPointerMove, true);
@@ -153,8 +159,7 @@ export class DiceScene {
 
   /** A random spot that, where possible, doesn't land inside another die already on screen. */
   private findSpawnSpot(): { x: number; y: number } {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const { width: w, height: h } = this.viewportRect();
     const boxX = Math.min(w * 0.3, 360);
     const boxY = Math.min(h, 640);
     const others = this.entries.filter((e) => !e.leaving);
@@ -228,8 +233,19 @@ export class DiceScene {
 
   // ----- pointer picking -----------------------------------------------------
 
+  private viewportRect(): ViewportRect {
+    const rect = this.container.getBoundingClientRect();
+    return {
+      left: rect.left,
+      top: rect.top,
+      width: Math.max(1, rect.width),
+      height: Math.max(1, rect.height),
+    };
+  }
+
   private toNdc(x: number, y: number): void {
-    this.ndc.set((x / window.innerWidth) * 2 - 1, -(y / window.innerHeight) * 2 + 1);
+    const point = pointToNdc(x, y, this.viewportRect());
+    this.ndc.set(point.x, point.y);
   }
 
   private pick(x: number, y: number): Entry | null {
@@ -359,14 +375,14 @@ export class DiceScene {
   }
 
   private onResize = (): void => {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const { width: w, height: h } = this.viewportRect();
     this.camera.left = -w / 2;
     this.camera.right = w / 2;
     this.camera.top = h / 2;
     this.camera.bottom = -h / 2;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(w, h);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setSize(w, h, false);
     this.renderOnce();
   };
 }

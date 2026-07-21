@@ -1,7 +1,9 @@
-import { describe, it, expect } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { beforeEach, describe, it, expect } from "vitest";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 import { IssuesChip } from "./IssuesChip";
 import type { Issue } from "../schema";
+import { handleTransientBack } from "./uiBack";
+import { useSettings } from "./useSettings";
 
 const warning: Issue = {
   path: "classes",
@@ -19,6 +21,8 @@ const error: Issue = {
 };
 
 describe("IssuesChip", () => {
+  beforeEach(() => useSettings.getState().setUiScale(100));
+
   it("renders nothing when there are no issues", () => {
     const { container } = render(<IssuesChip issues={[]} />);
     expect(container).toBeEmptyDOMElement();
@@ -46,6 +50,15 @@ describe("IssuesChip", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("closes the panel on UI Back before the enclosing page navigates", () => {
+    render(<IssuesChip issues={[warning]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Validation issues" }));
+
+    act(() => expect(handleTransientBack()).toBe(true));
+
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 

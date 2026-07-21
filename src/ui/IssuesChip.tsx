@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import type { Issue, IssueCode } from "../schema";
 import { interpolate, useT, type TFn } from "../i18n/useI18n";
 import { useFocusTrap } from "./useFocusTrap";
+import { useSettings } from "./useSettings";
+import { useUiBackHandler } from "./uiBack";
+import { fixedAnchorAbove } from "./zoomCoordinates";
 
 const MESSAGE_KEY: Partial<
   Record<
@@ -35,6 +38,7 @@ function describeIssue(issue: Issue, t: TFn): string {
 /** Footer chip with the error/warning count; opens a popover listing every validation issue. */
 export function IssuesChip({ issues }: { issues: Issue[] }) {
   const t = useT();
+  const uiScale = useSettings((s) => s.uiScale / 100);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -42,6 +46,10 @@ export function IssuesChip({ issues }: { issues: Issue[] }) {
   const [pos, setPos] = useState<{ bottom: number; right: number }>({ bottom: 0, right: 0 });
 
   useFocusTrap(open, panelRef);
+  useUiBackHandler(open, () => {
+    setOpen(false);
+    return true;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -51,13 +59,24 @@ export function IssuesChip({ issues }: { issues: Issue[] }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
+    const reposition = () => {
+      const r = toggleRef.current?.getBoundingClientRect();
+      if (r) {
+        setPos(fixedAnchorAbove(r, { width: window.innerWidth, height: window.innerHeight }, uiScale));
+      }
+    };
+    reposition();
     document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", reposition);
+    window.visualViewport?.addEventListener("resize", reposition);
     return () => {
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", reposition);
+      window.visualViewport?.removeEventListener("resize", reposition);
     };
-  }, [open]);
+  }, [open, uiScale]);
 
   if (issues.length === 0) return null;
 
@@ -69,8 +88,6 @@ export function IssuesChip({ issues }: { issues: Issue[] }) {
       setOpen(false);
       return;
     }
-    const r = toggleRef.current?.getBoundingClientRect();
-    if (r) setPos({ bottom: window.innerHeight - r.top + 8, right: window.innerWidth - r.right });
     setOpen(true);
   };
 

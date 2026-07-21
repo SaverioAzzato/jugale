@@ -2,6 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useT } from "../i18n/useI18n";
 import { useDice } from "./useDice";
 import { useFocusTrap } from "./useFocusTrap";
+import { useSettings } from "./useSettings";
+import { useUiBackHandler } from "./uiBack";
+import { fixedAnchorBelow } from "./zoomCoordinates";
 
 /** Each die type maps to a simple regular polygon (n sides, rotation) used as its glyph. */
 const DICE: { sides: number; n: number; rot: number }[] = [
@@ -60,6 +63,7 @@ function Die3DIcon() {
 export function DicePalette() {
   const t = useT();
   const roll = useDice((s) => s.roll);
+  const uiScale = useSettings((s) => s.uiScale / 100);
   const [open, setOpen] = useState(false);
   // The menu is position:fixed (the toolbar clips overflow), anchored under the toggle.
   const [pos, setPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
@@ -69,10 +73,14 @@ export function DicePalette() {
   const pressRef = useRef<{ x: number; y: number; moved: boolean; wasOpen: boolean } | null>(null);
 
   useFocusTrap(open, menuRef);
+  useUiBackHandler(open, () => {
+    setOpen(false);
+    return true;
+  });
 
   const openMenu = () => {
     const r = toggleRef.current?.getBoundingClientRect();
-    if (r) setPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
+    if (r) setPos(fixedAnchorBelow(r, window.innerWidth, uiScale));
     setOpen(true);
   };
 
@@ -87,17 +95,19 @@ export function DicePalette() {
     };
     const reposition = () => {
       const r = toggleRef.current?.getBoundingClientRect();
-      if (r) setPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
+      if (r) setPos(fixedAnchorBelow(r, window.innerWidth, uiScale));
     };
     document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
     window.addEventListener("resize", reposition);
+    window.visualViewport?.addEventListener("resize", reposition);
     return () => {
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
       window.removeEventListener("resize", reposition);
+      window.visualViewport?.removeEventListener("resize", reposition);
     };
-  }, [open]);
+  }, [open, uiScale]);
 
   const dieAt = (x: number, y: number): number | null => {
     const el = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-die]");

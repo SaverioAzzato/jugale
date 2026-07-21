@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useCharacter } from "../state/store";
 import { useT } from "../i18n/useI18n";
 import type { JsonEditorHandle, PanelDiagnostic } from "./jsonEditor";
+import { useUiBackHandler } from "./uiBack";
 
 /**
  * The raw-JSON view: a full-page CodeMirror editor over `character.json`, with syntax + schema
@@ -32,6 +33,16 @@ export function RawJsonPage() {
       return !open;
     });
   }, []);
+
+  useUiBackHandler(searchOpen || panelOpen, () => {
+    if (searchOpen) {
+      handleRef.current?.setSearch("", "");
+      setSearchOpen(false);
+    } else {
+      setPanelOpen(false);
+    }
+    return true;
+  });
 
   // Keep the editor's find/replace terms in sync with the bar while it's open, and focus the field.
   useEffect(() => {

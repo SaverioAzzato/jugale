@@ -1,8 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { loadCharacter } from "../schema";
 import { useCharacter } from "../state/store";
 import { PortraitSection } from "./PortraitSection";
+import { handleTransientBack } from "../ui/uiBack";
+import { useSettings } from "../ui/useSettings";
 
 const { character } = loadCharacter({ meta: { name: "Gallery hero" } });
 const images = [
@@ -13,6 +15,17 @@ const images = [
 describe("PortraitSection lightbox gestures", () => {
   beforeEach(() => {
     useCharacter.setState({ images });
+    useSettings.getState().setUiScale(100);
+  });
+
+  it("closes the lightbox on UI Back", () => {
+    render(<PortraitSection c={character} />);
+    fireEvent.click(screen.getByRole("button", { name: "Gallery hero" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    act(() => expect(handleTransientBack()).toBe(true));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("changes image on a horizontal swipe inside the lightbox", () => {

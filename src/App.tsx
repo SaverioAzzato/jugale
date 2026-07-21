@@ -8,6 +8,7 @@ import {
   type ChangeEvent,
   type RefObject,
 } from "react";
+import { onBackButtonPress } from "@tauri-apps/api/app";
 import { useShallow } from "zustand/react/shallow";
 import { useCharacter } from "./state/store";
 import { Sheet } from "./render/Sheet";
@@ -49,6 +50,7 @@ import { UpdateBanner } from "./update/UpdateBanner";
 import { useUpdate } from "./update/useUpdate";
 import { useSettings } from "./ui/useSettings";
 import { toolbarCapacity } from "./ui/toolbarLayout";
+import { handleTransientBack, useUiBackDepth, useUiBackHandler } from "./ui/uiBack";
 
 type ToolbarActionId = "dice" | "edit" | "export" | "raw" | "prompts" | "settings";
 
@@ -120,6 +122,7 @@ export function App() {
   const toolbarRef = useRef<HTMLElement>(null);
   const toolbarLeftRef = useRef<HTMLDivElement>(null);
   const tabbarRef = useRef<HTMLElement>(null);
+  const transientBackDepth = useUiBackDepth();
 
   // Settings/Prompts are full-page overlays, not floating popovers — nothing else behind
   // them is reachable (the toolbar's other buttons and the footer all unmount while one is
@@ -257,10 +260,42 @@ export function App() {
     }
   }
 
-  function handleBackToHome() {
-    if (dirty && !liveSync && !window.confirm(t("app.confirmLeave"))) return;
+  const handleBackToHome = useCallback((): boolean => {
+    if (dirty && !liveSync && !window.confirm(t("app.confirmLeave"))) return false;
     clear();
-  }
+    return true;
+  }, [clear, dirty, liveSync, t]);
+
+  const characterOpen = character !== null;
+
+  const handleUiBack = useCallback((): boolean => {
+    if (handleTransientBack()) return true;
+    if (overlay) {
+      setOverlay(null);
+      return true;
+    }
+    if (characterOpen) return handleBackToHome();
+    return false;
+  }, [characterOpen, handleBackToHome, overlay]);
+
+  // Android navigation-bar Back and the system edge-swipe must mirror the visible UI Back
+  // button. Install Tauri's listener only while there is something inside the app to close;
+  // on the home screen no listener is present, so Android retains its native exit behaviour.
+  useEffect(() => {
+    if (!isAndroid() || (transientBackDepth === 0 && !overlay && !characterOpen)) return;
+    let disposed = false;
+    let listener: { unregister: () => Promise<void> } | null = null;
+    void onBackButtonPress(() => { handleUiBack(); })
+      .then((registered) => {
+        if (disposed) void registered.unregister();
+        else listener = registered;
+      })
+      .catch((error) => console.error("Could not register Android Back handler", error));
+    return () => {
+      disposed = true;
+      if (listener) void listener.unregister();
+    };
+  }, [characterOpen, handleUiBack, overlay, transientBackDepth]);
 
   function handleOpenJson() {
     if (fileAccessSupported) {
@@ -359,7 +394,7 @@ export function App() {
               <button
                 ref={overlayBackRef}
                 className="btn btn-back"
-                onClick={() => setOverlay(null)}
+                onClick={handleUiBack}
                 title={t("app.back")}
                 aria-label={t("app.back")}
               >
@@ -378,7 +413,7 @@ export function App() {
               character && (
                 <button
                   className="btn btn-back"
-                  onClick={handleBackToHome}
+                  onClick={handleUiBack}
                   title={t("app.backTitle")}
                   aria-label={t("app.back")}
                 >
@@ -416,7 +451,7 @@ export function App() {
           </div>
           <div className="toolbar-right">
             {overlay === "json" && character && (
-              <RawJsonButton active onClick={() => setOverlay(null)} label={t("code.toggle")} />
+              <RawJsonButton active onClick={handleUiBack} label={t("code.toggle")} />
             )}
             {!overlay && (
               <>
@@ -598,13 +633,19 @@ interface ToolbarOverflowProps {
 function ToolbarOverflow({ actions, onExport, onEdit, onRaw, onPrompts, onSettings }: ToolbarOverflowProps) {
   const t = useT();
   const ref = useRef<HTMLDetailsElement>(null);
+  const [open, setOpen] = useState(false);
+
+  useUiBackHandler(open, () => {
+    setOpen(false);
+    return true;
+  });
 
   useEffect(() => {
     const closeOutside = (e: PointerEvent) => {
-      if (ref.current?.open && !ref.current.contains(e.target as Node)) ref.current.open = false;
+      if (open && ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     const closeOnEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && ref.current?.open) ref.current.open = false;
+      if (e.key === "Escape" && open) setOpen(false);
     };
     document.addEventListener("pointerdown", closeOutside);
     document.addEventListener("keydown", closeOnEscape);
@@ -612,7 +653,7 @@ function ToolbarOverflow({ actions, onExport, onEdit, onRaw, onPrompts, onSettin
       document.removeEventListener("pointerdown", closeOutside);
       document.removeEventListener("keydown", closeOnEscape);
     };
-  }, []);
+  }, [open]);
 
   const definitions: Partial<Record<ToolbarActionId, { label: string; run: () => void; trigger?: string }>> = {
     edit: { label: t("edit.toggle"), run: onEdit },
@@ -623,13 +664,17 @@ function ToolbarOverflow({ actions, onExport, onEdit, onRaw, onPrompts, onSettin
   };
 
   return (
-    <details className="toolbar-overflow" ref={ref}>
+    <details className="toolbar-overflow" ref={ref} open={open}>
       <summary
         className="btn btn-icon toolbar-more"
         role="button"
         aria-haspopup="menu"
         aria-label={t("toolbar.more")}
         title={t("toolbar.more")}
+        onClick={(event) => {
+          event.preventDefault();
+          setOpen((value) => !value);
+        }}
       >
         <span aria-hidden="true">•••</span>
       </summary>
@@ -644,7 +689,7 @@ function ToolbarOverflow({ actions, onExport, onEdit, onRaw, onPrompts, onSettin
               role="menuitem"
               data-overlay-trigger={action.trigger}
               onClick={() => {
-                if (ref.current) ref.current.open = false;
+                setOpen(false);
                 action.run();
               }}
             >

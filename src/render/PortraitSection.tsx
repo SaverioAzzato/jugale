@@ -3,6 +3,8 @@ import { Panel } from "./primitives";
 import { useT } from "../i18n/useI18n";
 import { useCharacter } from "../state/store";
 import type { Character } from "../schema";
+import { useUiBackHandler } from "../ui/uiBack";
+import { useSettings } from "../ui/useSettings";
 
 const basename = (p: string): string => p.split("/").pop() || p;
 const MAX_ZOOM = 4;
@@ -30,6 +32,7 @@ function clamp(value: number, min: number, max: number): number {
 export function PortraitSection({ c }: { c: Character }) {
   const t = useT();
   const images = useCharacter((s) => s.images);
+  const uiScale = useSettings((s) => s.uiScale / 100);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
@@ -41,6 +44,10 @@ export function PortraitSection({ c }: { c: Character }) {
   >(null);
   const wheelLock = useRef(false);
   const open = lightbox !== null;
+  useUiBackHandler(open, () => {
+    setLightbox(null);
+    return true;
+  });
 
   const resetTransform = useCallback(() => {
     gesture.current = null;
@@ -190,7 +197,7 @@ export function PortraitSection({ c }: { c: Character }) {
             onTouchCancel={() => { gesture.current = null; }}
             onWheel={onImageWheel}
             draggable={false}
-            style={{ transform: `translate3d(${offset.x}px, ${offset.y}px, 0) scale(${zoom})` }}
+            style={{ transform: `translate3d(${offset.x / uiScale}px, ${offset.y / uiScale}px, 0) scale(${zoom})` }}
           />
           <button type="button" className="lightbox-close" aria-label={t("portrait.close")} onClick={() => setLightbox(null)}>
             ×

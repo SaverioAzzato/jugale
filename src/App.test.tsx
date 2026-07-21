@@ -1,13 +1,65 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import { App } from "./App";
 import { useCharacter } from "./state/store";
 import { useSettings } from "./ui/useSettings";
+
+const androidBack = vi.hoisted(() => ({
+  enabled: false,
+  handler: null as null | (() => void),
+  unregister: vi.fn(),
+  register: vi.fn(),
+}));
+
+vi.mock("./storage/androidProvider", async () => {
+  const actual = await vi.importActual<typeof import("./storage/androidProvider")>("./storage/androidProvider");
+  return { ...actual, isAndroid: () => androidBack.enabled };
+});
+
+vi.mock("@tauri-apps/api/app", () => ({ onBackButtonPress: androidBack.register }));
 
 describe("App — empty state + live editing wiring", () => {
   beforeEach(() => {
     useCharacter.setState({ character: null, liveSync: false, dirty: false });
     useSettings.getState().setUiScale(100);
+    androidBack.enabled = false;
+    androidBack.handler = null;
+    androidBack.unregister.mockReset();
+    androidBack.register.mockReset();
+    androidBack.register.mockImplementation(async (handler: () => void) => {
+      androidBack.handler = handler;
+      return { unregister: androidBack.unregister };
+    });
+  });
+
+  it("maps Android system Back to the visible Back action on an app page", async () => {
+    androidBack.enabled = true;
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
+    await waitFor(() => expect(androidBack.handler).not.toBeNull());
+
+    act(() => androidBack.handler?.());
+
+    expect(screen.getByRole("heading", { name: /Your character, always yours/i })).toBeInTheDocument();
+  });
+
+  it("asks before Android system Back closes an unsaved character", async () => {
+    androidBack.enabled = true;
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
+    act(() => useCharacter.setState({ dirty: true }));
+    await waitFor(() => expect(androidBack.register.mock.calls.length).toBeGreaterThanOrEqual(2));
+
+    act(() => androidBack.handler?.());
+    expect(confirm).toHaveBeenCalled();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Example Warlock");
+
+    confirm.mockReturnValue(true);
+    act(() => androidBack.handler?.());
+    expect(screen.getByRole("heading", { name: /Your character, always yours/i })).toBeInTheDocument();
+    confirm.mockRestore();
   });
 
   it("starts on the welcome screen and loads a sample on demand", () => {
