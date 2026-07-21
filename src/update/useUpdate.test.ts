@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import androidCapability from "../../src-tauri/capabilities/android.json";
+import defaultPermissions from "../../src-tauri/plugins/android-updater/permissions/default.toml?raw";
+import listenerPermissions from "../../src-tauri/plugins/android-updater/permissions/listeners.toml?raw";
 
 const invoke = vi.fn();
 const unregister = vi.fn();
@@ -58,17 +58,9 @@ describe("native Android updater", () => {
   it("allows the native updater workflow, including progress listeners, but no CDN hosts", () => {
     expect(androidCapability.permissions).toContain("android-updater:default");
 
-    const defaultPermissions = readFileSync(
-      resolve(process.cwd(), "src-tauri/plugins/android-updater/permissions/default.toml"),
-      "utf8",
-    );
     expect(defaultPermissions).toContain('"allow-download-and-install"');
     expect(defaultPermissions).toContain('"allow-listeners"');
 
-    const listenerPermissions = readFileSync(
-      resolve(process.cwd(), "src-tauri/plugins/android-updater/permissions/listeners.toml"),
-      "utf8",
-    );
     expect(listenerPermissions).toContain('"registerListener"');
     expect(listenerPermissions).toContain('"remove_listener"');
 
