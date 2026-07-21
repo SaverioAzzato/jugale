@@ -15,7 +15,7 @@
     "android-fs:allow-persist-picker-uri-permission",
     "android-fs:allow-check-persisted-picker-uri-permission",
     "android-fs:allow-write-text-file",
-    "android-updater:allow-download-and-install",
+    "android-updater:default",
     {
       "identifier": "http:default",
       "allow": [{ "url": "https://api.github.com/*" }]

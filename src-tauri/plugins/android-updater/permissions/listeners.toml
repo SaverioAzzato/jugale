@@ -1,0 +1,11 @@
+"$schema" = "schemas/schema.json"
+
+[[permission]]
+identifier = "allow-listeners"
+description = "Allows the frontend to subscribe and unsubscribe from native Android updater events."
+commands.allow = [
+  "register_listener",
+  "registerListener",
+  "remove_listener",
+  "removeListener",
+]
