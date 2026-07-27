@@ -60,7 +60,9 @@ jobs:
       - run: npm ci
 
       - name: Initialize Android project
-        run: npx tauri android init --ci
+        # Init and build must see the same identifier; otherwise init scaffolds the stable Java
+        # package while build looks for it.azzato.jugale.dev and fails before Gradle starts.
+        run: npx tauri android init --ci --config src-tauri/tauri.dev.conf.json
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ env.NDK_VERSION }}
 
