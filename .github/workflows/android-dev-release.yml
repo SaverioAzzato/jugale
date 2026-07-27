@@ -76,7 +76,17 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Build JUGALE Dev APK
-        run: npx tauri android build --apk --ci --config src-tauri/tauri.dev.conf.json
+        shell: bash
+        run: |
+          set -o pipefail
+          if npx tauri android build --apk --ci --config src-tauri/tauri.dev.conf.json 2>&1 | tee android-build.log; then
+            exit 0
+          fi
+          # Draft logs require an authenticated maintainer. Mirror the useful tail into one check
+          # annotation so a failed device build remains diagnosable through the public Checks API.
+          details=$(tail -n 80 android-build.log | sed 's/%/%25/g; s/\r/%0D/g' | awk '{printf "%s%%0A", $0}')
+          echo "::error title=Android Dev APK build failed::$details"
+          exit 1
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ env.NDK_VERSION }}
 
