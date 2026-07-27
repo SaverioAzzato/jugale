@@ -24,6 +24,13 @@ import { AndroidFs, AndroidUriPermissionState, type AndroidFsUri } from "tauri-p
 import { isTauri } from "./tauriProvider";
 import type { StorageProvider, GalleryImage, RecentRef, LoadedCharacter } from "./provider";
 import { NO_CHARACTER_JSON } from "./provider";
+import {
+  allocateVersion,
+  parseVersionFilename,
+  requireVersionFilename,
+  sortVersionsNewestFirst,
+  type VersionStore,
+} from "./versions";
 
 const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
 const MIME: Record<string, string> = {
@@ -75,6 +82,48 @@ class AndroidFsProvider implements StorageProvider {
   /** Truncating in-place write (append defaults to false), so the source file stays canonical. */
   async write(data: unknown): Promise<void> {
     await AndroidFs.writeTextFile(this.fileUri, JSON.stringify(data, null, 2));
+  }
+}
+
+class AndroidFolderProvider extends AndroidFsProvider {
+  readonly versions: VersionStore;
+
+  constructor(characterUri: AndroidFsUri, treeUri: AndroidFsUri) {
+    super(characterUri);
+    this.versions = {
+      create: async (data, reason, now = new Date()) => {
+        const historyUri = await AndroidFs.createDir(treeUri, "history");
+        const existing = new Set(
+          (await AndroidFs.readDir(historyUri)).filter((entry) => entry.type === "File").map((entry) => entry.name),
+        );
+        const version = allocateVersion(now, reason, existing);
+        const uri = await AndroidFs.createNewFile(historyUri, version.filename, "application/json");
+        await AndroidFs.writeTextFile(uri, JSON.stringify(data, null, 2));
+        return version;
+      },
+      list: async () => {
+        const rootEntries = await AndroidFs.readDir(treeUri);
+        const history = rootEntries.find((entry) => entry.type === "Dir" && entry.name === "history");
+        if (!history) return [];
+        const versions = (await AndroidFs.readDir(history.uri))
+          .filter((entry) => entry.type === "File")
+          .map((entry) => parseVersionFilename(entry.name))
+          .filter((version) => version !== null);
+        return sortVersionsNewestFirst(versions);
+      },
+      read: async (version) => {
+        requireVersionFilename(version.filename);
+        const rootEntries = await AndroidFs.readDir(treeUri);
+        const history = rootEntries.find((entry) => entry.type === "Dir" && entry.name === "history");
+        if (!history) throw new Error(`Missing history/${version.filename}`);
+        const file = (await AndroidFs.readDir(history.uri)).find(
+          (entry) => entry.type === "File" && entry.name === version.filename,
+        );
+        if (!file) throw new Error(`Missing history/${version.filename}`);
+        const bytes = await AndroidFs.readFile(file.uri);
+        return JSON.parse(new TextDecoder("utf-8").decode(Uint8Array.from(bytes)));
+      },
+    };
   }
 }
 
@@ -143,7 +192,7 @@ export async function openCharacterFolderAndroid(): Promise<{
   await tryPersist(treeUri);
   const { fileUri, images } = await resolveFolder(treeUri);
   const name = await AndroidFs.getName(treeUri).catch(() => "character");
-  const provider = new AndroidFsProvider(fileUri);
+  const provider = new AndroidFolderProvider(fileUri, treeUri);
   return {
     provider,
     raw: await provider.read(),
@@ -180,7 +229,7 @@ export async function reopenAndroid(ref: RecentRef): Promise<LoadedCharacter> {
 
   if (ref.kind === "folder") {
     const { fileUri, images } = await resolveFolder(uri);
-    const provider = new AndroidFsProvider(fileUri);
+    const provider = new AndroidFolderProvider(fileUri, uri);
     return { provider, raw: await provider.read(), images, sourceName: ref.name };
   }
   const provider = new AndroidFsProvider(uri);

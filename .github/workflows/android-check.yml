@@ -8,20 +8,24 @@ on:
       - main
     paths:
       - "src-tauri/plugins/android-updater/**"
+      - "src-tauri/plugins/android-share/**"
       - "src-tauri/capabilities/android.json"
       - "src-tauri/src/lib.rs"
       - "src-tauri/Cargo.toml"
       - "src-tauri/Cargo.lock"
       - "src/update/**"
+      - "src/share/**"
       - ".github/workflows/android-check.yml"
   pull_request:
     paths:
       - "src-tauri/plugins/android-updater/**"
+      - "src-tauri/plugins/android-share/**"
       - "src-tauri/capabilities/android.json"
       - "src-tauri/src/lib.rs"
       - "src-tauri/Cargo.toml"
       - "src-tauri/Cargo.lock"
       - "src/update/**"
+      - "src/share/**"
       - ".github/workflows/android-check.yml"
   workflow_dispatch:
 

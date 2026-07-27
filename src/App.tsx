@@ -51,10 +51,11 @@ import { useUpdate } from "./update/useUpdate";
 import { useSettings } from "./ui/useSettings";
 import { toolbarCapacity } from "./ui/toolbarLayout";
 import { handleTransientBack, useUiBackDepth, useUiBackHandler } from "./ui/uiBack";
+import { VersionsPage } from "./ui/VersionsPage";
 
-type ToolbarActionId = "dice" | "edit" | "export" | "raw" | "prompts" | "settings";
+type ToolbarActionId = "dice" | "edit" | "version" | "history" | "export" | "raw" | "prompts" | "settings";
 
-const TOOLBAR_PRIORITY: ToolbarActionId[] = ["dice", "edit", "export", "raw", "prompts", "settings"];
+const TOOLBAR_PRIORITY: ToolbarActionId[] = ["dice", "edit", "version", "history", "export", "raw", "prompts", "settings"];
 
 function useToolbarCapacity(
   toolbarRef: RefObject<HTMLElement>,
@@ -87,7 +88,7 @@ function useToolbarCapacity(
 }
 
 export function App() {
-  const { character, sourceName, images, liveSync, dirty, saveError, readOnly, editMode, issues } = useCharacter(
+  const { character, sourceName, images, liveSync, dirty, saveError, readOnly, editMode, issues, versionsAvailable, versionBusy } = useCharacter(
     useShallow((s) => ({
       character: s.character,
       sourceName: s.sourceName,
@@ -98,14 +99,18 @@ export function App() {
       readOnly: s.readOnly,
       editMode: s.editMode,
       issues: s.issues,
+      versionsAvailable: Boolean(s.provider?.versions),
+      versionBusy: s.versionBusy,
     })),
   );
   const toggleEditMode = useCharacter((s) => s.toggleEditMode);
   const loadRaw = useCharacter((s) => s.loadRaw);
   const connect = useCharacter((s) => s.connect);
   const exportCharacter = useCharacter((s) => s.exportCharacter);
+  const createVersion = useCharacter((s) => s.createVersion);
   const clear = useCharacter((s) => s.clear);
   const t = useT();
+  const versionHistory = useSettings((s) => s.versionHistory);
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
   const fileAccessSupported = isTauri() || isFileAccessSupported();
@@ -117,7 +122,7 @@ export function App() {
 
   const [activeTab, setActiveTab] = useState("gioco");
   const [swipeDirection, setSwipeDirection] = useState<-1 | 1 | null>(null);
-  const [overlay, setOverlay] = useState<"settings" | "prompts" | "help" | "json" | null>(null);
+  const [overlay, setOverlay] = useState<"settings" | "prompts" | "help" | "json" | "versions" | null>(null);
   const overlayBackRef = useRef<HTMLButtonElement>(null);
   const toolbarRef = useRef<HTMLElement>(null);
   const toolbarLeftRef = useRef<HTMLDivElement>(null);
@@ -153,8 +158,10 @@ export function App() {
     : (tabs[0]?.id ?? "gioco");
 
   const presentToolbarActions = useMemo<ToolbarActionId[]>(
-    () => character ? TOOLBAR_PRIORITY : ["dice", "prompts", "settings"],
-    [character],
+    () => character
+      ? TOOLBAR_PRIORITY.filter((id) => !["version", "history"].includes(id) || (versionHistory && versionsAvailable))
+      : ["dice", "prompts", "settings"],
+    [character, versionHistory, versionsAvailable],
   );
   const toolbarActionCapacity = useToolbarCapacity(
     toolbarRef,
@@ -448,7 +455,9 @@ export function App() {
                     : overlay === "prompts"
                       ? "prompts.title"
                       : overlay === "json"
-                        ? "rawjson.title"
+                      ? "rawjson.title"
+                      : overlay === "versions"
+                        ? "versions.title"
                         : "help.title",
                 )}
               </span>
@@ -481,6 +490,30 @@ export function App() {
                     <PencilIcon />
                   </button>
                 )}
+                {character && visibleToolbarActions.has("version") && (
+                  <button
+                    type="button"
+                    className="btn btn-icon"
+                    disabled={versionBusy || readOnly || !liveSync}
+                    onClick={() => void createVersion("checkpoint")}
+                    title={t("versions.save")}
+                    aria-label={t("versions.save")}
+                  >
+                    <SaveVersionIcon />
+                  </button>
+                )}
+                {character && visibleToolbarActions.has("history") && (
+                  <button
+                    type="button"
+                    className="btn btn-icon"
+                    onClick={() => setOverlay("versions")}
+                    title={t("versions.open")}
+                    aria-label={t("versions.open")}
+                    data-overlay-trigger="versions"
+                  >
+                    <HistoryIcon />
+                  </button>
+                )}
                 {!character && <HelpButton onClick={() => setOverlay("help")} />}
                 {character && visibleToolbarActions.has("raw") && (
                   <RawJsonButton active={false} onClick={() => setOverlay("json")} label={t("code.toggle")} />
@@ -493,6 +526,9 @@ export function App() {
                     actions={overflowToolbarActions}
                     onExport={exportCharacter}
                     onEdit={toggleEditMode}
+                    onVersion={() => void createVersion("checkpoint")}
+                    versionDisabled={versionBusy || readOnly || !liveSync}
+                    onHistory={() => setOverlay("versions")}
                     onRaw={() => setOverlay("json")}
                     onPrompts={() => setOverlay("prompts")}
                     onSettings={() => setOverlay("settings")}
@@ -540,6 +576,8 @@ export function App() {
         <PromptsPage />
       ) : overlay === "help" ? (
         <HelpPage />
+      ) : overlay === "versions" ? (
+        <VersionsPage onRestored={() => setOverlay(null)} />
       ) : overlay === "json" ? (
         <RawJsonPage />
       ) : character ? (
@@ -626,17 +664,60 @@ function PencilIcon() {
   );
 }
 
+/** Floppy-disk glyph for an intentional character checkpoint. */
+function SaveVersionIcon() {
+  return (
+    <svg
+      className="settings-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M5 3h12l2 2v16H5z" />
+      <path d="M8 3v6h8V3M8 21v-7h8v7" />
+    </svg>
+  );
+}
+
+/** Clock-with-arrow glyph for browsing character history. */
+function HistoryIcon() {
+  return (
+    <svg
+      className="settings-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+      <path d="M3 3v5h5M12 7v5l3 2" />
+    </svg>
+  );
+}
+
 interface ToolbarOverflowProps {
   actions: ToolbarActionId[];
   onExport: () => void;
   onEdit: () => void;
+  onVersion: () => void;
+  versionDisabled: boolean;
+  onHistory: () => void;
   onRaw: () => void;
   onPrompts: () => void;
   onSettings: () => void;
 }
 
 /** Compact home for lower-priority toolbar actions when the viewport cannot hold every icon. */
-function ToolbarOverflow({ actions, onExport, onEdit, onRaw, onPrompts, onSettings }: ToolbarOverflowProps) {
+function ToolbarOverflow({ actions, onExport, onEdit, onVersion, versionDisabled, onHistory, onRaw, onPrompts, onSettings }: ToolbarOverflowProps) {
   const t = useT();
   const ref = useRef<HTMLDetailsElement>(null);
   const [open, setOpen] = useState(false);
@@ -661,8 +742,10 @@ function ToolbarOverflow({ actions, onExport, onEdit, onRaw, onPrompts, onSettin
     };
   }, [open]);
 
-  const definitions: Partial<Record<ToolbarActionId, { label: string; run: () => void; trigger?: string }>> = {
+  const definitions: Partial<Record<ToolbarActionId, { label: string; run: () => void; trigger?: string; disabled?: boolean }>> = {
     edit: { label: t("edit.toggle"), run: onEdit },
+    version: { label: t("versions.save"), run: onVersion, disabled: versionDisabled },
+    history: { label: t("versions.open"), run: onHistory, trigger: "versions" },
     export: { label: t("app.export"), run: onExport },
     raw: { label: t("code.toggle"), run: onRaw, trigger: "json" },
     prompts: { label: t("prompts.title"), run: onPrompts, trigger: "prompts" },
@@ -693,6 +776,7 @@ function ToolbarOverflow({ actions, onExport, onEdit, onRaw, onPrompts, onSettin
               key={id}
               type="button"
               role="menuitem"
+              disabled={action.disabled}
               data-overlay-trigger={action.trigger}
               onClick={() => {
                 setOpen(false);

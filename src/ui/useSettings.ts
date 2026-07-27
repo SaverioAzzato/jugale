@@ -11,9 +11,10 @@ interface Persisted {
   toastSeconds: number;
   units: UnitSystem;
   uiScale: UiScale;
+  versionHistory: boolean;
 }
 
-const DEFAULTS: Persisted = { toastSeconds: 10, units: "imperial", uiScale: 100 };
+const DEFAULTS: Persisted = { toastSeconds: 10, units: "imperial", uiScale: 100, versionHistory: true };
 
 function isUiScale(value: unknown): value is UiScale {
   return typeof value === "number" && UI_SCALES.includes(value as UiScale);
@@ -33,6 +34,7 @@ function load(): Persisted {
       toastSeconds: typeof saved.toastSeconds === "number" ? saved.toastSeconds : DEFAULTS.toastSeconds,
       units: saved.units === "metric" || saved.units === "imperial" ? saved.units : DEFAULTS.units,
       uiScale: isUiScale(saved.uiScale) ? saved.uiScale : DEFAULTS.uiScale,
+      versionHistory: typeof saved.versionHistory === "boolean" ? saved.versionHistory : DEFAULTS.versionHistory,
     };
   } catch {
     return DEFAULTS;
@@ -43,6 +45,7 @@ interface SettingsState extends Persisted {
   setToastSeconds: (n: number) => void;
   setUnits: (u: UnitSystem) => void;
   setUiScale: (scale: UiScale) => void;
+  setVersionHistory: (enabled: boolean) => void;
 }
 
 function persist(state: Persisted) {
@@ -56,7 +59,13 @@ applyUiScale(initial.uiScale);
 
 function currentPersisted(get: () => SettingsState, patch: Partial<Persisted>): Persisted {
   const state = get();
-  return { toastSeconds: state.toastSeconds, units: state.units, uiScale: state.uiScale, ...patch };
+  return {
+    toastSeconds: state.toastSeconds,
+    units: state.units,
+    uiScale: state.uiScale,
+    versionHistory: state.versionHistory,
+    ...patch,
+  };
 }
 
 export const useSettings = create<SettingsState>((set, get) => ({
@@ -73,5 +82,9 @@ export const useSettings = create<SettingsState>((set, get) => ({
     set({ uiScale });
     applyUiScale(uiScale);
     persist(currentPersisted(get, { uiScale }));
+  },
+  setVersionHistory: (versionHistory) => {
+    set({ versionHistory });
+    persist(currentPersisted(get, { versionHistory }));
   },
 }));

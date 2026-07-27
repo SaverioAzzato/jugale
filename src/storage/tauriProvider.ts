@@ -5,10 +5,17 @@
  * fs plugin's scope to whatever the user picks, for the running session.
  */
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
-import { exists, readDir, readFile, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { exists, mkdir, readDir, readFile, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { join, basename } from "@tauri-apps/api/path";
 import type { StorageProvider, GalleryImage, RecentRef, LoadedCharacter } from "./provider";
 import { NO_CHARACTER_JSON } from "./provider";
+import {
+  allocateVersion,
+  parseVersionFilename,
+  requireVersionFilename,
+  sortVersionsNewestFirst,
+  type VersionStore,
+} from "./versions";
 
 const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
 const MIME: Record<string, string> = {
@@ -37,6 +44,37 @@ class TauriFileProvider implements StorageProvider {
 
   async write(data: unknown): Promise<void> {
     await writeTextFile(this.path, JSON.stringify(data, null, 2));
+  }
+}
+
+class TauriFolderProvider extends TauriFileProvider {
+  readonly versions: VersionStore;
+
+  constructor(characterPath: string, directoryPath: string) {
+    super(characterPath);
+    this.versions = {
+      create: async (data, reason, now = new Date()) => {
+        const historyPath = await join(directoryPath, "history");
+        await mkdir(historyPath, { recursive: true });
+        const existing = new Set((await readDir(historyPath)).filter((entry) => entry.isFile).map((entry) => entry.name));
+        const version = allocateVersion(now, reason, existing);
+        await writeTextFile(await join(historyPath, version.filename), JSON.stringify(data, null, 2));
+        return version;
+      },
+      list: async () => {
+        const historyPath = await join(directoryPath, "history");
+        if (!(await exists(historyPath))) return [];
+        const versions = (await readDir(historyPath))
+          .filter((entry) => entry.isFile)
+          .map((entry) => parseVersionFilename(entry.name))
+          .filter((version) => version !== null);
+        return sortVersionsNewestFirst(versions);
+      },
+      read: async (version) => {
+        requireVersionFilename(version.filename);
+        return JSON.parse(await readTextFile(await join(directoryPath, "history", version.filename)));
+      },
+    };
   }
 }
 
@@ -93,7 +131,7 @@ export async function openCharacterFolderTauri(): Promise<{
   if (!dirPath) return null;
   const jsonPath = await join(dirPath, "character.json");
   if (!(await exists(jsonPath))) throw new Error(NO_CHARACTER_JSON);
-  const provider = new TauriFileProvider(jsonPath);
+  const provider = new TauriFolderProvider(jsonPath, dirPath);
   return {
     provider,
     raw: await provider.read(),
@@ -126,7 +164,7 @@ export async function reopenTauriPath(ref: RecentRef): Promise<LoadedCharacter> 
     const dirPath = ref.path!;
     const jsonPath = await join(dirPath, "character.json");
     if (!(await exists(jsonPath))) throw new Error(NO_CHARACTER_JSON);
-    const provider = new TauriFileProvider(jsonPath);
+    const provider = new TauriFolderProvider(jsonPath, dirPath);
     return {
       provider,
       raw: await provider.read(),

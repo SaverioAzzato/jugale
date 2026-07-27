@@ -2,12 +2,14 @@ import { create } from "zustand";
 import { loadCharacter, maxHitDice, isBodyArmor, type Character, type Issue } from "../schema";
 import { applyAction, getByPath, makeRng, type FormulaChange, type RolledFace } from "../model/formula";
 import { setIn, insertAt, removeAt, type Path } from "../model/edit";
-import { translate, useI18n, type StringKey } from "../i18n/useI18n";
+import { interpolate, translate, useI18n, type StringKey } from "../i18n/useI18n";
 import { useToast } from "../ui/useToast";
 import { useDice } from "../ui/useDice";
 import { type GalleryImage, type StorageProvider } from "../storage/provider";
 import { saveJsonAs } from "../storage/exporter";
 import { notifySaveOutcome } from "../ui/saveToast";
+import { useSettings } from "../ui/useSettings";
+import type { CharacterVersion, VersionReason } from "../storage/versions";
 
 const FIELD_LABEL: Record<string, StringKey> = {
   "combat.hp.current": "vitals.hp",
@@ -116,6 +118,8 @@ interface CharacterState {
   /** Edit mode: the whole sheet becomes an interactive editor of the JSON. Transient —
    *  always starts off on a fresh load, so a session never opens in an editable state. */
   editMode: boolean;
+  /** True while a checkpoint or full-character replacement owns the persistence pipeline. */
+  versionBusy: boolean;
 
   /** Load into memory only (sample / import) — edits are kept until exported. `readOnly`
    *  flags a real file/folder that this host simply can't write back to live (the no-write
@@ -131,6 +135,12 @@ interface CharacterState {
   /** Save a copy of the character to a user-chosen destination (native picker where available),
    *  then confirm it — with the path/filename where the host can report one. */
   exportCharacter: () => Promise<void>;
+  /** Cancel the debounce, await any active write, then persist the exact latest state. */
+  flushPendingSave: () => Promise<boolean>;
+  /** Create an intentional snapshot. Returns null when unavailable, busy or failed. */
+  createVersion: (reason?: VersionReason) => Promise<CharacterVersion | null>;
+  /** Safely replace the complete character, optionally snapshotting before the write. */
+  replaceCharacter: (raw: unknown, reason: "before-import" | "before-restore") => Promise<boolean>;
   /** Replace the whole character from raw JSON (the raw-JSON editor). Runs the normal load
    *  pipeline (migrate → validate) so the sheet stays renderable even from half-edited input,
    *  marks dirty, and saves through the same debounced path (live-sync, else in-memory → export).
@@ -178,6 +188,48 @@ function revokeImages(images: GalleryImage[]): void {
 export const useCharacter = create<CharacterState>((set, get) => {
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
   let validateTimer: ReturnType<typeof setTimeout> | null = null;
+  let saveQueue: Promise<boolean> = Promise.resolve(true);
+
+  const cancelScheduledSave = () => {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = null;
+  };
+
+  const reportWriteFailure = (provider: StorageProvider, error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    if (get().provider === provider) {
+      useToast.getState().push("error", translate(useI18n.getState().locale, "toast.saveFailed"), message);
+      set({ saveError: message, liveSync: false, readOnly: true });
+    }
+  };
+
+  /** Serialize writes and clear dirty only if no newer character state appeared meanwhile. */
+  const persistCurrent = (): Promise<boolean> => {
+    const write = saveQueue.then(async () => {
+      const { provider, liveSync, character, dirty } = get();
+      if (!provider || !liveSync || !character || !dirty) return true;
+      try {
+        await provider.write(character);
+        if (get().provider === provider && get().character === character) {
+          set({ dirty: false, saveError: null });
+        }
+        return true;
+      } catch (error) {
+        reportWriteFailure(provider, error);
+        return false;
+      }
+    });
+    saveQueue = write;
+    return write;
+  };
+
+  const flushPendingSave = async (): Promise<boolean> => {
+    cancelScheduledSave();
+    await saveQueue;
+    const { provider, dirty, liveSync, readOnly } = get();
+    if (provider && dirty && (!liveSync || readOnly)) return false;
+    return persistCurrent();
+  };
 
   // Re-run validation after a structural edit so the issues chip stays live. Only `issues`
   // is updated — never `character`, or Zod's defaults/coercions would clobber whatever the
@@ -194,30 +246,23 @@ export const useCharacter = create<CharacterState>((set, get) => {
 
   /** Apply a structural edit, mark dirty, schedule a save + a revalidate. */
   const applyEdit = (next: Character) => {
+    if (get().versionBusy) return;
     set({ character: next, dirty: true });
     scheduleSave();
     scheduleRevalidate();
   };
 
   const scheduleSave = () => {
-    if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(async () => {
-      const { provider, liveSync, character } = get();
-      if (!provider || !liveSync || !character) return;
-      try {
-        await provider.write(character);
-        set({ dirty: false, saveError: null });
-      } catch (e) {
-        const message = e instanceof Error ? e.message : String(e);
-        const locale = useI18n.getState().locale;
-        useToast.getState().push("error", translate(locale, "toast.saveFailed"), message);
-        set({ saveError: message, liveSync: false, readOnly: true });
-      }
+    cancelScheduledSave();
+    saveTimer = setTimeout(() => {
+      saveTimer = null;
+      void persistCurrent();
     }, 250);
   };
 
   /** Apply an immutable patch to the character, mark dirty, schedule a save. */
   const mutate = (fn: (c: Character) => Character) => {
+    if (get().versionBusy) return;
     const c = get().character;
     if (!c) return;
     set({ character: clearDeathOnRevive(c, fn(c)), dirty: true });
@@ -234,6 +279,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
 
   /** Built-in rest reset + any registered actions of that kind, with a summary toast. */
   const doRest = (kind: "shortRest" | "longRest") => {
+    if (get().versionBusy) return;
     const c = get().character;
     if (!c) return;
     const rng = makeRng(Date.now());
@@ -290,8 +336,10 @@ export const useCharacter = create<CharacterState>((set, get) => {
     saveError: null,
     readOnly: false,
     editMode: false,
+    versionBusy: false,
 
     loadRaw: (raw, sourceName = "", images = [], readOnly = false) => {
+      cancelScheduledSave();
       const r = loadCharacter(raw);
       revokeImages(get().images);
       set({
@@ -304,10 +352,12 @@ export const useCharacter = create<CharacterState>((set, get) => {
         saveError: null,
         readOnly,
         editMode: false,
+        versionBusy: false,
       });
     },
 
     connect: (provider, raw, sourceName, images = []) => {
+      cancelScheduledSave();
       const r = loadCharacter(raw);
       revokeImages(get().images);
       set({
@@ -320,6 +370,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
         saveError: null,
         readOnly: false,
         editMode: false,
+        versionBusy: false,
       });
     },
 
@@ -330,8 +381,95 @@ export const useCharacter = create<CharacterState>((set, get) => {
       if (notifySaveOutcome(outcome)) set({ dirty: false }); // clear dirty only on a real write
     },
 
+    flushPendingSave,
+
+    createVersion: async (reason = "checkpoint") => {
+      const initial = get();
+      if (initial.versionBusy || !initial.provider?.versions || !initial.liveSync || initial.readOnly) return null;
+      set({ versionBusy: true });
+      try {
+        if (!(await flushPendingSave())) return null;
+        const { provider, character } = get();
+        if (!provider?.versions || !character) return null;
+        const version = await provider.versions.create(character, reason);
+        const message = interpolate(translate(useI18n.getState().locale, "versions.saved"), {
+          filename: version.filename,
+        });
+        useToast.getState().push("success", message);
+        return version;
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        useToast.getState().push(
+          "error",
+          translate(useI18n.getState().locale, "versions.saveFailed"),
+          detail,
+        );
+        return null;
+      } finally {
+        set({ versionBusy: false });
+      }
+    },
+
+    replaceCharacter: async (raw, reason) => {
+      if (get().versionBusy) return false;
+      const next = loadCharacter(raw); // validate before touching current state or storage
+      set({ versionBusy: true });
+      try {
+        if (!(await flushPendingSave())) return false;
+        const { provider, character, sourceName, images } = get();
+        if (!character) return false;
+
+        if (!provider) {
+          set({ ...next, sourceName, images, dirty: true, editMode: false });
+          return true;
+        }
+        if (!get().liveSync || get().readOnly) {
+          useToast.getState().push("error", translate(useI18n.getState().locale, "versions.replaceUnavailable"));
+          return false;
+        }
+
+        const shouldSnapshot = Boolean(
+          provider.versions &&
+            (reason === "before-restore" || useSettings.getState().versionHistory),
+        );
+        if (shouldSnapshot) {
+          try {
+            await provider.versions!.create(character, reason);
+          } catch (error) {
+            const detail = error instanceof Error ? error.message : String(error);
+            useToast.getState().push(
+              "error",
+              translate(useI18n.getState().locale, "versions.replaceAborted"),
+              detail,
+            );
+            return false;
+          }
+        }
+
+        try {
+          await provider.write(next.character);
+        } catch (error) {
+          const detail = error instanceof Error ? error.message : String(error);
+          useToast.getState().push(
+            "error",
+            translate(useI18n.getState().locale, "versions.replaceFailed"),
+            detail,
+          );
+          if (get().provider === provider) {
+            set({ saveError: detail, liveSync: false, readOnly: true });
+          }
+          return false;
+        }
+
+        set({ ...next, sourceName, images, dirty: false, saveError: null, editMode: false });
+        return true;
+      } finally {
+        set({ versionBusy: false });
+      }
+    },
+
     setRawJson: (raw) => {
-      if (!get().character) return;
+      if (!get().character || get().versionBusy) return;
       const r = loadCharacter(raw);
       // Keep provider/liveSync/sourceName/images/editMode/readOnly as they are — only the
       // character (and its issues) change, then the usual debounced save fires.
@@ -340,6 +478,8 @@ export const useCharacter = create<CharacterState>((set, get) => {
     },
 
     clear: () => {
+      if (get().versionBusy) return;
+      cancelScheduledSave();
       revokeImages(get().images);
       set({
         character: null,
@@ -354,10 +494,12 @@ export const useCharacter = create<CharacterState>((set, get) => {
         saveError: null,
         readOnly: false,
         editMode: false,
+        versionBusy: false,
       });
     },
 
     toggleEditMode: () => {
+      if (get().versionBusy) return;
       // Leaving Edit mode drops any material rows the user added but left blank.
       if (get().editMode) {
         const c = get().character;
@@ -429,6 +571,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
       ),
 
     runAction: (id) => {
+      if (get().versionBusy) return;
       const c = get().character;
       if (!c) return;
       const action = c.actions.find((a) => a.id === id);

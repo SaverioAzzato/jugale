@@ -78,4 +78,23 @@ The "Edit (later milestone)" half of the M2 two-modes contract (`docs/UI.md`): a
 - **No in-app chat/LLM.** Originally floated as an optional "BYOK chat" milestone, dropped on purpose: an in-app assistant that ingests arbitrary user-supplied rules content and proposes JSON edits is exactly the kind of legal exposure (non-permissive-license content, generated-content liability) this project wants to avoid. External chatbots (ChatGPT, Claude, etc.) driven by the M3 prompts + published JSON Schema remain the fully supported integration path, with the source and retrieval boundaries stated explicitly in every build/play prompt.
 
 ## Suggested next concrete step
-M0–M6 are done. The clearest product follow-ups are list reordering (drag + keyboard), broader Android/device coverage, macOS notarization if distribution justifies the paid account, and continued performance/docs polish.
+M0–M6 are done. **Character versions are now in progress:** the optional folder-provider contract,
+sortable `history/` filenames, collision handling, web/desktop/Android adapters, least-privilege
+Android create permissions and the persisted EN/IT setting have landed as the first slice. The
+application coordinator now flushes pending saves, snapshots and replaces atomically, including
+failure/race coverage; the responsive toolbar exposes both the manual **Save version** checkpoint
+and a distinct history action. The EN/IT history overlay now lists, previews and restores snapshots
+with a mandatory `before-restore` safety copy. Versioning defaults to active for new installations
+but remains effective only for writable folders. Android outbound prompt sharing is now implemented
+through a scoped local Tauri plugin and the generic sharesheet, with EN/IT UI, attachment rules,
+privacy confirmation, frontend tests and debug-APK CI coverage. Its ChatGPT/Gemini/Claude behavior
+still requires the planned real-device matrix before compatibility is claimed. Next is that device
+spike followed by the inbound JSON intent/preview/import flow, then the Help Center. The remaining
+polish backlog still includes list reordering (drag + keyboard), broader Android/device coverage,
+macOS notarization if distribution justifies the paid account, and continued performance work.
+
+Native Android work can now be exercised before a stable cut through `vX.Y.Z-dev.N` tags on
+`develop`: CI produces a private draft containing a release-signed `JUGALE Dev` APK with the
+separate `it.azzato.jugale.dev` application ID. It installs beside stable JUGALE, skips the stable
+updater, and cannot trigger Pages or the stable release jobs. The complete Dev/stable procedures are
+recorded in `docs/AUTOMATION.md` and summarized for future agents in `AGENTS.md`.

@@ -4,6 +4,7 @@ import { UI_SCALES, useSettings, type UiScale, type UnitSystem } from "./useSett
 import { Panel } from "../render/primitives";
 import { isTauri } from "../storage/tauriProvider";
 import { useUpdate } from "../update/useUpdate";
+import { useCharacter } from "../state/store";
 
 const TOAST_OPTIONS = [5, 10, 15, 20, 0];
 
@@ -48,6 +49,9 @@ export function SettingsPage() {
   const setUnits = useSettings((s) => s.setUnits);
   const uiScale = useSettings((s) => s.uiScale);
   const setUiScale = useSettings((s) => s.setUiScale);
+  const versionHistory = useSettings((s) => s.versionHistory);
+  const setVersionHistory = useSettings((s) => s.setVersionHistory);
+  const versionsAvailable = useCharacter((s) => Boolean(s.provider?.versions));
   const checking = useUpdate((s) => s.state.status === "checking");
   const checkForUpdates = useUpdate((s) => s.check);
 
@@ -64,6 +68,17 @@ export function SettingsPage() {
             ))}
           </select>
         </label>
+        <div className="settings-row settings-row-stack">
+          <label className="settings-toggle">
+            <span>{t("settings.versionHistory")}</span>
+            <input
+              type="checkbox"
+              checked={versionHistory}
+              onChange={(event) => setVersionHistory(event.target.checked)}
+            />
+          </label>
+          <small>{t(versionsAvailable ? "settings.versionHistoryHint" : "settings.versionHistoryUnavailable")}</small>
+        </div>
         <label className="settings-row">
           <span>{t("settings.theme")}</span>
           <select value={theme} onChange={(e) => setTheme(e.target.value as ThemeId)}>

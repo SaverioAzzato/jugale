@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useCharacter } from "./store";
 import { useToast } from "../ui/useToast";
 import type { StorageProvider } from "../storage/provider";
 import { newResource, newSpellSection, newSpell } from "../model/factories";
 import multiclass from "../../characters/example-multiclass/character.json";
+import { useSettings } from "../ui/useSettings";
+import type { CharacterVersion, VersionStore } from "../storage/versions";
 
 const c = () => useCharacter.getState().character!;
 const res = (id: string) => c().resources.find((r) => r.id === id)!;
@@ -210,5 +212,163 @@ describe("store — setRawJson (raw JSON editor)", () => {
     expect(useCharacter.getState().liveSync).toBe(true);
     expect(useCharacter.getState().provider).toBe(provider);
     expect(c().meta.name).toBe("Z");
+  });
+});
+
+const checkpoint: CharacterVersion = {
+  id: "character-20260727-153012-184-checkpoint.json",
+  filename: "character-20260727-153012-184-checkpoint.json",
+  createdAt: "2026-07-27T13:30:12.184Z",
+  reason: "checkpoint",
+};
+
+function versionedProvider(overrides: Partial<StorageProvider> = {}, versionOverrides: Partial<VersionStore> = {}) {
+  const versions: VersionStore = {
+    create: vi.fn(async () => checkpoint),
+    list: vi.fn(async () => []),
+    read: vi.fn(async () => multiclass),
+    ...versionOverrides,
+  };
+  const provider: StorageProvider = {
+    kind: "file",
+    read: vi.fn(async () => multiclass),
+    write: vi.fn(async () => {}),
+    versions,
+    ...overrides,
+  };
+  return { provider, versions };
+}
+
+describe("store — character versions and safe replacement", () => {
+  beforeEach(() => {
+    useCharacter.getState().loadRaw(multiclass, "test");
+    useSettings.getState().setVersionHistory(false);
+    useToast.setState({ toasts: [] });
+  });
+
+  it("flushes the latest debounced state before creating a manual checkpoint", async () => {
+    const { provider, versions } = versionedProvider();
+    useCharacter.getState().connect(provider, multiclass, "folder");
+    useCharacter.getState().damage(1);
+
+    const result = await useCharacter.getState().createVersion();
+
+    expect(result).toEqual(checkpoint);
+    expect(provider.write).toHaveBeenCalledTimes(1);
+    const persisted = vi.mocked(provider.write).mock.calls[0][0] as typeof multiclass;
+    expect(persisted.combat.hp.current).toBe(multiclass.combat.hp.current - 1);
+    expect(versions.create).toHaveBeenCalledWith(useCharacter.getState().character, "checkpoint");
+    expect(useToast.getState().toasts.at(-1)).toMatchObject({
+      kind: "success",
+      message: `Version saved: ${checkpoint.filename}`,
+    });
+  });
+
+  it("does not create history from the toggle, live mutations or ordinary live sync", async () => {
+    const { provider, versions } = versionedProvider();
+    useCharacter.getState().connect(provider, multiclass, "folder");
+    useSettings.getState().setVersionHistory(true);
+    useCharacter.getState().damage(1);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    expect(provider.write).toHaveBeenCalledTimes(1);
+    expect(versions.create).not.toHaveBeenCalled();
+  });
+
+  it("does not emit a false success and ignores a double tap while creation is active", async () => {
+    let finish!: (version: CharacterVersion) => void;
+    const pending = new Promise<CharacterVersion>((resolve) => { finish = resolve; });
+    const create = vi.fn(() => pending);
+    const { provider } = versionedProvider({}, { create });
+    useCharacter.getState().connect(provider, multiclass, "folder");
+
+    const first = useCharacter.getState().createVersion();
+    const second = await useCharacter.getState().createVersion();
+    expect(second).toBeNull();
+    await vi.waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+    expect(useToast.getState().toasts).toHaveLength(0);
+
+    finish(checkpoint);
+    await expect(first).resolves.toEqual(checkpoint);
+    expect(useToast.getState().toasts).toHaveLength(1);
+  });
+
+  it("does not snapshot an unpersisted state when flushing the canonical file fails", async () => {
+    const write = vi.fn(async () => { throw new Error("canonical denied"); });
+    const { provider, versions } = versionedProvider({ write });
+    useCharacter.getState().connect(provider, multiclass, "folder");
+    useCharacter.getState().damage(1);
+
+    await expect(useCharacter.getState().createVersion()).resolves.toBeNull();
+    expect(versions.create).not.toHaveBeenCalled();
+    expect(useCharacter.getState()).toMatchObject({ liveSync: false, readOnly: true, dirty: true });
+  });
+
+  it("aborts replacement without writing when the safety snapshot fails", async () => {
+    useSettings.getState().setVersionHistory(true);
+    const create = vi.fn(async () => { throw new Error("history denied"); });
+    const { provider } = versionedProvider({}, { create });
+    useCharacter.getState().connect(provider, multiclass, "folder");
+
+    const replaced = await useCharacter.getState().replaceCharacter(
+      { ...multiclass, meta: { ...multiclass.meta, name: "Incoming" } },
+      "before-import",
+    );
+
+    expect(replaced).toBe(false);
+    expect(provider.write).not.toHaveBeenCalled();
+    expect(c().meta.name).toBe(multiclass.meta.name);
+    expect(useToast.getState().toasts.at(-1)).toMatchObject({ kind: "error", detail: "history denied" });
+  });
+
+  it("replaces without an automatic snapshot when version history is off", async () => {
+    const { provider, versions } = versionedProvider();
+    useCharacter.getState().connect(provider, multiclass, "folder");
+
+    const replaced = await useCharacter.getState().replaceCharacter(
+      { ...multiclass, meta: { ...multiclass.meta, name: "Incoming" } },
+      "before-import",
+    );
+
+    expect(replaced).toBe(true);
+    expect(versions.create).not.toHaveBeenCalled();
+    expect(provider.write).toHaveBeenCalledTimes(1);
+  });
+
+  it("snapshots, writes and reloads a replacement while preserving provider and images", async () => {
+    useSettings.getState().setVersionHistory(true);
+    const beforeImport = { ...checkpoint, reason: "before-import" as const };
+    const { provider, versions } = versionedProvider({}, { create: vi.fn(async () => beforeImport) });
+    const images = [{ name: "images/01.png", url: "data:image/png;base64,AA==" }];
+    useCharacter.getState().connect(provider, multiclass, "folder", images);
+    const incoming = { ...multiclass, meta: { ...multiclass.meta, name: "Incoming" } };
+
+    await expect(useCharacter.getState().replaceCharacter(incoming, "before-import")).resolves.toBe(true);
+
+    expect(versions.create).toHaveBeenCalledWith(
+      expect.objectContaining({ meta: expect.objectContaining({ name: multiclass.meta.name }) }),
+      "before-import",
+    );
+    expect(provider.write).toHaveBeenCalledWith(
+      expect.objectContaining({ meta: expect.objectContaining({ name: incoming.meta.name }) }),
+    );
+    expect(c().meta.name).toBe("Incoming");
+    expect(useCharacter.getState()).toMatchObject({ provider, images, dirty: false, liveSync: true });
+  });
+
+  it("keeps the old in-memory character and switches to read-only if replacement write fails", async () => {
+    useSettings.getState().setVersionHistory(true);
+    const write = vi.fn(async () => { throw new Error("disk full"); });
+    const { provider } = versionedProvider({ write });
+    useCharacter.getState().connect(provider, multiclass, "folder");
+
+    const replaced = await useCharacter.getState().replaceCharacter(
+      { ...multiclass, meta: { ...multiclass.meta, name: "Incoming" } },
+      "before-import",
+    );
+
+    expect(replaced).toBe(false);
+    expect(c().meta.name).toBe(multiclass.meta.name);
+    expect(useCharacter.getState()).toMatchObject({ readOnly: true, liveSync: false, saveError: "disk full" });
   });
 });

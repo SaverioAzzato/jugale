@@ -21,3 +21,9 @@ export function isNewer(candidate: string, current: string): boolean {
   }
   return false;
 }
+
+/** Dev-channel APKs are side-loaded from private draft releases and must never offer stable
+ * release assets through the production updater. */
+export function isDevVersion(version: string): boolean {
+  return /-dev(?:[.+-]|$)/i.test(version.trim());
+}

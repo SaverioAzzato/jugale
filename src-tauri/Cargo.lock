@@ -2143,7 +2143,7 @@ dependencies = [
 
 [[package]]
 name = "jugale"
-version = "1.12.3"
+version = "1.13.0-dev.1"
 dependencies = [
  "log",
  "serde",
@@ -2151,6 +2151,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-android-fs",
+ "tauri-plugin-android-share",
  "tauri-plugin-android-updater",
  "tauri-plugin-dialog",
  "tauri-plugin-fs",
@@ -4305,6 +4306,16 @@ dependencies = [
  "tauri",
  "tauri-plugin",
  "tauri-plugin-fs",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "tauri-plugin-android-share"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "tauri",
+ "tauri-plugin",
  "thiserror 2.0.18",
 ]
 

@@ -5,8 +5,9 @@
 | File | Trigger | What it does |
 |---|---|---|
 | `.github/workflows/ci.yml` | every PR + push to `main` | typecheck → unit tests → web build. The required gate before merge. |
-| `release.yml` *(added in M4)* | tag `v*` | builds desktop + a release-signed Android APK, attaches them to a **draft** GitHub Release. |
-| `pages.yml` *(added in M4)* | tag `v*` | deploys the web build to GitHub Pages. |
+| `release.yml` *(added in M4)* | stable tag `vX.Y.Z` | builds desktop + a release-signed Android APK into a **draft** Release; skips `-dev` tags. |
+| `android-dev-release.yml` | tag `vX.Y.Z-dev.N` at `develop` HEAD | builds the separately-installable **JUGALE Dev** APK and attaches it to a private draft/prerelease. |
+| `pages.yml` *(added in M4)* | stable tag `vX.Y.Z` | deploys the web build to GitHub Pages; skips `-dev` tags. |
 | `tauri-check.yml` | PR touching `src-tauri/` | fast Rust `cargo check` (no bundling). |
 | `android-check.yml` | PR touching the native updater/update wiring | builds a debug APK, including Kotlin and the merged Android manifest. |
 
@@ -14,11 +15,11 @@ There is intentionally **no `claude.yml`** — see "ticket → PR" below for why
 
 ## Repository secrets (the whole list)
 
-Every secret CI relies on, in one place. All are **one-time setup** (create once, reuse for every release) and only used by `release.yml`; `ci.yml`/`pages.yml`/`tauri-check.yml`/`android-check.yml` need none. **Back up each value outside GitHub** — GitHub won't show it again, and losing the signing ones means you can't ship compatible updates. Set them at *Repo → Settings → Secrets and variables → Actions*.
+Every secret CI relies on, in one place. All are **one-time setup** (create once, reuse for every release). Android keystore secrets are used by both `release.yml` and `android-dev-release.yml`; desktop updater secrets are stable-release-only. `ci.yml`/`pages.yml`/`tauri-check.yml`/`android-check.yml` need none. **Back up each value outside GitHub** — GitHub won't show it again, and losing the signing ones means you can't ship compatible updates. Set them at *Repo → Settings → Secrets and variables → Actions*.
 
 | Secret | Purpose | Consumed by | Details |
 |---|---|---|---|
-| `ANDROID_KEYSTORE_BASE64` | base64 of the release keystore (`.jks`) | `release-android` → `scripts/android-sign-setup.sh` | [Android signing](#android-signing) |
+| `ANDROID_KEYSTORE_BASE64` | base64 of the release keystore (`.jks`) | stable/Dev Android jobs → `scripts/android-sign-setup.sh` | [Android signing](#android-signing) |
 | `ANDROID_KEYSTORE_PASSWORD` | keystore (store) password | ″ | ″ |
 | `ANDROID_KEY_ALIAS` | key alias inside the keystore | ″ | ″ |
 | `ANDROID_KEY_PASSWORD` | password for that alias | ″ | ″ |
@@ -82,6 +83,69 @@ Keep them in lockstep:
 1. **Run `scripts/set-version.sh <x.y.z>`** (no `v` prefix, e.g. `1.4.0`) — it sets all four at once, **including `Cargo.lock`** (skip that and `cargo check --locked` fails CI). Follow SemVer: patch for fixes, minor for features, major for breaking changes. Commit the result (typically as part of, or just before, the release PR). *(Doing it by hand instead? Edit all four — forgetting `tauri.conf.json` ships installers labelled with the wrong version, and forgetting `Cargo.lock` breaks CI.)*
 2. After merging to `main`, create and push the matching tag **`v<version>`** (e.g. `v1.3.0`). The tag is what triggers `pages.yml` (web deploy) and `release.yml` (native draft).
 3. Publish the drafted GitHub Release once the native assets are attached.
+
+### Android Dev draft release
+
+Use this channel when native Android behavior must be exercised before merging/publishing a stable
+release. It creates **only** an Android APK; it does not build desktop artifacts and never deploys
+GitHub Pages. GitHub draft releases are visible only to repository collaborators with sufficient
+access, so the APK is not public unless someone deliberately publishes the draft.
+
+The Dev flavor is intentionally a different Android application:
+
+| Channel | Launcher name | Application ID | Updates |
+|---|---|---|---|
+| Stable | `JUGALE` | `it.azzato.jugale` | Stable release updater |
+| Device test | `JUGALE Dev` | `it.azzato.jugale.dev` | Side-load the next Dev APK |
+
+Both APKs use the release keystore, but the distinct application ID lets Android install them side
+by side. Their app-local settings, Recents and SAF permission grants are separate. They may both be
+granted access to the same character folder, but do not leave both apps editing that folder at once:
+each is a legitimate writer of the same canonical `character.json`.
+
+#### Cut a Dev draft
+
+1. Start from the current `develop` head and incorporate the work to test. The workflow requires the
+   tag commit to equal `origin/develop` HEAD—not merely be somewhere in its history.
+2. Choose the target stable version and the next monotonically increasing build counter, e.g.
+   `1.13.0-dev.1`, then `1.13.0-dev.2`. Never reuse a pushed tag for a different artifact.
+3. Set all version files: `scripts/set-version.sh 1.13.0-dev.1`.
+4. Run the normal gate (`npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, plus
+   `cargo check --locked` under `src-tauri/`), commit, then push `develop`.
+5. Tag the exact pushed commit and push the tag:
+
+   ```bash
+   git tag v1.13.0-dev.1
+   git push origin v1.13.0-dev.1
+   ```
+
+6. Open Actions → **Android Dev Draft**. It verifies tag/version/develop alignment, builds with
+   `src-tauri/tauri.dev.conf.json`, release-signs the APK, and verifies both the v2 signature and the
+   `it.azzato.jugale.dev` package/`JUGALE Dev` label before creating the draft.
+7. Open Releases as a repository collaborator, edit/view the `JUGALE Dev v…` draft, download
+   `JUGALE-Dev-v…-android.apk`, and sideload it. A later `.N` APK upgrades the existing JUGALE Dev
+   installation because application ID and signing key remain constant.
+8. Record device results in `docs/RELEASE-TESTING.md` and the relevant `.tmp` plan. Delete the draft
+   after testing if desired. Keeping the immutable tag is recommended for provenance; if cleanup
+   requires removing it too, delete that exact tag locally and remotely only after confirming the
+   draft is no longer needed.
+
+Dev builds detect their `-dev` version and skip the production updater. The stable `release.yml` and
+`pages.yml` jobs also skip every `-dev` tag, so pushing a test tag cannot publish the website or
+create stable desktop/native assets.
+
+#### Promote the tested work to stable
+
+1. Merge the tested `develop` work into `main` through the normal reviewed/green path.
+2. On the final release commit, remove the prerelease suffix with
+   `scripts/set-version.sh 1.13.0`, run the full gate, commit and push `main`.
+3. Create and push `v1.13.0`. The existing stable workflow builds desktop plus Android into one
+   draft Release, while Pages deploys the web build.
+4. Complete `docs/RELEASE-TESTING.md` against the stable draft, then publish it manually.
+5. Merge/sync the stable release commit back to `develop` before starting the next `-dev.N` line.
+
+Deleting a Dev draft does not uninstall an already sideloaded APK. Uninstall `JUGALE Dev` from the
+phone when that test line is finished; stable JUGALE and its data are unaffected.
 
 > **Don't confuse this with `schemaVersion`.** `package.json` `version` is the *app* release (the `v1.x` line). The `character.json` contract has its own independent `schemaVersion` (`2.2.0`), documented in [SCHEMA.md](SCHEMA.md) — the two move on separate clocks and need not agree. (The app version started at `2.0.0-dev` during the rewrite, then realigned to the `1.x` release line.)
 

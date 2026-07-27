@@ -14,6 +14,14 @@ Most prompts layer, but one stands alone:
 
 Because every *build/play* task prompt includes the base, the licensing disclaimer and the data contract **travel with every copied prompt** — there's no separate block you have to remember to paste. In the in-app Prompts page the two workflows are split into a **Create, modify & verify** section (base + create/level-up/validate) and a separate **Migrate an old character** section (the standalone migrate prompt + its changelog download).
 
+On Android, each applicable prompt also has **Share** beside Copy. It opens the system sharesheet—
+JUGALE does not target or require a particular chatbot—and sends the compiled prompt plus scoped
+cache copies of the relevant files. Base and Custom include the open `character.json` when present;
+Create sends only `character.schema.json`; Level up and Validate require an open character and send
+both JSON files; Migrate also includes `schema-changelog.md`. The first use confirms that prompt and
+character data will be disclosed to the app the user chooses. Actual handling of text plus multiple
+attachments varies by receiving app and is verified separately on real devices.
+
 ## Parameters (filled in the app, printed into the prompt)
 
 - **Reference guides** — name + optional base wiki URL, one or more. Pre-filled from the loaded character's `meta.ruleset` (which accepts either plain strings or `{ name, url }` objects). The prompt instructs the assistant to use **only** these sources. Adding a guide here is the same act as adding it to `meta.ruleset`.

@@ -1,0 +1,8 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "JUGALE Dev",
+  "identifier": "it.azzato.jugale.dev",
+  "bundle": {
+    "createUpdaterArtifacts": false
+  }
+}

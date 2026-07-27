@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { importCharacterFolder, NO_CHARACTER_JSON } from "./provider";
+import { importCharacterFolder, NO_CHARACTER_JSON, openCharacterFile, openCharacterFolder } from "./provider";
 
 beforeAll(() => {
   // jsdom has no object-URL support; stub it so the loaders can mint blob URLs.
@@ -55,5 +55,74 @@ describe("importCharacterFolder", () => {
 
   it("throws NO_CHARACTER_JSON when the folder has none", async () => {
     await expect(importCharacterFolder([fileAt("hero/images/01-a.png")])).rejects.toThrow(NO_CHARACTER_JSON);
+  });
+});
+
+describe("web folder version store", () => {
+  it("is available only through a live folder and creates/lists/reads history JSON", async () => {
+    const files = new Map<string, string>([["character.json", charJson("Current")]]);
+    const historyFiles = new Map<string, string>();
+    const fileHandle = (name: string, bucket: Map<string, string>) => ({
+      name,
+      getFile: async () => ({ text: async () => bucket.get(name) ?? "" }),
+      createWritable: async () => ({
+        write: async (text: string) => bucket.set(name, text),
+        close: async () => {},
+      }),
+    });
+    const history = {
+      name: "history",
+      getFileHandle: async (name: string, options?: { create?: boolean }) => {
+        if (!historyFiles.has(name) && !options?.create) throw new Error("missing");
+        if (!historyFiles.has(name)) historyFiles.set(name, "");
+        return fileHandle(name, historyFiles);
+      },
+      getDirectoryHandle: async () => {
+        throw new Error("missing");
+      },
+      entries: async function* () {
+        for (const name of historyFiles.keys()) yield [name, { kind: "file" as const }] as const;
+      },
+    };
+    const root = {
+      name: "hero",
+      getFileHandle: async (name: string) => {
+        if (!files.has(name)) throw new Error("missing");
+        return fileHandle(name, files);
+      },
+      getDirectoryHandle: async (name: string, options?: { create?: boolean }) => {
+        if (name === "history" && (options?.create || historyFiles.size > 0)) return history;
+        throw new Error("missing");
+      },
+      entries: async function* () {},
+    };
+    Object.defineProperty(window, "showDirectoryPicker", { configurable: true, value: async () => root });
+
+    const loaded = await openCharacterFolder();
+    expect(loaded?.provider.versions).toBeDefined();
+    const version = await loaded!.provider.versions!.create(
+      { meta: { name: "Current" } },
+      "checkpoint",
+      new Date(2026, 6, 27, 15, 30, 12, 184),
+    );
+    expect(await loaded!.provider.versions!.list()).toEqual([version]);
+    expect(await loaded!.provider.versions!.read(version)).toEqual({ meta: { name: "Current" } });
+    await expect(
+      loaded!.provider.versions!.read({ ...version, filename: "../character.json" }),
+    ).rejects.toThrow("Invalid character version filename");
+  });
+
+  it("does not expose versions when only character.json is opened", async () => {
+    const handle = {
+      name: "character.json",
+      getFile: async () => ({ text: async () => charJson("Single file") }),
+      createWritable: async () => ({ write: async () => {}, close: async () => {} }),
+    };
+    Object.defineProperty(window, "showOpenFilePicker", {
+      configurable: true,
+      value: async () => [handle],
+    });
+    const loaded = await openCharacterFile();
+    expect(loaded!.provider.versions).toBeUndefined();
   });
 });

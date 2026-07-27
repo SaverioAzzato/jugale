@@ -3,6 +3,8 @@ import { render, screen, fireEvent, act, waitFor } from "@testing-library/react"
 import { App } from "./App";
 import { useCharacter } from "./state/store";
 import { useSettings } from "./ui/useSettings";
+import multiclass from "../characters/example-multiclass/character.json";
+import type { StorageProvider } from "./storage/provider";
 
 const androidBack = vi.hoisted(() => ({
   enabled: false,
@@ -22,6 +24,7 @@ describe("App — empty state + live editing wiring", () => {
   beforeEach(() => {
     useCharacter.setState({ character: null, liveSync: false, dirty: false });
     useSettings.getState().setUiScale(100);
+    useSettings.getState().setVersionHistory(false);
     androidBack.enabled = false;
     androidBack.handler = null;
     androidBack.unregister.mockReset();
@@ -116,6 +119,36 @@ describe("App — empty state + live editing wiring", () => {
     // Edit mode: the header name becomes an input and the Gioco tab gains the resource editor.
     expect(screen.getByRole("textbox", { name: "Character name" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Add resource/ })).toBeInTheDocument();
+  });
+
+  it("shows Save version for a versioned folder and confirms only after the snapshot resolves", async () => {
+    let finish!: () => void;
+    const pending = new Promise<void>((resolve) => { finish = resolve; });
+    const create = vi.fn(async () => {
+      await pending;
+      return {
+        id: "character-20260727-153012-184-checkpoint.json",
+        filename: "character-20260727-153012-184-checkpoint.json",
+        createdAt: "2026-07-27T13:30:12.184Z",
+        reason: "checkpoint" as const,
+      };
+    });
+    const provider: StorageProvider = {
+      kind: "file",
+      read: async () => multiclass,
+      write: async () => {},
+      versions: { create, list: async () => [], read: async () => multiclass },
+    };
+    useCharacter.getState().connect(provider, multiclass, "folder");
+    useSettings.getState().setVersionHistory(true);
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save version" }));
+    expect(screen.queryByText(/Version saved:/)).not.toBeInTheDocument();
+    finish();
+
+    expect(await screen.findByText("Version saved: character-20260727-153012-184-checkpoint.json")).toBeInTheDocument();
+    expect(create).toHaveBeenCalledTimes(1);
   });
 
   it("animates a swiped tab in from the gesture direction, but not a clicked tab", () => {

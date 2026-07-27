@@ -11,11 +11,14 @@
     "android-fs:allow-read-dir",
     "android-fs:allow-read-text-file",
     "android-fs:allow-read-file",
+    "android-fs:allow-create-dir",
+    "android-fs:allow-create-new-file",
     "android-fs:allow-get-name",
     "android-fs:allow-persist-picker-uri-permission",
     "android-fs:allow-check-persisted-picker-uri-permission",
     "android-fs:allow-write-text-file",
     "android-updater:default",
+    "android-share:default",
     {
       "identifier": "http:default",
       "allow": [{ "url": "https://api.github.com/*" }]

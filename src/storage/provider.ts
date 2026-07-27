@@ -5,10 +5,22 @@
  * with the Tauri `fs` implementation landing with the native shells. Everything above
  * this layer talks only to `StorageProvider`.
  */
+import {
+  allocateVersion,
+  parseVersionFilename,
+  requireVersionFilename,
+  sortVersionsNewestFirst,
+  type CharacterVersion,
+  type VersionReason,
+  type VersionStore,
+} from "./versions";
+
 export interface StorageProvider {
   readonly kind: "file";
   read(): Promise<unknown>;
   write(data: unknown): Promise<void>;
+  /** Present only when the source is a writable character folder/workspace. */
+  readonly versions?: VersionStore;
 }
 
 /**
@@ -67,8 +79,8 @@ const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
 /** Async-iterable directory handle (File System Access API; not yet in every TS lib). */
 interface DirHandle {
   name: string;
-  getFileHandle(name: string): Promise<FileSystemFileHandle>;
-  getDirectoryHandle(name: string): Promise<DirHandle>;
+  getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>;
+  getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<DirHandle>;
   entries(): AsyncIterable<[string, { kind: "file" | "directory" }]>;
 }
 
@@ -100,6 +112,48 @@ class FileHandleProvider implements StorageProvider {
     const writable = await this.handle.createWritable();
     await writable.write(JSON.stringify(data, null, 2));
     await writable.close();
+  }
+}
+
+class WebFolderProvider extends FileHandleProvider {
+  readonly versions: VersionStore;
+
+  constructor(handle: FileSystemFileHandle, directory: DirHandle) {
+    super(handle);
+    this.versions = {
+      create: async (data: unknown, reason: VersionReason, now = new Date()) => {
+        const history = await directory.getDirectoryHandle("history", { create: true });
+        const existing = new Set<string>();
+        for await (const [name, entry] of history.entries()) if (entry.kind === "file") existing.add(name);
+        const version = allocateVersion(now, reason, existing);
+        const file = await history.getFileHandle(version.filename, { create: true });
+        const writable = await file.createWritable();
+        await writable.write(JSON.stringify(data, null, 2));
+        await writable.close();
+        return version;
+      },
+      list: async () => {
+        let history: DirHandle;
+        try {
+          history = await directory.getDirectoryHandle("history");
+        } catch {
+          return [];
+        }
+        const versions = [];
+        for await (const [name, entry] of history.entries()) {
+          if (entry.kind !== "file") continue;
+          const parsed = parseVersionFilename(name);
+          if (parsed) versions.push(parsed);
+        }
+        return sortVersionsNewestFirst(versions);
+      },
+      read: async (version: CharacterVersion) => {
+        requireVersionFilename(version.filename);
+        const history = await directory.getDirectoryHandle("history");
+        const file = await (await history.getFileHandle(version.filename)).getFile();
+        return JSON.parse(await file.text());
+      },
+    };
   }
 }
 
@@ -177,7 +231,7 @@ export async function openCharacterFolder(): Promise<{
   } catch {
     throw new Error(NO_CHARACTER_JSON);
   }
-  const provider = new FileHandleProvider(fileHandle);
+  const provider = new WebFolderProvider(fileHandle, dir);
   return {
     provider,
     raw: await provider.read(),
@@ -322,7 +376,7 @@ export async function reopenWebHandle(ref: RecentRef): Promise<LoadedCharacter> 
     } catch {
       throw new Error(NO_CHARACTER_JSON);
     }
-    const provider = new FileHandleProvider(fileHandle);
+    const provider = new WebFolderProvider(fileHandle, dir);
     return { provider, raw: await provider.read(), images: await readImagesDir(dir), sourceName: dir.name };
   }
   const provider = new FileHandleProvider(ref.handle as FileSystemFileHandle);

@@ -17,6 +17,11 @@ pub fn run() {
     #[cfg(target_os = "android")]
     let builder = builder.plugin(tauri_plugin_android_updater::init());
 
+    // Shares compiled prompts and short-lived cache copies through Android's generic chooser.
+    // The plugin exposes only its cache FileProvider; character folders are never shared directly.
+    #[cfg(target_os = "android")]
+    let builder = builder.plugin(tauri_plugin_android_share::init());
+
     // The Android update check calls the GitHub API through this HTTP plugin (from Rust) instead
     // of the webview's `fetch`, which is unreliable there. Desktop uses the native updater below,
     // so this is Android-only. See src/update/useUpdate.ts.

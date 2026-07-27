@@ -61,7 +61,26 @@ Tests are first-class — the schema/model layer is exhaustively unit-tested. CI
 
 ## Cutting a release
 
-Pushing a tag `v*` triggers the web deploy (`pages.yml`) and native builds (`release.yml`, a draft Release). **The app version lives in four files that must all match the tag — `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock` (or `cargo check --locked` fails CI). Run `scripts/set-version.sh <x.y.z>` to set all four at once** before tagging (don't bump them by hand and forget one). This is the *app* version (`1.x` line), independent of `character.json`'s `schemaVersion` (`2.2.0`). Full checklist: `docs/AUTOMATION.md` → "Cutting a release".
+Pushing a stable tag `vX.Y.Z` triggers the web deploy (`pages.yml`) and native builds (`release.yml`, a draft Release); `-dev.N` tags follow the separate procedure below. **The app version lives in four files that must all match the tag — `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock` (or `cargo check --locked` fails CI). Run `scripts/set-version.sh <x.y.z>` to set all four at once** before tagging (don't bump them by hand and forget one). This is the *app* version (`1.x` line), independent of `character.json`'s `schemaVersion` (`2.2.0`). Full checklist: `docs/AUTOMATION.md` → "Cutting a release".
+
+### Android Dev draft releases
+
+Private device-test APKs use a separate app/channel and must follow
+`docs/AUTOMATION.md` → "Android Dev draft release" exactly:
+
+- Work from `develop`; a Dev tag is accepted only when it points exactly at `origin/develop` HEAD.
+- Use monotonically increasing tags/versions `vX.Y.Z-dev.N` (for example
+  `v1.13.0-dev.1`), set in all four version files with `scripts/set-version.sh X.Y.Z-dev.N`.
+- Push `develop` first, then the matching tag. `.github/workflows/android-dev-release.yml` creates
+  a private draft/prerelease containing only the release-signed APK.
+- The APK is `JUGALE Dev` / `it.azzato.jugale.dev`, so it installs beside stable JUGALE and later
+  Dev APKs upgrade only the Dev installation. Dev builds never use the stable in-app updater.
+- `-dev` tags must never deploy Pages or run the stable desktop/native release jobs; those workflows
+  have explicit guards. Do not publish a Dev draft. Download/test it, then delete the draft if no
+  longer needed; prefer a new `.N` tag over deleting/reusing a tag.
+- To promote: merge the tested work to `main`, run `scripts/set-version.sh X.Y.Z` without a suffix,
+  commit/push, tag `vX.Y.Z`, and push the tag. Review the stable draft, then publish it. Stable tags
+  also deploy Pages. Sync the stable release commit back into `develop` before starting the next line.
 
 ## Agents & automation
 

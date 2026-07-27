@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { isTauri } from "../storage/tauriProvider";
 import { isAndroid } from "../storage/androidProvider";
-import { isNewer } from "./version";
+import { isDevVersion, isNewer } from "./version";
 import { useToast } from "../ui/useToast";
 import { translate, useI18n } from "../i18n/useI18n";
 
@@ -138,6 +138,10 @@ export const useUpdate = create<UpdateStore>((set) => ({
   state: { status: "idle" },
   dismiss: () => set({ state: { status: "idle" } }),
   check: async (manual = false) => {
+    if (isDevVersion(__APP_VERSION__)) {
+      if (manual) notify("success", "update.upToDate");
+      return;
+    }
     if (!isTauri()) {
       if (manual) notify("success", "update.upToDate"); // web is always current
       return;

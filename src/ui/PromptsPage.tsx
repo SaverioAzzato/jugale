@@ -21,6 +21,14 @@ import { SCHEMA_CHANGELOG } from "../schema/changelog";
 import { saveJsonAs, saveTextAs } from "../storage/exporter";
 import { notifySaveOutcome } from "./saveToast";
 import { useToast } from "./useToast";
+import { isAndroid } from "../storage/androidProvider";
+import {
+  buildPromptSharePayload,
+  sharePromptAndroid,
+  type SharePromptKind,
+} from "../share/androidShare";
+
+const SHARE_NOTICE_KEY = "jugale.android-share-notice-v1";
 
 /** Book icon button — opens the full Prompts page (App owns the open/close state). */
 export function PromptsButton({ onClick }: { onClick: () => void }) {
@@ -102,6 +110,19 @@ function CheckIcon() {
   );
 }
 
+/** Lucide "share-2". */
+function ShareIcon() {
+  return (
+    <svg className="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="m8.6 10.5 6.8-4" />
+      <path d="m8.6 13.5 6.8 4" />
+    </svg>
+  );
+}
+
 /** Lucide "x" — clears the custom instruction. */
 function ClearIcon() {
   return (
@@ -177,12 +198,74 @@ function CopyButton({ text, withBase = true }: { text: string; withBase?: boolea
   );
 }
 
-function PromptBlock({ title, text, withBase = true }: { title: string; text: string; withBase?: boolean }) {
+function ShareButton({
+  kind,
+  title,
+  text,
+  character,
+}: {
+  kind: SharePromptKind;
+  title: string;
+  text: string;
+  character: Character | null;
+}) {
+  const t = useT();
+  const [sharing, setSharing] = useState(false);
+  const payload = buildPromptSharePayload(kind, title, text, character);
+
+  async function share() {
+    if (!payload || sharing) return;
+    try {
+      if (localStorage.getItem(SHARE_NOTICE_KEY) !== "seen") {
+        if (!window.confirm(t("prompts.shareNotice"))) return;
+        localStorage.setItem(SHARE_NOTICE_KEY, "seen");
+      }
+      setSharing(true);
+      useToast.getState().push("success", t("prompts.sharing"));
+      await sharePromptAndroid(payload);
+    } catch {
+      useToast.getState().push("error", t("prompts.shareFailed"));
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      className="btn btn-icon prompt-share-btn"
+      onClick={share}
+      disabled={!payload || sharing}
+      aria-label={t("prompts.share")}
+      aria-busy={sharing}
+      title={!payload ? t("prompts.shareNeedsCharacter") : t("prompts.share")}
+    >
+      <ShareIcon />
+    </button>
+  );
+}
+
+function PromptBlock({
+  title,
+  text,
+  kind,
+  character,
+  withBase = true,
+}: {
+  title: string;
+  text: string;
+  kind: SharePromptKind;
+  character: Character | null;
+  withBase?: boolean;
+}) {
   return (
     <div className="prompt-block">
       <div className="prompt-block-head">
         <h3>{title}</h3>
-        <CopyButton text={text} withBase={withBase} />
+        <div className="prompt-block-tools">
+          {isAndroid() && <ShareButton kind={kind} title={title} text={text} character={character} />}
+          <CopyButton text={text} withBase={withBase} />
+        </div>
       </div>
       <pre className="prompt-text">{text}</pre>
     </div>
@@ -194,10 +277,12 @@ function CustomSection({
   custom,
   setCustom,
   copyText,
+  character,
 }: {
   custom: string;
   setCustom: (v: string) => void;
   copyText: string;
+  character: Character | null;
 }) {
   const t = useT();
   return (
@@ -215,6 +300,7 @@ function CustomSection({
           >
             <ClearIcon />
           </button>
+          {isAndroid() && <ShareButton kind="custom" title={t("prompts.custom")} text={copyText} character={character} />}
           <CopyButton text={copyText} withBase />
         </div>
       </div>
@@ -296,7 +382,7 @@ function SegmentEditors({
 }
 
 /** The migration workflow is a separate top-level panel because it uses a standalone prompt. */
-function MigrateSection({ params, segments, locale }: { params: PromptParams; segments: PromptSegments; locale: Locale }) {
+function MigrateSection({ params, segments, locale, character }: { params: PromptParams; segments: PromptSegments; locale: Locale; character: Character | null }) {
   const t = useT();
   const migrate = PROMPTS.find((p) => p.id === "migrate")!;
   return (
@@ -311,7 +397,13 @@ function MigrateSection({ params, segments, locale }: { params: PromptParams; se
           {t("prompts.downloadChangelog")}
         </button>
       </div>
-      <PromptBlock title={t(migrate.titleKey)} text={composePrompt(migrate.id, params, segments, locale)} withBase={false} />
+      <PromptBlock
+        title={t(migrate.titleKey)}
+        text={composePrompt(migrate.id, params, segments, locale)}
+        kind="migrate"
+        character={character}
+        withBase={false}
+      />
     </Panel>
   );
 }
@@ -460,13 +552,19 @@ export function PromptsPage() {
         ) : (
           <>
             {PROMPTS.filter((p) => p.id !== "migrate").map((p) => (
-              <PromptBlock key={p.id} title={t(p.titleKey)} text={composePrompt(p.id, params, segments, locale)} />
+              <PromptBlock
+                key={p.id}
+                title={t(p.titleKey)}
+                text={composePrompt(p.id, params, segments, locale)}
+                kind={p.id}
+                character={character}
+              />
             ))}
-            <CustomSection custom={custom} setCustom={setCustom} copyText={composeCustom(params, segments, locale, custom)} />
+            <CustomSection custom={custom} setCustom={setCustom} copyText={composeCustom(params, segments, locale, custom)} character={character} />
           </>
         )}
       </Panel>
-      {!editing && <MigrateSection params={params} segments={segments} locale={locale} />}
+      {!editing && <MigrateSection params={params} segments={segments} locale={locale} character={character} />}
     </div>
   );
 }
