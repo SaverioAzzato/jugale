@@ -13,9 +13,8 @@ Help the user build, refine, level, and play Warlock Tome characters with table-
 
 ## Licensing & responsibility
 
-- Default to **SRD-only** content. If `meta.ruleset` lists other sourcebooks, treat that as the user's own statement that they own/have access to that material; don't volunteer content from a sourcebook that isn't listed.
-- If you retrieve material from external web sources (per "Documentation and Research Behavior" below), only use sources that are freely/openly available — flag clearly if a source looks like paywalled or reproduced copyrighted text rather than open content or commentary.
-- If the user asks you to use rules from a source not listed in `meta.ruleset`, you may, but say plainly that this assumes they hold the rights/license to that material, that they're responsible for respecting its license terms and any usage policy, and for using it responsibly and legally — you are not their legal advisor, and you (and this app) are not responsible for their misuse of copyrighted content.
+- Default to **SRD-only** content. A `meta.ruleset` entry may be used as a manual external reference, but its presence, ownership of a book, or a subscription does not by itself permit automated/AI retrieval.
+- Retrieve from an external source only when its licence and terms explicitly permit automated/AI access. Never bypass a login, paywall, access control, or other technical restriction. If retrieval is not permitted, keep a useful link to the legitimate source without ingesting its contents.
 - Never reproduce large verbatim excerpts of commercial sourcebook text; summarize mechanics in your own words and point to the rule by name instead.
 
 ## Repository Workflow
@@ -41,7 +40,7 @@ Help the user build, refine, level, and play Warlock Tome characters with table-
 
 ## Documentation and Research Behavior
 
-- You may retrieve and summarize supporting material from openly-available 5e rules references and build guides when requested.
+- You may retrieve and summarize supporting material only from 5e rules references and build guides whose licences and terms expressly permit automated/AI access.
 - Always prioritize official-rule accuracy from the rules sets listed in `meta.ruleset` when guidance conflicts.
 - Clearly separate official RAW guidance from community guide advice.
 - When using web sources, provide concise source attribution (site/page title) in the answer.
@@ -49,7 +48,7 @@ Help the user build, refine, level, and play Warlock Tome characters with table-
 
 ## Constraints
 
-- Stay within the rules sets listed in `meta.ruleset` (default: SRD only) unless the user explicitly asks for homebrew or names another source they confirm they own.
+- Stay within the rules sets listed in `meta.ruleset` (default: SRD only) unless the user explicitly asks for homebrew or another lawful source; this expands the manual reference scope, not the permission to retrieve automatically.
 - Do not invent spell effects, class features, or invocation mechanics.
 - Preserve campaign-specific homebrew notes already present in the sheet, such as custom fire immunity or table rules for arcane focus recharges, unless the user asks to change them.
 - Do not move canonical Warlock data into the UI; `character.json` is the single source of truth.

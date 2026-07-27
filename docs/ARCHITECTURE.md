@@ -13,7 +13,7 @@ A character-sheet platform where **the JSON is the character** and the app is a 
 4. **Freedom within structure.** The schema is structured enough to validate rules and generate UI, free enough for any class/homebrew, and simple enough for an LLM to manipulate by hand. (See `SCHEMA.md`.)
 5. **Free & open distribution.** No app stores required, no hosting bills. GitHub Releases + GitHub Pages.
 6. **Spec-first, tested, automated.** Architecture and schema specs precede code; everything is covered by tests; CI/CD does the building and shipping.
-7. **Low legal & licensing risk, on purpose.** Ship only freely-licensed example content (the 5e SRD) as defaults — never a commercial sourcebook hardcoded into schema defaults, prompts, or seed material. No in-app chat/LLM that ingests arbitrary user-supplied content; external chatbots via the published JSON Schema are the supported integration point instead. See `ROADMAP.md` ("Explicitly out of scope") and the M3 prompts section.
+7. **Low legal & licensing risk, on purpose.** Ship only freely licensed example content (the 5e SRD) as defaults — never a commercial sourcebook hardcoded into schema defaults, prompts, or seed material. User-authored links remain first-class references, but the app only opens them externally: it never fetches, scrapes, caches, previews, proxies, indexes, or reproduces the destination. No in-app chat/LLM ingests arbitrary user-supplied content; external chatbots via the published JSON Schema are the supported integration point instead, and prompts permit automated retrieval only where the source's licence and terms expressly allow it. See `ROADMAP.md` ("Explicitly out of scope") and the M3 prompts section.
 
 ## 2. Stack decision (resolved)
 

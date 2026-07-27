@@ -61,9 +61,9 @@ Only `schemaVersion` and `meta.name` are strictly required; every section has a 
   "ruleset": ["SRD", { "name": "My Homebrew Wiki", "url": "https://wiki.example/srd" }],
                          // rules guides in scope; drives the prompts. Each entry is a bare name
                          // string or { name, url } (base wiki URL for niche guides). Default is the
-                         // freely-licensed SRD only — only reference content that is SRD or otherwise
-                         // free to access/scrape under its terms of use; that choice (and the
-                         // licensing responsibility) is the user's.
+                         // freely licensed SRD only. Other entries may remain clickable manual
+                         // references; automated/AI retrieval additionally requires the source's
+                         // licence and terms to permit it explicitly.
   "tags": ["warlock", "draconide"]
 }
 ```

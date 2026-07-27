@@ -60,10 +60,10 @@ const Meta = z
       .array(RulesetEntry)
       .default(["SRD"])
       .describe(
-        "Rules guides in scope for this character. Default is the freely-licensed SRD only; " +
+        "Rules guides in scope for this character. Default is the freely licensed SRD only; " +
           "each entry is a name string or { name, url } for a guide's base wiki URL. Adding other " +
-          "sourcebooks is the user's own choice and licensing responsibility — only reference content " +
-          "that is SRD or otherwise free to access/scrape under its terms of use.",
+          "sources expands the manual reference scope, but automated/AI retrieval requires their " +
+          "licences and terms to permit it explicitly.",
       ),
     tags: strings,
   })

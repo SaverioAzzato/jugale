@@ -26,6 +26,8 @@ describe("WikiLink", () => {
     expect(a).toHaveAttribute("href", "https://example.com/x");
     expect(a).toHaveAttribute("rel", "noopener noreferrer");
     expect(a).toHaveAttribute("target", "_blank");
+    expect(a).toHaveAttribute("title", "example.com");
+    expect(a).toHaveAttribute("data-external-host", "example.com");
   });
 
   it("renders inert text (no anchor) for a dangerous or missing link", () => {

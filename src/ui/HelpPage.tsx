@@ -64,6 +64,7 @@ const CONTENT: Record<Locale, HelpContent> = {
       "The dice icon rolls any of the 7 standard dice, with or without a character loaded.",
       "The welcome screen keeps a Recent list so you can reopen a character in one click. Where the platform can keep a live link to your file (desktop, and Chromium browsers) it reopens writable; where it can't (Firefox, Safari) it keeps a read-only snapshot so the character still shows up — you just export to save. It's purely local: only a reference (or that snapshot) is kept on your device, never sent anywhere. Clear it anytime with Clear; an entry that no longer opens (file moved or deleted) is dropped automatically.",
       "Everything stays on your device: JUGALE has no server and no tracking, and sends nothing anywhere. Your character lives in its file; recents, settings, and theme are saved locally in your browser or app only.",
+      "External links: links from character.json are shown as references and open in your system browser. JUGALE does not fetch, scrape, cache, preview, or endorse their contents. A book, account, or subscription may allow manual reading without permitting automated or AI retrieval; always follow the source's licence and terms.",
     ],
     schemaTitle: "The character.json fields, section by section",
     schemaIntro:
@@ -153,6 +154,7 @@ const CONTENT: Record<Locale, HelpContent> = {
       "L'icona dei dadi lancia uno qualsiasi dei 7 dadi standard, con o senza un personaggio caricato.",
       "La schermata iniziale tiene un elenco Recenti per riaprire un personaggio con un clic. Dove la piattaforma può mantenere un collegamento vivo al file (desktop e browser Chromium) lo riapre in scrittura; dove non può (Firefox, Safari) salva uno snapshot in sola lettura, così il personaggio compare comunque — basta esportare per salvare. È tutto locale: sul dispositivo resta solo un riferimento (o quello snapshot), mai inviato da nessuna parte. Puoi svuotarlo quando vuoi con Svuota; una voce che non si apre più (file spostato o eliminato) viene rimossa in automatico.",
       "Tutto resta sul tuo dispositivo: JUGALE non ha server né tracciamento e non invia nulla da nessuna parte. Il personaggio vive nel suo file; recenti, impostazioni e tema sono salvati solo in locale nel browser o nell'app.",
+      "Link esterni: i link di character.json sono mostrati come riferimenti e si aprono nel browser di sistema. JUGALE non ne recupera, estrae, salva, mostra in anteprima o approva i contenuti. Un libro, account o abbonamento può consentire la lettura manuale senza autorizzare il retrieval automatico o tramite IA: rispetta sempre la licenza e i termini della fonte.",
     ],
     schemaTitle: "I campi di character.json, sezione per sezione",
     schemaIntro:

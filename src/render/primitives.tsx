@@ -25,8 +25,17 @@ export function safeHref(link: string): string | null {
 export function WikiLink({ link, children }: { link?: string | null; children: ReactNode }) {
   const href = link ? safeHref(link) : null;
   if (!href) return <>{children}</>;
+  const parsed = new URL(href);
+  const destination = parsed.hostname || parsed.protocol.replace(":", "");
   return (
-    <a className="wikilink" href={href} target="_blank" rel="noopener noreferrer">
+    <a
+      className="wikilink"
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={destination}
+      data-external-host={destination}
+    >
       {children}
     </a>
   );

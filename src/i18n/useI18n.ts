@@ -122,7 +122,7 @@ const en = {
   "settings.uiScaleDefault": "Default",
   // prompts page
   "prompts.title": "GPT prompts",
-  "prompts.banner": "Only use SRD content, or content whose terms of use permit free and automated/AI access. Don't point a chatbot at sources that prohibit scraping. You're responsible for using your chosen guides legally and within their terms.",
+  "prompts.banner": "Automated/AI retrieval is allowed only for SRD content or sources whose licence and terms explicitly permit it. Owning or subscribing to a source is not enough; manual external links remain welcome.",
   "prompts.sectionBuildTitle": "Create, modify & verify a character",
   "prompts.intro": "Fill in the parameters. This will auto-compile the prompts. (Optionally, manually modify the prompts through Edit.) Download the JSON Schema and feed it, together with the specific prompt you need (Base is just the foundation for the other prompts), into your favourite AI chatbot.",
   "prompts.sectionMigrateTitle": "Migrate an old character",
@@ -552,7 +552,7 @@ const it: Record<StringKey, string> = {
   "settings.uiScale": "Scala interfaccia",
   "settings.uiScaleDefault": "Predefinita",
   "prompts.title": "Prompt per chatbot",
-  "prompts.banner": "Usa solo contenuto SRD, o contenuto i cui termini d'uso consentono l'accesso libero e automatico/AI. Non puntare un chatbot a fonti che vietano lo scraping. Sei responsabile di usare le guide scelte legalmente e nei loro termini d'uso.",
+  "prompts.banner": "Il retrieval automatico/AI è ammesso solo per contenuti SRD o fonti la cui licenza e i cui termini lo consentono esplicitamente. Possedere una fonte o avere un abbonamento non basta; i link esterni manuali restano benvenuti.",
   "prompts.sectionBuildTitle": "Crea, modifica e verifica un personaggio",
   "prompts.intro": "Compila i parametri: i prompt si aggiornano automaticamente. (Puoi anche modificarli a mano con Modifica.) Scarica lo JSON Schema e forniscilo, insieme al prompt specifico che ti serve (Base è solo la base su cui si costruiscono gli altri), al tuo chatbot AI preferito.",
   "prompts.sectionMigrateTitle": "Migra un personaggio vecchio",
