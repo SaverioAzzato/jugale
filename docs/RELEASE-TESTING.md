@@ -13,8 +13,10 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
   opened". (If it says "damaged", the ad-hoc signing in `release.yml` regressed.)
 - ☐ Open a character `character.json`; edit HP; confirm it saves in place (reopen shows the change).
 - ☐ Open a character *folder* — portrait shows.
-- ☐ With Character versions enabled, **Save version** creates `history/` on first use; Versions
-  lists and previews it. Restore it and confirm a second `before-restore` snapshot is created.
+- ☐ With Character versions enabled, **Save version** accepts an optional title and creates
+  `history/` on first use; Versions shows compact cards. Restore once with Yes (a `before-restore`
+  snapshot appears), once with No (none appears), and verify Cancel changes nothing. Delete a test
+  version and confirm both its JSON and optional `.meta.json` sidecar disappear.
 - ☐ Roll dice; drag one; tap to dismiss.
 
 ## Windows (`.msi` / `.exe`)
@@ -36,8 +38,9 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
 - ☐ **Reopen from Recents after fully closing the app** (swipe it away, relaunch) → the character
   reopens writable without re-picking. (This proves the persisted SAF permission.)
 - ☐ **Character versions** on a local SAF folder: the setting starts enabled on a clean install;
-  Save version creates `history/`, the filename toast appears only after the write, Versions opens
-  and previews it, and Restore creates `before-restore` before replacing `character.json`.
+  Save version creates `history/`, optional titles render only when non-empty, and the filename toast
+  appears only after the write. Test Restore with Yes/No/Cancel and delete both titled and untitled
+  versions. The canonical `character.json` and `images/` must remain untouched by history metadata.
 - ☐ Repeat on a DocumentsProvider that refuses create/write: show a clear error and leave the
   canonical `character.json` unchanged; never report a successful version.
 - ☐ **Open single file** (`character.json` directly): loads; edits save.
@@ -65,20 +68,20 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
   reacts, the button underneath does **not** fire.
 - ☐ **Prompt sharing**: on the Prompts page, Base/Create/Custom can open Android's generic
   sharesheet without a character; Level up/Validate/Migrate are disabled and explain why. With a
-  character open, share Level up and verify prompt text plus `character.schema.json` and
-  `character.json`; Create must still omit the current character. The first share shows the privacy
-  confirmation and cancelling it opens no chooser.
+  character open, share Level up and verify the chooser opens immediately. The single `prompt.txt`
+  attachment must contain delimited PROMPT, schema and character sections; Create must omit the
+  current character; Migrate must also contain the changelog section.
 - ☐ Complete the chatbot matrix for the installed ChatGPT/Gemini/Claude versions: target visible,
-  new-chat behavior, `EXTRA_TEXT`, two JSON attachments, Migrate's mixed Markdown attachment and
-  return MIME. Record failures as receiver compatibility—not as successful support—and decide
-  whether the optional `prompt.txt` fallback is needed before release.
+  new-chat behavior, whether `EXTRA_TEXT` pre-fills the composer, whether `prompt.txt` is attached
+  and read correctly, and return MIME. Record app versions and failures as receiver compatibility.
 
 ## Web on mobile (the Pages site from a phone browser)
 - ☐ Open the live site on a phone.
 - ☐ **Dice on a button**: same as above — tapping a die over a button must not trigger the button.
 - ☐ Open a `character.json` (read-only import path); dice work.
 - ☐ A single JSON/read-only import does not expose version actions. On Chromium desktop, opening a
-  writable folder does; Save version + preview + restore work through File System Access.
+  writable folder does; titled save, compact history, restore choices and delete work through File
+  System Access.
 - ☐ The page does not pinch/double-tap zoom; the Story gallery still supports its own zoom/swipe.
 
 ## Auto-update (once shipped)

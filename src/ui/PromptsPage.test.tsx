@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { invoke } = vi.hoisted(() => ({
-  invoke: vi.fn(async (_command: string, _args: { payload: { files: Array<{ name: string }> } }) => undefined),
+  invoke: vi.fn(async (_command: string, _args: { payload: { files: Array<{ name: string; contents: string }> } }) => undefined),
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));
@@ -13,7 +13,6 @@ import { PromptsPage } from "./PromptsPage";
 
 beforeEach(() => {
   invoke.mockClear();
-  localStorage.clear();
   useCharacter.getState().clear();
 });
 
@@ -32,19 +31,18 @@ describe("PromptsPage Android sharing", () => {
     expect(shareButtons[5]).toBeDisabled(); // Migrate
   });
 
-  it("shares level-up with schema and the loaded character after the privacy notice", async () => {
+  it("shares level-up immediately as one compatible text bundle", async () => {
     useCharacter.getState().loadRaw({ meta: { name: "Astrid" } });
-    vi.spyOn(window, "confirm").mockReturnValue(true);
     render(<PromptsPage />);
+
+    expect(screen.getByText(/quickly send the prompt, schema and character/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole("button", { name: "Share" })[2]);
 
     await waitFor(() => expect(invoke).toHaveBeenCalledOnce());
     const [, args] = invoke.mock.calls[0];
-    expect(args.payload.files.map((file: { name: string }) => file.name)).toEqual([
-      "character.schema.json",
-      "character.json",
-    ]);
-    expect(localStorage.getItem("jugale.android-share-notice-v1")).toBe("seen");
+    expect(args.payload.files.map((file: { name: string }) => file.name)).toEqual(["prompt.txt"]);
+    expect(args.payload.files[0].contents).toContain("character.schema.json");
+    expect(args.payload.files[0].contents).toContain('"name": "Astrid"');
   });
 });

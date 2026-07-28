@@ -5,15 +5,18 @@
  * fs plugin's scope to whatever the user picks, for the running session.
  */
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
-import { exists, mkdir, readDir, readFile, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { exists, mkdir, readDir, readFile, readTextFile, remove, writeTextFile } from "@tauri-apps/plugin-fs";
 import { join, basename } from "@tauri-apps/api/path";
 import type { StorageProvider, GalleryImage, RecentRef, LoadedCharacter } from "./provider";
 import { NO_CHARACTER_JSON } from "./provider";
 import {
   allocateVersion,
+  normalizeVersionTitle,
   parseVersionFilename,
+  readVersionTitle,
   requireVersionFilename,
   sortVersionsNewestFirst,
+  versionMetadataFilename,
   type VersionStore,
 } from "./versions";
 
@@ -53,13 +56,20 @@ class TauriFolderProvider extends TauriFileProvider {
   constructor(characterPath: string, directoryPath: string) {
     super(characterPath);
     this.versions = {
-      create: async (data, reason, now = new Date()) => {
+      create: async (data, reason, title, now = new Date()) => {
         const historyPath = await join(directoryPath, "history");
         await mkdir(historyPath, { recursive: true });
         const existing = new Set((await readDir(historyPath)).filter((entry) => entry.isFile).map((entry) => entry.name));
         const version = allocateVersion(now, reason, existing);
         await writeTextFile(await join(historyPath, version.filename), JSON.stringify(data, null, 2));
-        return version;
+        const normalizedTitle = normalizeVersionTitle(title);
+        if (normalizedTitle) {
+          await writeTextFile(
+            await join(historyPath, versionMetadataFilename(version.filename)),
+            JSON.stringify({ title: normalizedTitle }, null, 2),
+          );
+        }
+        return { ...version, title: normalizedTitle };
       },
       list: async () => {
         const historyPath = await join(directoryPath, "history");
@@ -68,11 +78,27 @@ class TauriFolderProvider extends TauriFileProvider {
           .filter((entry) => entry.isFile)
           .map((entry) => parseVersionFilename(entry.name))
           .filter((version) => version !== null);
-        return sortVersionsNewestFirst(versions);
+        const titled = await Promise.all(versions.map(async (version) => {
+          const metadataPath = await join(historyPath, versionMetadataFilename(version.filename));
+          if (!(await exists(metadataPath))) return version;
+          try {
+            return { ...version, title: readVersionTitle(JSON.parse(await readTextFile(metadataPath))) };
+          } catch {
+            return version;
+          }
+        }));
+        return sortVersionsNewestFirst(titled);
       },
       read: async (version) => {
         requireVersionFilename(version.filename);
         return JSON.parse(await readTextFile(await join(directoryPath, "history", version.filename)));
+      },
+      delete: async (version) => {
+        requireVersionFilename(version.filename);
+        const historyPath = await join(directoryPath, "history");
+        await remove(await join(historyPath, version.filename));
+        const metadataPath = await join(historyPath, versionMetadataFilename(version.filename));
+        if (await exists(metadataPath)) await remove(metadataPath);
       },
     };
   }

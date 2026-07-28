@@ -288,9 +288,6 @@ a {
   margin: 0 auto;
   padding: 24px 20px 72px;
 }
-.versions-page > .panel + .panel {
-  margin-top: 18px;
-}
 .versions-state {
   color: var(--muted);
   text-align: center;
@@ -313,40 +310,86 @@ a {
   border-radius: var(--radius-sm);
   background: var(--surface-2);
 }
-.version-row.is-selected {
-  border-color: var(--accent);
-}
-.version-row > div {
+.version-row-copy {
   min-width: 0;
   display: grid;
   gap: 3px;
 }
-.version-row strong,
-.version-row span,
-.version-row code {
+.version-row-title,
+.version-row time,
+.version-row span {
   display: block;
 }
+.version-row time,
 .version-row span {
   color: var(--muted);
   font-size: 13px;
 }
-.version-row code {
-  overflow: hidden;
-  color: var(--dim);
-  font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.version-row-title {
+  color: var(--text);
+  font-size: 15px;
 }
-.version-preview-grid {
+.version-row-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+.version-error {
+  color: var(--error) !important;
+}
+.version-dialog-backdrop {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  place-items: center;
+  padding: 20px;
+  background: rgb(0 0 0 / 58%);
+}
+.version-dialog {
+  width: min(440px, 100%);
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.version-dialog h2 {
+  margin: 0 0 16px;
+  font-size: 19px;
+}
+.version-dialog p {
   margin: 0 0 18px;
 }
-.version-preview-grid div {
-  padding: 10px 12px;
+.version-dialog-field {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.version-dialog-field input {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+}
+.version-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+@media (max-width: 520px) {
+  .version-row {
+    align-items: flex-start;
+  }
+  .version-dialog-actions > .btn {
+    flex: 1 1 auto;
+  }
 }
 .version-preview-grid dt {
   color: var(--muted);

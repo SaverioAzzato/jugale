@@ -17,6 +17,7 @@
     "android-fs:allow-persist-picker-uri-permission",
     "android-fs:allow-check-persisted-picker-uri-permission",
     "android-fs:allow-write-text-file",
+    "android-fs:allow-remove-file",
     "android-updater:default",
     "android-share:default",
     {

@@ -52,6 +52,7 @@ import { useSettings } from "./ui/useSettings";
 import { toolbarCapacity } from "./ui/toolbarLayout";
 import { handleTransientBack, useUiBackDepth, useUiBackHandler } from "./ui/uiBack";
 import { VersionsPage } from "./ui/VersionsPage";
+import { SaveVersionDialog } from "./ui/VersionDialog";
 
 type ToolbarActionId = "dice" | "edit" | "version" | "history" | "export" | "raw" | "prompts" | "settings";
 
@@ -123,6 +124,7 @@ export function App() {
   const [activeTab, setActiveTab] = useState("gioco");
   const [swipeDirection, setSwipeDirection] = useState<-1 | 1 | null>(null);
   const [overlay, setOverlay] = useState<"settings" | "prompts" | "help" | "json" | "versions" | null>(null);
+  const [saveVersionOpen, setSaveVersionOpen] = useState(false);
   const overlayBackRef = useRef<HTMLButtonElement>(null);
   const toolbarRef = useRef<HTMLElement>(null);
   const toolbarLeftRef = useRef<HTMLDivElement>(null);
@@ -276,6 +278,10 @@ export function App() {
   const characterOpen = character !== null;
 
   const handleUiBack = useCallback((): boolean => {
+    if (saveVersionOpen) {
+      if (!versionBusy) setSaveVersionOpen(false);
+      return true;
+    }
     if (handleTransientBack()) return true;
     if (overlay) {
       setOverlay(null);
@@ -283,13 +289,13 @@ export function App() {
     }
     if (characterOpen) return handleBackToHome();
     return false;
-  }, [characterOpen, handleBackToHome, overlay]);
+  }, [characterOpen, handleBackToHome, overlay, saveVersionOpen, versionBusy]);
 
   // Android navigation-bar Back and the system edge-swipe must mirror the visible UI Back
   // button. Install Tauri's listener only while there is something inside the app to close;
   // on the home screen no listener is present, so Android retains its native exit behaviour.
   useEffect(() => {
-    if (!isAndroid() || (transientBackDepth === 0 && !overlay && !characterOpen)) return;
+    if (!isAndroid() || (transientBackDepth === 0 && !saveVersionOpen && !overlay && !characterOpen)) return;
     let disposed = false;
     let listener: { unregister: () => Promise<void> } | null = null;
     void onBackButtonPress(() => { handleUiBack(); })
@@ -302,7 +308,7 @@ export function App() {
       disposed = true;
       if (listener) void listener.unregister();
     };
-  }, [characterOpen, handleUiBack, overlay, transientBackDepth]);
+  }, [characterOpen, handleUiBack, overlay, saveVersionOpen, transientBackDepth]);
 
   function handleOpenJson() {
     if (fileAccessSupported) {
@@ -495,7 +501,7 @@ export function App() {
                     type="button"
                     className="btn btn-icon"
                     disabled={versionBusy || readOnly || !liveSync}
-                    onClick={() => void createVersion("checkpoint")}
+                    onClick={() => setSaveVersionOpen(true)}
                     title={t("versions.save")}
                     aria-label={t("versions.save")}
                   >
@@ -526,7 +532,7 @@ export function App() {
                     actions={overflowToolbarActions}
                     onExport={exportCharacter}
                     onEdit={toggleEditMode}
-                    onVersion={() => void createVersion("checkpoint")}
+                    onVersion={() => setSaveVersionOpen(true)}
                     versionDisabled={versionBusy || readOnly || !liveSync}
                     onHistory={() => setOverlay("versions")}
                     onRaw={() => setOverlay("json")}
@@ -640,6 +646,19 @@ export function App() {
       <UpdateBanner />
       <DiceCanvas />
       <Toasts />
+      {saveVersionOpen && (
+        <SaveVersionDialog
+          busy={versionBusy}
+          onCancel={() => {
+            if (!versionBusy) setSaveVersionOpen(false);
+          }}
+          onSave={(title) => {
+            void createVersion("checkpoint", title).then((saved) => {
+              if (saved) setSaveVersionOpen(false);
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { writes, mkdirMock, historyFiles } = vi.hoisted(() => ({
-  writes: vi.fn(async (_path: string, _value: string) => {}),
-  mkdirMock: vi.fn(async () => {}),
-  historyFiles: new Map<string, string>(),
-}));
+const { writes, mkdirMock, removeMock, historyFiles } = vi.hoisted(() => {
+  const historyFiles = new Map<string, string>();
+  return {
+    writes: vi.fn(async (_path: string, _value: string) => {}),
+    mkdirMock: vi.fn(async () => {}),
+    removeMock: vi.fn(async (path: string) => { historyFiles.delete(path.split("/").pop() || ""); }),
+    historyFiles,
+  };
+});
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({
   open: vi.fn(async (options: { directory?: boolean }) =>
@@ -19,7 +23,8 @@ vi.mock("@tauri-apps/api/path", () => ({
 }));
 
 vi.mock("@tauri-apps/plugin-fs", () => ({
-  exists: vi.fn(async (path: string) => path === "/hero/character.json" || path === "/hero/history"),
+  exists: vi.fn(async (path: string) =>
+    path === "/hero/character.json" || path === "/hero/history" || historyFiles.has(path.split("/").pop() || "")),
   mkdir: mkdirMock,
   readDir: vi.fn(async (path: string) => {
     if (path === "/hero/images") return [];
@@ -37,6 +42,7 @@ vi.mock("@tauri-apps/plugin-fs", () => ({
     writes(path, value);
     if (path.startsWith("/hero/history/")) historyFiles.set(path.split("/").pop()!, value);
   }),
+  remove: removeMock,
 }));
 
 import { openCharacterFileTauri, openCharacterFolderTauri } from "./tauriProvider";
@@ -44,6 +50,7 @@ import { openCharacterFileTauri, openCharacterFolderTauri } from "./tauriProvide
 beforeEach(() => {
   writes.mockClear();
   mkdirMock.mockClear();
+  removeMock.mockClear();
   historyFiles.clear();
   historyFiles.set(
     "character-20260727-153012-184-checkpoint.json",
@@ -58,10 +65,12 @@ describe("Tauri folder version store", () => {
     const created = await store.create(
       { meta: { name: "Hero" } },
       "checkpoint",
+      "Before dragon",
       new Date(2026, 6, 27, 15, 30, 12, 184),
     );
 
     expect(created.filename).toBe("character-20260727-153012-185-checkpoint.json");
+    expect(created.title).toBe("Before dragon");
     expect(mkdirMock).toHaveBeenCalledWith("/hero/history", { recursive: true });
     expect(writes).toHaveBeenCalledWith(
       `/hero/history/${created.filename}`,
@@ -73,6 +82,10 @@ describe("Tauri folder version store", () => {
       "character-20260727-153012-184-checkpoint.json",
     ]);
     expect(await store.read(listed[1])).toEqual({ meta: { name: "Old hero" } });
+    await store.delete(created);
+    expect((await store.list()).map((version) => version.filename)).toEqual([
+      "character-20260727-153012-184-checkpoint.json",
+    ]);
 
     const file = await openCharacterFileTauri();
     expect(file!.provider.versions).toBeUndefined();

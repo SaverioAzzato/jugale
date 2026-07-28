@@ -7,12 +7,15 @@ export interface CharacterVersion {
   filename: string;
   createdAt: string;
   reason: VersionReason;
+  /** Optional user-authored label stored beside the snapshot, never in character.json. */
+  title?: string;
 }
 
 export interface VersionStore {
-  create(data: unknown, reason: VersionReason, now?: Date): Promise<CharacterVersion>;
+  create(data: unknown, reason: VersionReason, title?: string, now?: Date): Promise<CharacterVersion>;
   list(): Promise<CharacterVersion[]>;
   read(version: CharacterVersion): Promise<unknown>;
+  delete(version: CharacterVersion): Promise<void>;
 }
 
 const VERSION_FILENAME_RE =
@@ -57,6 +60,23 @@ export function parseVersionFilename(filename: string): CharacterVersion | null 
 
 export function requireVersionFilename(filename: string): void {
   if (!parseVersionFilename(filename)) throw new Error(`Invalid character version filename: ${filename}`);
+}
+
+/** Sidecar metadata keeps history labels out of both the canonical character and its snapshots. */
+export function versionMetadataFilename(filename: string): string {
+  requireVersionFilename(filename);
+  return `${filename.slice(0, -".json".length)}.meta.json`;
+}
+
+export function normalizeVersionTitle(title?: string): string | undefined {
+  const normalized = title?.trim();
+  return normalized ? normalized.slice(0, 120) : undefined;
+}
+
+export function readVersionTitle(raw: unknown): string | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const title = (raw as { title?: unknown }).title;
+  return typeof title === "string" ? normalizeVersionTitle(title) : undefined;
 }
 
 /**

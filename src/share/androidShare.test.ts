@@ -16,25 +16,26 @@ beforeEach(() => {
 });
 
 describe("buildPromptSharePayload", () => {
-  it("shares schema plus the open character for level-up", () => {
+  it("bundles the prompt, schema and open character into one text/plain share", () => {
     const payload = buildPromptSharePayload("level-up", "Level up", "prompt", character);
-    expect(payload?.files.map((file) => file.name)).toEqual(["character.schema.json", "character.json"]);
-    expect(JSON.parse(payload!.files[1].contents).meta.name).toBe("Astrid");
+    expect(payload?.files).toHaveLength(1);
+    expect(payload?.files[0]).toMatchObject({ name: "prompt.txt", mime: "text/plain" });
+    expect(payload?.files[0].contents).toContain("===== PROMPT =====\nprompt");
+    expect(payload?.files[0].contents).toContain("===== character.schema.json =====");
+    expect(payload?.files[0].contents).toContain('"name": "Astrid"');
   });
 
   it("never attaches an open character to the create prompt", () => {
-    expect(buildPromptSharePayload("create", "Create", "prompt", character)?.files.map((file) => file.name)).toEqual([
-      "character.schema.json",
-    ]);
+    const contents = buildPromptSharePayload("create", "Create", "prompt", character)?.files[0].contents;
+    expect(contents).toContain("character.schema.json");
+    expect(contents).not.toContain("===== character.json =====");
   });
 
   it("requires a character for update prompts and adds the changelog to migrate", () => {
     expect(buildPromptSharePayload("validate", "Validate", "prompt", null)).toBeNull();
-    expect(buildPromptSharePayload("migrate", "Migrate", "prompt", character)?.files.map((file) => file.name)).toEqual([
-      "character.schema.json",
-      "character.json",
-      "schema-changelog.md",
-    ]);
+    expect(buildPromptSharePayload("migrate", "Migrate", "prompt", character)?.files[0].contents).toContain(
+      "===== schema-changelog.md =====",
+    );
   });
 });
 

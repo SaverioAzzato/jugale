@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   allocateVersion,
+  normalizeVersionTitle,
   parseVersionFilename,
   sortVersionsNewestFirst,
   versionFilename,
+  versionMetadataFilename,
 } from "./versions";
 
 describe("character version filenames", () => {
@@ -34,5 +36,13 @@ describe("character version filenames", () => {
     const older = parseVersionFilename("character-20260727-181455-031-before-import.json")!;
     const newer = parseVersionFilename("character-20260728-090102-442-before-restore.json")!;
     expect(sortVersionsNewestFirst([older, newer])).toEqual([newer, older]);
+  });
+
+  it("keeps optional titles in a separate, bounded metadata sidecar", () => {
+    const filename = "character-20260727-181455-031-checkpoint.json";
+    expect(versionMetadataFilename(filename)).toBe("character-20260727-181455-031-checkpoint.meta.json");
+    expect(normalizeVersionTitle("  Before dragon  ")).toBe("Before dragon");
+    expect(normalizeVersionTitle("   ")).toBeUndefined();
+    expect(normalizeVersionTitle("x".repeat(140))).toHaveLength(120);
   });
 });

@@ -98,6 +98,7 @@ class AndroidSharePlugin(private val activity: Activity) : Plugin(activity) {
         val intent = Intent(if (uris.size == 1) Intent.ACTION_SEND else Intent.ACTION_SEND_MULTIPLE).apply {
             type = homogeneousMime ?: "*/*"
             putExtra(Intent.EXTRA_TEXT, args.text)
+            putExtra(Intent.EXTRA_TITLE, args.title)
             if (uris.size == 1) putExtra(Intent.EXTRA_STREAM, uris[0])
             else putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
             clipData = ClipData.newUri(activity.contentResolver, args.files[0].name, uris[0]).also { clip ->

@@ -81,14 +81,19 @@ Both implement the same interface; the rest of the app never knows which host it
 **Android prompt sharing (outbound implemented; device matrix pending):** the Prompts page exposes
 Share only on Android and always opens the generic system chooser—there are no chatbot package
 names, provider SDKs, accounts or API keys in JUGALE. The frontend sends the compiled prompt as
-`EXTRA_TEXT` and cache copies of the JSON Schema plus the current character when the workflow needs
-one; Create never leaks an already-open character, while Migrate also attaches the schema changelog.
+`EXTRA_TEXT` and one `text/plain` cache file, `prompt.txt`, whose clearly delimited sections contain
+the prompt, JSON Schema, current character when required, and migration changelog when applicable.
+Create never leaks an already-open character. The single-file `ACTION_SEND` contract is deliberate:
+the first device test showed ChatGPT accepting multiple streams but dropping `EXTRA_TEXT`, while
+Gemini and Claude were not offered for `ACTION_SEND_MULTIPLE`/JSON or mixed MIME payloads. Android's
+documented common denominator is `ACTION_SEND` + `text/plain`; no third-party sender library can
+make a receiver declare an intent filter it does not support.
 The local `android-share` Tauri plugin accepts only a small filename/MIME allowlist, enforces per-file
 and aggregate UTF-8 size limits, cleans `cache/shares`, and exposes only that cache through a
 non-exported `FileProvider` with temporary read grants. It never exposes the source character folder.
-The first share shows an explicit privacy confirmation. Chatbot handling of text plus multiple files
-is not standardized, so compatibility claims and any `prompt.txt` fallback remain gated on the real
-device matrix in `.tmp/02-share-intent-mobile.md`.
+The user's tap on Share is the disclosure gesture; no redundant confirmation precedes the system
+chooser. Receiver behavior remains subject to the real-device matrix in
+`.tmp/02-share-intent-mobile.md`.
 
 **Character versions (in progress):** `character.json` remains the only canonical file. A
 writable folder provider may expose the optional `StorageProvider.versions` capability; single
@@ -96,7 +101,9 @@ files, browser snapshots and read-only imports do not. Snapshots are complete JS
 `history/`, named `character-YYYYMMDD-HHmmss-SSS-<reason>.json`, where reason is `checkpoint`,
 `before-import` or `before-restore`. The timestamp is local and filenames sort chronologically;
 collisions advance to the next free millisecond. No metadata is injected into the character and
-`images/` is never copied or modified. The persisted setting may stay enabled while an unsupported
+`images/` is never copied or modified. A manual checkpoint may have an optional, trimmed title;
+when non-empty it lives in a sibling `<snapshot>.meta.json` sidecar, so both `character.json` and
+the snapshot remain clean character documents. The persisted setting may stay enabled while an unsupported
 source is open, but effective availability always comes from the current provider capability. The
 preference defaults to enabled for new installations, so an old folder becomes version-capable as
 soon as it is opened; no `history/` directory is created until the first real snapshot. An explicit
@@ -108,10 +115,11 @@ validates input, flushes pending play edits, creates the required safety snapsho
 images. A failed safety snapshot aborts the replacement; a failed canonical write leaves the extra
 snapshot intact, keeps the old in-memory character and switches the source to the existing
 read-only/export recovery path. A shared busy guard prevents double taps and concurrent edits.
-The full-page Versions overlay lists snapshots newest-first, labels their reason, tolerates corrupt
-entries independently, previews name/classes/schema/validation counts, and restores only after an
-explicit confirmation. Restore always creates a `before-restore` snapshot, even though no delete or
-retention controls exist in the first release.
+The full-page Versions overlay lists compact snapshot cards newest-first (optional title, timestamp,
+reason), tolerates corrupt entries independently, and provides icon actions to restore or delete.
+Restore asks only whether to save the current character to history: Yes creates a `before-restore`
+snapshot, No restores directly, and Cancel does nothing. Deletion removes the snapshot and optional
+title sidecar; there is no automatic retention policy.
 
 **Web folder loading (M4, shipped):** `openCharacterFolder()` uses `showDirectoryPicker()` for a live read/write folder, reading `character.json` and scanning a sibling `images/` directory (alphabetical filename order) into object URLs; browsers without that API fall back to a read-only `<input type="file" webkitdirectory>` (`importCharacterFolder`). The scanned images ride alongside the character as a runtime `images` channel on the store — they're object URLs, revoked on reload, and **never written into `character.json`** (the JSON carries no image references at all; images sort by filename and the first is the portrait, so the user specifies nothing). **Native folder/file loading (M4, shipped):** `src/storage/tauriProvider.ts` satisfies the same surface natively — `@tauri-apps/plugin-dialog`'s `open()` for the picker (its scope auto-extends to whatever the user selects, plus a `$HOME/**` capability grant as a backstop) and `@tauri-apps/plugin-fs` for read/write and `images/` directory scanning. `App.tsx` selects it over the browser path via a runtime `isTauri()` check; everything above the `StorageProvider` boundary is unaware which one is active. **Android (dedicated SAF provider):** Android has no real file paths — the OS hands back Storage Access Framework (SAF) `content://` URIs, which the stock `dialog`/`fs` plugins can't write back to, can't persist across restarts, and mishandle as if they were paths (this caused read-only saves, dead recents, and "invalid JSON" on open-folder). So Android gets its own `src/storage/androidProvider.ts` over [`tauri-plugin-android-fs`](https://github.com/aiueo13/tauri-plugin-android-fs) (Rust crate target-gated to Android in `Cargo.toml` + registered in `lib.rs`; JS bindings `tauri-plugin-android-fs-api`, versions pinned to match). It opens a folder (tree URI, the preferred path since it exposes `images/`) or a single file, **persists the read+write permission** (`persistPickerUriPermission`) so Recents reopen after a restart, and reads/writes the URI **in place** — so `character.json` stays the single source of truth at its original location, saved live exactly like desktop, no copy-in or export-only. `App.tsx` routes to it via `isAndroid()` (checked before the desktop `isTauri()` branch). Two SAF-specific gotchas the provider handles: (1) the plugin's `android-fs:default` permission set is `all-without-delete`, which **excludes every write command**, so `capabilities/android.json` grants the exact least-privilege set the provider calls — `allow-write-text-file` included (relying on `default` silently broke live save); (2) persisting the grant is **best-effort** (`tryPersist`) because some providers refuse a persistable permission and throw — swallowing that keeps a Drive-hosted file from failing the open with a misleading "invalid JSON". Cloud document providers (e.g. Google Drive) have real platform limits: Drive is **absent from the folder/tree picker** (no `ACTION_OPEN_DOCUMENT_TREE`), so Drive characters must be opened via the single-file picker; and Drive may refuse write-back, in which case the store falls back to read-only + export like the web path. The provider logic is unit-tested with the plugin mocked, but **SAF runtime behaviour is only verifiable on a real device** — see `docs/RELEASE-TESTING.md`.
 

@@ -28,8 +28,6 @@ import {
   type SharePromptKind,
 } from "../share/androidShare";
 
-const SHARE_NOTICE_KEY = "jugale.android-share-notice-v1";
-
 /** Book icon button — opens the full Prompts page (App owns the open/close state). */
 export function PromptsButton({ onClick }: { onClick: () => void }) {
   const t = useT();
@@ -216,10 +214,6 @@ function ShareButton({
   async function share() {
     if (!payload || sharing) return;
     try {
-      if (localStorage.getItem(SHARE_NOTICE_KEY) !== "seen") {
-        if (!window.confirm(t("prompts.shareNotice"))) return;
-        localStorage.setItem(SHARE_NOTICE_KEY, "seen");
-      }
       setSharing(true);
       useToast.getState().push("success", t("prompts.sharing"));
       await sharePromptAndroid(payload);
@@ -462,6 +456,7 @@ export function PromptsPage() {
           {t("prompts.banner")}
         </p>
         <p className="prompts-intro">{t("prompts.intro")}</p>
+        {isAndroid() && <p className="prompts-intro prompts-share-intro">{t("prompts.shareIntro")}</p>}
 
         <div className="prompts-params">
           <h3 className="prompts-params-title">{t("prompts.params")}</h3>

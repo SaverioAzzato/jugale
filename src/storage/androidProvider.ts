@@ -26,9 +26,12 @@ import type { StorageProvider, GalleryImage, RecentRef, LoadedCharacter } from "
 import { NO_CHARACTER_JSON } from "./provider";
 import {
   allocateVersion,
+  normalizeVersionTitle,
   parseVersionFilename,
+  readVersionTitle,
   requireVersionFilename,
   sortVersionsNewestFirst,
+  versionMetadataFilename,
   type VersionStore,
 } from "./versions";
 
@@ -91,7 +94,7 @@ class AndroidFolderProvider extends AndroidFsProvider {
   constructor(characterUri: AndroidFsUri, treeUri: AndroidFsUri) {
     super(characterUri);
     this.versions = {
-      create: async (data, reason, now = new Date()) => {
+      create: async (data, reason, title, now = new Date()) => {
         const historyUri = await AndroidFs.createDir(treeUri, "history");
         const existing = new Set(
           (await AndroidFs.readDir(historyUri)).filter((entry) => entry.type === "File").map((entry) => entry.name),
@@ -99,17 +102,42 @@ class AndroidFolderProvider extends AndroidFsProvider {
         const version = allocateVersion(now, reason, existing);
         const uri = await AndroidFs.createNewFile(historyUri, version.filename, "application/json");
         await AndroidFs.writeTextFile(uri, JSON.stringify(data, null, 2));
-        return version;
+        const normalizedTitle = normalizeVersionTitle(title);
+        if (normalizedTitle) {
+          const metadataUri = await AndroidFs.createNewFile(
+            historyUri,
+            versionMetadataFilename(version.filename),
+            "application/json",
+          );
+          await AndroidFs.writeTextFile(metadataUri, JSON.stringify({ title: normalizedTitle }, null, 2));
+        }
+        return { ...version, title: normalizedTitle };
       },
       list: async () => {
         const rootEntries = await AndroidFs.readDir(treeUri);
         const history = rootEntries.find((entry) => entry.type === "Dir" && entry.name === "history");
         if (!history) return [];
-        const versions = (await AndroidFs.readDir(history.uri))
+        const entries = await AndroidFs.readDir(history.uri);
+        const versions = entries
           .filter((entry) => entry.type === "File")
           .map((entry) => parseVersionFilename(entry.name))
           .filter((version) => version !== null);
-        return sortVersionsNewestFirst(versions);
+        const titled = await Promise.all(versions.map(async (version) => {
+          const metadata = entries.find(
+            (entry) => entry.type === "File" && entry.name === versionMetadataFilename(version.filename),
+          );
+          if (!metadata) return version;
+          try {
+            const bytes = await AndroidFs.readFile(metadata.uri);
+            return {
+              ...version,
+              title: readVersionTitle(JSON.parse(new TextDecoder("utf-8").decode(Uint8Array.from(bytes)))),
+            };
+          } catch {
+            return version;
+          }
+        }));
+        return sortVersionsNewestFirst(titled);
       },
       read: async (version) => {
         requireVersionFilename(version.filename);
@@ -122,6 +150,20 @@ class AndroidFolderProvider extends AndroidFsProvider {
         if (!file) throw new Error(`Missing history/${version.filename}`);
         const bytes = await AndroidFs.readFile(file.uri);
         return JSON.parse(new TextDecoder("utf-8").decode(Uint8Array.from(bytes)));
+      },
+      delete: async (version) => {
+        requireVersionFilename(version.filename);
+        const rootEntries = await AndroidFs.readDir(treeUri);
+        const history = rootEntries.find((entry) => entry.type === "Dir" && entry.name === "history");
+        if (!history) throw new Error(`Missing history/${version.filename}`);
+        const entries = await AndroidFs.readDir(history.uri);
+        const file = entries.find((entry) => entry.type === "File" && entry.name === version.filename);
+        if (!file) throw new Error(`Missing history/${version.filename}`);
+        await AndroidFs.removeFile(file.uri);
+        const metadata = entries.find(
+          (entry) => entry.type === "File" && entry.name === versionMetadataFilename(version.filename),
+        );
+        if (metadata) await AndroidFs.removeFile(metadata.uri);
       },
     };
   }

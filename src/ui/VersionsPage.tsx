@@ -1,16 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { loadCharacter, type Character, type Issue } from "../schema";
 import type { CharacterVersion, VersionReason } from "../storage/versions";
 import { interpolate, useI18n, useT, type StringKey } from "../i18n/useI18n";
 import { useCharacter } from "../state/store";
 import { useToast } from "./useToast";
-
-interface Preview {
-  raw: unknown;
-  character: Character;
-  issues: Issue[];
-  schemaVersion: string;
-}
+import { VersionDialog } from "./VersionDialog";
 
 const REASON_KEYS: Record<VersionReason, StringKey> = {
   checkpoint: "versions.reason.checkpoint",
@@ -18,11 +11,21 @@ const REASON_KEYS: Record<VersionReason, StringKey> = {
   "before-restore": "versions.reason.before-restore",
 };
 
-function issueCounts(issues: Issue[]): { errors: number; warnings: number } {
-  return {
-    errors: issues.filter((issue) => issue.severity === "error").length,
-    warnings: issues.filter((issue) => issue.severity === "warning").length,
-  };
+function RestoreIcon() {
+  return (
+    <svg className="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+      <path d="M3 3v5h5" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg className="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 10v6M14 10v6" />
+    </svg>
+  );
 }
 
 export function VersionsPage({ onRestored }: { onRestored: () => void }) {
@@ -34,10 +37,10 @@ export function VersionsPage({ onRestored }: { onRestored: () => void }) {
   const [versions, setVersions] = useState<CharacterVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState(false);
-  const [selected, setSelected] = useState<CharacterVersion | null>(null);
-  const [preview, setPreview] = useState<Preview | null>(null);
-  const [previewError, setPreviewError] = useState(false);
-  const [previewLoading, setPreviewLoading] = useState(false);
+  const [readingId, setReadingId] = useState<string | null>(null);
+  const [unreadableIds, setUnreadableIds] = useState<Set<string>>(new Set());
+  const [pendingRestore, setPendingRestore] = useState<{ version: CharacterVersion; raw: unknown } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<CharacterVersion | null>(null);
 
   const store = provider?.versions;
   const loadVersions = useCallback(async () => {
@@ -61,48 +64,49 @@ export function VersionsPage({ onRestored }: { onRestored: () => void }) {
     void loadVersions();
   }, [loadVersions]);
 
-  const openPreview = async (version: CharacterVersion) => {
-    if (!store) return;
-    setSelected(version);
-    setPreview(null);
-    setPreviewError(false);
-    setPreviewLoading(true);
+  async function requestRestore(version: CharacterVersion) {
+    if (!store || versionBusy || readingId) return;
+    setReadingId(version.id);
+    setUnreadableIds((ids) => {
+      const next = new Set(ids);
+      next.delete(version.id);
+      return next;
+    });
     try {
-      const raw = await store.read(version);
-      const loaded = loadCharacter(raw);
-      const rawVersion = (raw as { schemaVersion?: unknown } | null)?.schemaVersion;
-      setPreview({
-        raw,
-        character: loaded.character,
-        issues: loaded.issues,
-        schemaVersion: typeof rawVersion === "string" ? rawVersion : loaded.character.schemaVersion,
-      });
+      setPendingRestore({ version, raw: await store.read(version) });
     } catch {
-      setPreviewError(true);
+      setUnreadableIds((ids) => new Set(ids).add(version.id));
     } finally {
-      setPreviewLoading(false);
+      setReadingId(null);
     }
-  };
+  }
 
-  const restore = async () => {
-    if (!selected || !preview || versionBusy) return;
-    const counts = issueCounts(preview.issues);
-    const confirmed = window.confirm(
-      interpolate(t("versions.confirmRestore"), {
-        filename: selected.filename,
-        errors: counts.errors,
-        warnings: counts.warnings,
-      }),
-    );
-    if (!confirmed) return;
-    if (await replaceCharacter(preview.raw, "before-restore")) {
-      useToast.getState().push(
-        "success",
-        interpolate(t("versions.restored"), { filename: selected.filename }),
-      );
+  async function restore(saveCurrent: boolean) {
+    if (!pendingRestore || versionBusy) return;
+    const { raw, version } = pendingRestore;
+    if (await replaceCharacter(raw, "before-restore", saveCurrent)) {
+      useToast.getState().push("success", interpolate(t("versions.restored"), { filename: version.filename }));
+      setPendingRestore(null);
       onRestored();
     }
-  };
+  }
+
+  async function deleteVersion() {
+    if (!store || !pendingDelete || versionBusy) return;
+    const target = pendingDelete;
+    try {
+      await store.delete(target);
+      setVersions((current) => current.filter((version) => version.id !== target.id));
+      setPendingDelete(null);
+      useToast.getState().push("success", t("versions.deleted"));
+    } catch (error) {
+      useToast.getState().push(
+        "error",
+        t("versions.deleteFailed"),
+        error instanceof Error ? error.message : String(error),
+      );
+    }
+  }
 
   return (
     <main className="versions-page" aria-labelledby="versions-heading">
@@ -120,42 +124,64 @@ export function VersionsPage({ onRestored }: { onRestored: () => void }) {
         ) : (
           <ul className="versions-list">
             {versions.map((version) => (
-              <li key={version.id} className={selected?.id === version.id ? "version-row is-selected" : "version-row"}>
-                <div>
-                  <strong>{new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "medium" }).format(new Date(version.createdAt))}</strong>
+              <li key={version.id} className="version-row">
+                <div className="version-row-copy">
+                  {version.title && <strong className="version-row-title">{version.title}</strong>}
+                  <time dateTime={version.createdAt}>
+                    {new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "medium" }).format(new Date(version.createdAt))}
+                  </time>
                   <span>{t(REASON_KEYS[version.reason])}</span>
-                  <code>{version.filename}</code>
+                  {unreadableIds.has(version.id) && <span className="version-error">{t("versions.unreadable")}</span>}
                 </div>
-                <button type="button" className="btn" onClick={() => void openPreview(version)}>
-                  {t("versions.preview")}
-                </button>
+                <div className="version-row-actions">
+                  <button
+                    type="button"
+                    className="btn btn-icon"
+                    disabled={versionBusy || readingId !== null}
+                    aria-label={t("versions.restore")}
+                    title={t("versions.restore")}
+                    onClick={() => void requestRestore(version)}
+                  >
+                    <RestoreIcon />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-icon btn-danger"
+                    disabled={versionBusy || readingId !== null}
+                    aria-label={t("versions.delete")}
+                    title={t("versions.delete")}
+                    onClick={() => setPendingDelete(version)}
+                  >
+                    <TrashIcon />
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      {selected && (
-        <section className="panel version-preview" aria-live="polite">
-          <h2 className="panel-title">{t("versions.preview")}</h2>
-          {previewLoading ? (
-            <p>{t("versions.loadingPreview")}</p>
-          ) : previewError || !preview ? (
-            <p className="version-error">{t("versions.unreadable")}</p>
-          ) : (
-            <>
-              <dl className="version-preview-grid">
-                <div><dt>{t("versions.character")}</dt><dd>{preview.character.meta.name}</dd></div>
-                <div><dt>{t("versions.classes")}</dt><dd>{preview.character.classes.map((entry) => `${entry.name} ${entry.level}`).join(" / ") || "—"}</dd></div>
-                <div><dt>{t("versions.schema")}</dt><dd>{preview.schemaVersion}</dd></div>
-                <div><dt>{t("versions.validation")}</dt><dd>{interpolate(t("versions.issueCounts"), issueCounts(preview.issues))}</dd></div>
-              </dl>
-              <button type="button" className="btn btn-danger" disabled={versionBusy} onClick={() => void restore()}>
-                {t("versions.restore")}
-              </button>
-            </>
-          )}
-        </section>
+      {pendingRestore && (
+        <VersionDialog label={t("versions.restore")} onCancel={() => setPendingRestore(null)}>
+          <h2>{t("versions.restore")}</h2>
+          <p>{t("versions.saveCurrentQuestion")}</p>
+          <div className="version-dialog-actions">
+            <button type="button" className="btn btn-primary" disabled={versionBusy} onClick={() => void restore(true)}>{t("common.yes")}</button>
+            <button type="button" className="btn" disabled={versionBusy} onClick={() => void restore(false)}>{t("common.no")}</button>
+            <button type="button" className="btn" disabled={versionBusy} onClick={() => setPendingRestore(null)}>{t("prompts.cancel")}</button>
+          </div>
+        </VersionDialog>
+      )}
+
+      {pendingDelete && (
+        <VersionDialog label={t("versions.delete")} onCancel={() => setPendingDelete(null)}>
+          <h2>{t("versions.delete")}</h2>
+          <p>{t("versions.confirmDelete")}</p>
+          <div className="version-dialog-actions">
+            <button type="button" className="btn btn-danger" disabled={versionBusy} onClick={() => void deleteVersion()}>{t("versions.delete")}</button>
+            <button type="button" className="btn" disabled={versionBusy} onClick={() => setPendingDelete(null)}>{t("prompts.cancel")}</button>
+          </div>
+        </VersionDialog>
       )}
     </main>
   );

@@ -3,23 +3,26 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock the native SAF plugin: an in-memory folder with character.json + two images.
 // Everything the vi.mock factory needs is created via vi.hoisted (the factory is hoisted
 // above normal top-level consts, so it can't close over them).
-const { persist, checkPerm, writeText, createDir, createNewFile, savepicker, TREE, JSON_URI, SAVE_URI, HISTORY_URI, VERSION_URI } = vi.hoisted(() => {
+const { persist, checkPerm, writeText, createDir, createNewFile, removeFile, savepicker, TREE, JSON_URI, SAVE_URI, HISTORY_URI, VERSION_URI, META_URI } = vi.hoisted(() => {
   const TREE = { uri: "content://tree/PG", documentTopTreeUri: "content://tree/PG" };
   const JSON_URI = { uri: "content://doc/character.json", documentTopTreeUri: TREE.uri };
   const SAVE_URI = { uri: "content://doc/export.json", documentTopTreeUri: TREE.uri };
   const HISTORY_URI = { uri: "content://doc/history", documentTopTreeUri: TREE.uri };
   const VERSION_URI = { uri: "content://doc/version", documentTopTreeUri: TREE.uri };
+  const META_URI = { uri: "content://doc/version-meta", documentTopTreeUri: TREE.uri };
   return {
     TREE,
     JSON_URI,
     SAVE_URI,
     HISTORY_URI,
     VERSION_URI,
+    META_URI,
     persist: vi.fn(async () => {}),
     checkPerm: vi.fn(async () => true),
     writeText: vi.fn(async () => {}),
     createDir: vi.fn(async () => HISTORY_URI),
-    createNewFile: vi.fn(async () => VERSION_URI),
+    createNewFile: vi.fn(async (_parent, name: string) => name.endsWith(".meta.json") ? META_URI : VERSION_URI),
+    removeFile: vi.fn(async () => {}),
     // typed nullable so a test can simulate the user cancelling the saver (null)
     savepicker: vi.fn(async (): Promise<typeof SAVE_URI | null> => SAVE_URI),
   };
@@ -41,10 +44,13 @@ vi.mock("tauri-plugin-android-fs-api", () => {
       writeTextFile: writeText,
       createDir,
       createNewFile,
+      removeFile,
       readFile: vi.fn(async (uri: { uri: string }) => {
         // For character.json return a *plain number[]* (not a Uint8Array) on purpose: that mirrors
         // the Android WebView IPC payload that crashed TextDecoder in readTextFile. The provider
         // must still decode it. Other URIs are images → raw bytes.
+        if (uri.uri === META_URI.uri)
+          return Array.from(new TextEncoder().encode(JSON.stringify({ title: "Before dragon" })));
         if (uri.uri === JSON_URI.uri || uri.uri === VERSION_URI.uri)
           return Array.from(new TextEncoder().encode(JSON.stringify({ meta: { name: "Astrid" } })));
         return new Uint8Array([1, 2, 3]);
@@ -62,6 +68,11 @@ vi.mock("tauri-plugin-android-fs-api", () => {
               type: "File",
               name: "character-20260727-153012-184-checkpoint.json",
               uri: VERSION_URI,
+            },
+            {
+              type: "File",
+              name: "character-20260727-153012-184-checkpoint.meta.json",
+              uri: META_URI,
             },
             { type: "File", name: "ignore-me.json", uri: SAVE_URI },
           ];
@@ -88,6 +99,7 @@ beforeEach(() => {
   writeText.mockClear();
   createDir.mockClear();
   createNewFile.mockClear();
+  removeFile.mockClear();
   savepicker.mockClear();
   // jsdom lacks createObjectURL
   globalThis.URL.createObjectURL = vi.fn(() => "blob:mock");
@@ -114,10 +126,11 @@ describe("openCharacterFolderAndroid", () => {
     const res = await openCharacterFolderAndroid();
     const store = res!.provider.versions!;
     const now = new Date(2026, 6, 27, 15, 30, 12, 184);
-    const created = await store.create({ meta: { name: "Astrid" } }, "checkpoint", now);
+    const created = await store.create({ meta: { name: "Astrid" } }, "checkpoint", "Before dragon", now);
 
     // The fixture already contains the requested millisecond, so allocation moves forward.
     expect(created.filename).toBe("character-20260727-153012-185-checkpoint.json");
+    expect(created.title).toBe("Before dragon");
     expect(createDir).toHaveBeenCalledWith(TREE, "history");
     expect(createNewFile).toHaveBeenCalledWith(HISTORY_URI, created.filename, "application/json");
     expect(writeText).toHaveBeenCalledWith(VERSION_URI, JSON.stringify({ meta: { name: "Astrid" } }, null, 2));
@@ -127,6 +140,10 @@ describe("openCharacterFolderAndroid", () => {
       "character-20260727-153012-184-checkpoint.json",
     ]);
     expect(await store.read(listed[0])).toEqual({ meta: { name: "Astrid" } });
+    expect(listed[0].title).toBe("Before dragon");
+    await store.delete(listed[0]);
+    expect(removeFile).toHaveBeenCalledWith(VERSION_URI);
+    expect(removeFile).toHaveBeenCalledWith(META_URI);
   });
 });
 

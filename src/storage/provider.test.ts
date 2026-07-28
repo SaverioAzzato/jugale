@@ -83,6 +83,7 @@ describe("web folder version store", () => {
       entries: async function* () {
         for (const name of historyFiles.keys()) yield [name, { kind: "file" as const }] as const;
       },
+      removeEntry: async (name: string) => { historyFiles.delete(name); },
     };
     const root = {
       name: "hero",
@@ -95,6 +96,7 @@ describe("web folder version store", () => {
         throw new Error("missing");
       },
       entries: async function* () {},
+      removeEntry: async () => {},
     };
     Object.defineProperty(window, "showDirectoryPicker", { configurable: true, value: async () => root });
 
@@ -103,13 +105,17 @@ describe("web folder version store", () => {
     const version = await loaded!.provider.versions!.create(
       { meta: { name: "Current" } },
       "checkpoint",
+      "Before dragon",
       new Date(2026, 6, 27, 15, 30, 12, 184),
     );
+    expect(version.title).toBe("Before dragon");
     expect(await loaded!.provider.versions!.list()).toEqual([version]);
     expect(await loaded!.provider.versions!.read(version)).toEqual({ meta: { name: "Current" } });
     await expect(
       loaded!.provider.versions!.read({ ...version, filename: "../character.json" }),
     ).rejects.toThrow("Invalid character version filename");
+    await loaded!.provider.versions!.delete(version);
+    expect(await loaded!.provider.versions!.list()).toEqual([]);
   });
 
   it("does not expose versions when only character.json is opened", async () => {

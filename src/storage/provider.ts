@@ -7,9 +7,12 @@
  */
 import {
   allocateVersion,
+  normalizeVersionTitle,
   parseVersionFilename,
+  readVersionTitle,
   requireVersionFilename,
   sortVersionsNewestFirst,
+  versionMetadataFilename,
   type CharacterVersion,
   type VersionReason,
   type VersionStore,
@@ -81,6 +84,7 @@ interface DirHandle {
   name: string;
   getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>;
   getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<DirHandle>;
+  removeEntry(name: string): Promise<void>;
   entries(): AsyncIterable<[string, { kind: "file" | "directory" }]>;
 }
 
@@ -121,7 +125,7 @@ class WebFolderProvider extends FileHandleProvider {
   constructor(handle: FileSystemFileHandle, directory: DirHandle) {
     super(handle);
     this.versions = {
-      create: async (data: unknown, reason: VersionReason, now = new Date()) => {
+      create: async (data: unknown, reason: VersionReason, title, now = new Date()) => {
         const history = await directory.getDirectoryHandle("history", { create: true });
         const existing = new Set<string>();
         for await (const [name, entry] of history.entries()) if (entry.kind === "file") existing.add(name);
@@ -130,7 +134,14 @@ class WebFolderProvider extends FileHandleProvider {
         const writable = await file.createWritable();
         await writable.write(JSON.stringify(data, null, 2));
         await writable.close();
-        return version;
+        const normalizedTitle = normalizeVersionTitle(title);
+        if (normalizedTitle) {
+          const metadata = await history.getFileHandle(versionMetadataFilename(version.filename), { create: true });
+          const metadataWritable = await metadata.createWritable();
+          await metadataWritable.write(JSON.stringify({ title: normalizedTitle }, null, 2));
+          await metadataWritable.close();
+        }
+        return { ...version, title: normalizedTitle };
       },
       list: async () => {
         let history: DirHandle;
@@ -143,7 +154,14 @@ class WebFolderProvider extends FileHandleProvider {
         for await (const [name, entry] of history.entries()) {
           if (entry.kind !== "file") continue;
           const parsed = parseVersionFilename(name);
-          if (parsed) versions.push(parsed);
+          if (parsed) {
+            try {
+              const metadata = await (await history.getFileHandle(versionMetadataFilename(name))).getFile();
+              versions.push({ ...parsed, title: readVersionTitle(JSON.parse(await metadata.text())) });
+            } catch {
+              versions.push(parsed);
+            }
+          }
         }
         return sortVersionsNewestFirst(versions);
       },
@@ -152,6 +170,16 @@ class WebFolderProvider extends FileHandleProvider {
         const history = await directory.getDirectoryHandle("history");
         const file = await (await history.getFileHandle(version.filename)).getFile();
         return JSON.parse(await file.text());
+      },
+      delete: async (version: CharacterVersion) => {
+        requireVersionFilename(version.filename);
+        const history = await directory.getDirectoryHandle("history");
+        await history.removeEntry(version.filename);
+        try {
+          await history.removeEntry(versionMetadataFilename(version.filename));
+        } catch {
+          // Older and untitled versions have no metadata sidecar.
+        }
       },
     };
   }

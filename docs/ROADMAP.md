@@ -83,12 +83,15 @@ sortable `history/` filenames, collision handling, web/desktop/Android adapters,
 Android create permissions and the persisted EN/IT setting have landed as the first slice. The
 application coordinator now flushes pending saves, snapshots and replaces atomically, including
 failure/race coverage; the responsive toolbar exposes both the manual **Save version** checkpoint
-and a distinct history action. The EN/IT history overlay now lists, previews and restores snapshots
-with a mandatory `before-restore` safety copy. Versioning defaults to active for new installations
+and a distinct history action. The EN/IT history overlay now lists compact cards with optional
+sidecar titles, restores with a Yes/No/Cancel safety-copy choice, and can delete snapshots.
+Versioning defaults to active for new installations
 but remains effective only for writable folders. Android outbound prompt sharing is now implemented
 through a scoped local Tauri plugin and the generic sharesheet, with EN/IT UI, attachment rules,
-privacy confirmation, frontend tests and debug-APK CI coverage. Its ChatGPT/Gemini/Claude behavior
-still requires the planned real-device matrix before compatibility is claimed. Next is that device
+frontend tests and debug-APK CI coverage. After the first device test exposed poor compatibility of
+multiple JSON/mixed-MIME shares, outbound payloads now use one `text/plain` prompt bundle plus
+`EXTRA_TEXT`, based on Android's documented receiver contract. Its ChatGPT/Gemini/Claude behavior
+still requires the next real-device matrix before compatibility is claimed. Next is that device
 spike followed by the inbound JSON intent/preview/import flow, then the Help Center. The remaining
 polish backlog still includes list reordering (drag + keyboard), broader Android/device coverage,
 macOS notarization if distribution justifies the paid account, and continued performance work.

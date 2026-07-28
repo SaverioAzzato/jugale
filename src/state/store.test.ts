@@ -223,12 +223,13 @@ const checkpoint: CharacterVersion = {
 };
 
 function versionedProvider(overrides: Partial<StorageProvider> = {}, versionOverrides: Partial<VersionStore> = {}) {
-  const versions: VersionStore = {
+  const versions = {
     create: vi.fn(async () => checkpoint),
     list: vi.fn(async () => []),
     read: vi.fn(async () => multiclass),
+    delete: vi.fn(async () => {}),
     ...versionOverrides,
-  };
+  } as VersionStore;
   const provider: StorageProvider = {
     kind: "file",
     read: vi.fn(async () => multiclass),
@@ -257,7 +258,7 @@ describe("store — character versions and safe replacement", () => {
     expect(provider.write).toHaveBeenCalledTimes(1);
     const persisted = vi.mocked(provider.write).mock.calls[0][0] as typeof multiclass;
     expect(persisted.combat.hp.current).toBe(multiclass.combat.hp.current - 1);
-    expect(versions.create).toHaveBeenCalledWith(useCharacter.getState().character, "checkpoint");
+    expect(versions.create).toHaveBeenCalledWith(useCharacter.getState().character, "checkpoint", undefined);
     expect(useToast.getState().toasts.at(-1)).toMatchObject({
       kind: "success",
       message: `Version saved: ${checkpoint.filename}`,

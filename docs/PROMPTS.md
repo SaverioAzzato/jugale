@@ -15,12 +15,13 @@ Most prompts layer, but one stands alone:
 Because every *build/play* task prompt includes the base, the licensing disclaimer and the data contract **travel with every copied prompt** — there's no separate block you have to remember to paste. In the in-app Prompts page the two workflows are split into a **Create, modify & verify** section (base + create/level-up/validate) and a separate **Migrate an old character** section (the standalone migrate prompt + its changelog download).
 
 On Android, each applicable prompt also has **Share** beside Copy. It opens the system sharesheet—
-JUGALE does not target or require a particular chatbot—and sends the compiled prompt plus scoped
-cache copies of the relevant files. Base and Custom include the open `character.json` when present;
-Create sends only `character.schema.json`; Level up and Validate require an open character and send
-both JSON files; Migrate also includes `schema-changelog.md`. The first use confirms that prompt and
-character data will be disclosed to the app the user chooses. Actual handling of text plus multiple
-attachments varies by receiving app and is verified separately on real devices.
+JUGALE does not target or require a particular chatbot—and sends one `text/plain` bundle named
+`prompt.txt`. Its delimited sections contain the compiled prompt, `character.schema.json`, the open
+`character.json` when applicable, and `schema-changelog.md` for Migrate. The prompt is also placed in
+Android's `EXTRA_TEXT`. This single-file `ACTION_SEND` shape is intentional: it matches the broadest
+documented Android receiver contract and keeps the prompt available even when a receiving app ignores
+text beside an attachment. The Share control and its explanatory sentence are Android-only; web and
+desktop retain Copy and downloads. The tap itself opens the chooser without an extra confirmation.
 
 ## Parameters (filled in the app, printed into the prompt)
 

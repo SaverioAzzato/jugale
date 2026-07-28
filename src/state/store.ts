@@ -138,9 +138,13 @@ interface CharacterState {
   /** Cancel the debounce, await any active write, then persist the exact latest state. */
   flushPendingSave: () => Promise<boolean>;
   /** Create an intentional snapshot. Returns null when unavailable, busy or failed. */
-  createVersion: (reason?: VersionReason) => Promise<CharacterVersion | null>;
+  createVersion: (reason?: VersionReason, title?: string) => Promise<CharacterVersion | null>;
   /** Safely replace the complete character, optionally snapshotting before the write. */
-  replaceCharacter: (raw: unknown, reason: "before-import" | "before-restore") => Promise<boolean>;
+  replaceCharacter: (
+    raw: unknown,
+    reason: "before-import" | "before-restore",
+    snapshotOverride?: boolean,
+  ) => Promise<boolean>;
   /** Replace the whole character from raw JSON (the raw-JSON editor). Runs the normal load
    *  pipeline (migrate → validate) so the sheet stays renderable even from half-edited input,
    *  marks dirty, and saves through the same debounced path (live-sync, else in-memory → export).
@@ -383,7 +387,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
 
     flushPendingSave,
 
-    createVersion: async (reason = "checkpoint") => {
+    createVersion: async (reason = "checkpoint", title) => {
       const initial = get();
       if (initial.versionBusy || !initial.provider?.versions || !initial.liveSync || initial.readOnly) return null;
       set({ versionBusy: true });
@@ -391,7 +395,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
         if (!(await flushPendingSave())) return null;
         const { provider, character } = get();
         if (!provider?.versions || !character) return null;
-        const version = await provider.versions.create(character, reason);
+        const version = await provider.versions.create(character, reason, title);
         const message = interpolate(translate(useI18n.getState().locale, "versions.saved"), {
           filename: version.filename,
         });
@@ -410,7 +414,7 @@ export const useCharacter = create<CharacterState>((set, get) => {
       }
     },
 
-    replaceCharacter: async (raw, reason) => {
+    replaceCharacter: async (raw, reason, snapshotOverride) => {
       if (get().versionBusy) return false;
       const next = loadCharacter(raw); // validate before touching current state or storage
       set({ versionBusy: true });
@@ -428,10 +432,9 @@ export const useCharacter = create<CharacterState>((set, get) => {
           return false;
         }
 
-        const shouldSnapshot = Boolean(
-          provider.versions &&
-            (reason === "before-restore" || useSettings.getState().versionHistory),
-        );
+        const shouldSnapshot = Boolean(provider.versions && (
+          snapshotOverride ?? (reason === "before-restore" || useSettings.getState().versionHistory)
+        ));
         if (shouldSnapshot) {
           try {
             await provider.versions!.create(character, reason);

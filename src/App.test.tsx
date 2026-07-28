@@ -137,13 +137,14 @@ describe("App — empty state + live editing wiring", () => {
       kind: "file",
       read: async () => multiclass,
       write: async () => {},
-      versions: { create, list: async () => [], read: async () => multiclass },
+      versions: { create, list: async () => [], read: async () => multiclass, delete: async () => {} },
     };
     useCharacter.getState().connect(provider, multiclass, "folder");
     useSettings.getState().setVersionHistory(true);
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: "Save version" }));
+    fireEvent.click(screen.getByRole("dialog").querySelector(".btn-primary")!);
     expect(screen.queryByText(/Version saved:/)).not.toBeInTheDocument();
     finish();
 
