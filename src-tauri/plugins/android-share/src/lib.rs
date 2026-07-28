@@ -23,7 +23,10 @@ impl<R: Runtime, T: Manager<R>> AndroidShareExt<R> for T {
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::new("android-share")
-        .invoke_handler(tauri::generate_handler![commands::share_prompt])
+        .invoke_handler(tauri::generate_handler![
+            commands::share_prompt,
+            commands::take_pending_share
+        ])
         .setup(|app, api| {
             let share = mobile::init(app, api)?;
             app.manage(share);

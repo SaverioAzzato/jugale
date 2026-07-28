@@ -12,6 +12,11 @@ const androidBack = vi.hoisted(() => ({
   unregister: vi.fn(),
   register: vi.fn(),
 }));
+const incomingShare = vi.hoisted(() => ({
+  handler: null as null | ((payload: unknown) => void),
+  pending: { status: "empty" } as unknown,
+  unregister: vi.fn(),
+}));
 
 vi.mock("./storage/androidProvider", async () => {
   const actual = await vi.importActual<typeof import("./storage/androidProvider")>("./storage/androidProvider");
@@ -19,6 +24,13 @@ vi.mock("./storage/androidProvider", async () => {
 });
 
 vi.mock("@tauri-apps/api/app", () => ({ onBackButtonPress: androidBack.register }));
+vi.mock("./share/incomingCharacterShare", () => ({
+  listenForCharacterShares: vi.fn(async (handler: (payload: unknown) => void) => {
+    incomingShare.handler = handler;
+    return { unregister: incomingShare.unregister };
+  }),
+  takePendingCharacterShare: vi.fn(async () => incomingShare.pending),
+}));
 
 describe("App — empty state + live editing wiring", () => {
   beforeEach(() => {
@@ -33,6 +45,9 @@ describe("App — empty state + live editing wiring", () => {
       androidBack.handler = handler;
       return { unregister: androidBack.unregister };
     });
+    incomingShare.handler = null;
+    incomingShare.pending = { status: "empty" };
+    incomingShare.unregister.mockReset();
   });
 
   it("maps Android system Back to the visible Back action on an app page", async () => {
@@ -65,6 +80,25 @@ describe("App — empty state + live editing wiring", () => {
     confirm.mockRestore();
   });
 
+  it("previews an incoming Android character before applying it", async () => {
+    androidBack.enabled = true;
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
+    await waitFor(() => expect(incomingShare.handler).not.toBeNull());
+    act(() => incomingShare.handler?.({
+      status: "character",
+      id: "shared-astrid",
+      name: "character.json",
+      mime: "application/json",
+      contents: JSON.stringify({ meta: { name: "Astrid" } }),
+    }));
+
+    expect(screen.getByRole("dialog", { name: "Received character" })).toBeInTheDocument();
+    expect(screen.getByText(/Existing images are left unchanged/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Apply to Example Warlock" }));
+    await waitFor(() => expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Astrid"));
+  });
+
   it("starts on the welcome screen and loads a sample on demand", () => {
     render(<App />);
     expect(screen.getByRole("heading", { name: /Your character, always yours/i })).toBeInTheDocument(); // default locale: en
@@ -91,19 +125,20 @@ describe("App — empty state + live editing wiring", () => {
     expect(screen.getByRole("button", { name: "Warlock" })).toBeInTheDocument(); // present in the DOM either way
   });
 
-  it("shows the help button only on the welcome screen, not once a character is loaded", () => {
+  it("keeps Help reachable after a character is loaded", () => {
     render(<App />);
     expect(screen.getByRole("button", { name: "How to use :JUGALE" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
-    expect(screen.queryByRole("button", { name: "How to use :JUGALE" })).not.toBeInTheDocument();
+    const direct = screen.queryByRole("button", { name: "How to use :JUGALE" });
+    if (!direct) fireEvent.click(screen.getByRole("button", { name: "More actions" }));
+    expect(screen.getByRole(direct ? "button" : "menuitem", { name: "How to use :JUGALE" })).toBeInTheDocument();
   });
 
   it("opens the Help page with how-to content and returns to the welcome screen on Back", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "How to use :JUGALE" }));
-    // "What this app is" now appears both as a section heading and a TOC link — scope to the heading.
-    expect(screen.getByRole("heading", { name: "What this app is" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "How can we help?" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("heading", { name: /Your character, always yours/i })).toBeInTheDocument();

@@ -25,8 +25,8 @@ function bundleSection(title: string, contents: string): string {
 }
 
 /** Build one text/plain bundle: ACTION_SEND is the common denominator declared by chatbot apps.
- * The prompt also remains in EXTRA_TEXT; the file copy protects it from receivers that ignore
- * EXTRA_TEXT whenever an EXTRA_STREAM is present. `create` never includes the open character. */
+ * The same complete bundle travels in EXTRA_TEXT and prompt.txt because receivers may consume only
+ * one of those channels. `create` never includes the open character. */
 export function buildPromptSharePayload(
   kind: SharePromptKind,
   title: string,
@@ -43,10 +43,12 @@ export function buildPromptSharePayload(
   if (kind !== "create" && character) sections.push(bundleSection("character.json", asJson(character)));
   if (kind === "migrate") sections.push(bundleSection("schema-changelog.md", SCHEMA_CHANGELOG));
 
+  const bundle = sections.join("\n\n");
+
   return {
     title,
-    text,
-    files: [{ name: "prompt.txt", mime: "text/plain", contents: sections.join("\n\n") }],
+    text: bundle,
+    files: [{ name: "prompt.txt", mime: "text/plain", contents: bundle }],
   };
 }
 

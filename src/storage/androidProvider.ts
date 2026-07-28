@@ -36,6 +36,7 @@ import {
 } from "./versions";
 
 const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
+export const IMPORT_TARGET_NOT_EMPTY = "IMPORT_TARGET_NOT_EMPTY";
 const MIME: Record<string, string> = {
   png: "image/png",
   jpg: "image/jpeg",
@@ -241,6 +242,49 @@ export async function openCharacterFolderAndroid(): Promise<{
     images,
     sourceName: name,
     ref: { platform: "android", kind: "folder", name, uri: treeUri },
+  };
+}
+
+export type AndroidImportTarget =
+  | ({ kind: "existing" } & NonNullable<Awaited<ReturnType<typeof openCharacterFolderAndroid>>>)
+  | {
+      kind: "empty";
+      sourceName: string;
+      ref: RecentRef;
+      create: (raw: unknown) => Promise<LoadedCharacter>;
+    };
+
+/** Pick an import destination without changing it. Existing characters are loaded for preview;
+ * a truly empty folder exposes a deferred creator so character.json is written only after the
+ * user confirms. A non-empty folder without character.json is rejected. */
+export async function pickCharacterImportTargetAndroid(): Promise<AndroidImportTarget | null> {
+  const treeUri = await AndroidFs.showOpenDirPicker();
+  if (!treeUri) return null;
+  await tryPersist(treeUri);
+  const entries = await AndroidFs.readDir(treeUri);
+  const sourceName = await AndroidFs.getName(treeUri).catch(() => "character");
+  const ref: RecentRef = { platform: "android", kind: "folder", name: sourceName, uri: treeUri };
+  if (entries.some((entry) => entry.type === "File" && entry.name === "character.json")) {
+    const { fileUri, images } = await resolveFolder(treeUri);
+    const provider = new AndroidFolderProvider(fileUri, treeUri);
+    return { kind: "existing", provider, raw: await provider.read(), images, sourceName, ref };
+  }
+  if (entries.length > 0) throw new Error(IMPORT_TARGET_NOT_EMPTY);
+  return {
+    kind: "empty",
+    sourceName,
+    ref,
+    create: async (raw) => {
+      const fileUri = await AndroidFs.createNewFile(treeUri, "character.json", "application/json");
+      const provider = new AndroidFolderProvider(fileUri, treeUri);
+      try {
+        await provider.write(raw);
+        return { provider, raw: await provider.read(), images: [], sourceName };
+      } catch (error) {
+        await AndroidFs.removeFile(fileUri).catch(() => undefined);
+        throw error;
+      }
+    },
   };
 }
 

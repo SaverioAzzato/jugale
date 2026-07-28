@@ -7,6 +7,18 @@ touch interaction. Run the relevant sections against the draft Release artifacts
 
 Legend: ☐ = check on the built artifact from the draft Release (not `npm run dev`).
 
+## Help Center (all targets)
+- ☐ Open Help from the welcome screen and again with a character open (direct `?` or the `…`
+  overflow). The home shows one grid of six distinct topics without duplicate sections or
+  horizontal overflow.
+- ☐ Open every topic; advanced details start collapsed, breadcrumb and previous/next work, and the
+  URL hash is `#help/<topic>`. Back/Escape first returns to the Help home, then closes Help.
+- ☐ Screenshots match the current UI, use the selected language and load offline. On **Use the
+  character sheet**, the four-screen gallery scrolls horizontally without moving the whole page.
+- ☐ Switch EN/IT while a topic is open. Content changes without reload and retains the same topic.
+- ☐ On Android at 80%, 100% and 120% UI scale, verify cards, long titles, accordions and bottom
+  navigation remain readable and tappable.
+
 ## macOS (`.dmg` / `.app`)
 - ☐ Download the `.dmg` from the draft Release in a browser (so it gets the quarantine flag).
 - ☐ First launch: right-click → Open → Open. **It must launch** — no "damaged and can't be
@@ -70,10 +82,19 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
   sharesheet without a character; Level up/Validate/Migrate are disabled and explain why. With a
   character open, share Level up and verify the chooser opens immediately. The single `prompt.txt`
   attachment must contain delimited PROMPT, schema and character sections; Create must omit the
-  current character; Migrate must also contain the changelog section.
+  current character; Migrate must also contain the changelog section. The full bundle must also be
+  present in the receiving app's text/message channel when it ignores the attachment.
 - ☐ Complete the chatbot matrix for the installed ChatGPT/Gemini/Claude versions: target visible,
   new-chat behavior, whether `EXTRA_TEXT` pre-fills the composer, whether `prompt.txt` is attached
   and read correctly, and return MIME. Record app versions and failures as receiver compatibility.
+- ☐ **Return a character to JUGALE:** share one `application/json` character file from a chatbot or
+  file manager. Test once with JUGALE closed and once already open. The preview must show name,
+  schema and issue counts before any write; Android Back/Cancel must leave the target unchanged.
+- ☐ Apply to the open folder with versioning enabled: `history/` gains a `before-import` snapshot and
+  images remain unchanged. Repeat with versioning disabled, then select another existing folder.
+- ☐ Select a truly empty folder: `character.json` is created only after confirmation. A non-empty
+  folder without `character.json` must be rejected. Also try invalid JSON, an unreadable URI and a
+  file over 5 MiB; none may alter a character.
 
 ## Web on mobile (the Pages site from a phone browser)
 - ☐ Open the live site on a phone.

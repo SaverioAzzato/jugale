@@ -25,7 +25,14 @@ import {
   RECENT_PERMISSION_DENIED,
 } from "./storage/provider";
 import { isTauri, openCharacterFileTauri, openCharacterFolderTauri } from "./storage/tauriProvider";
-import { isAndroid, openCharacterFileAndroid, openCharacterFolderAndroid } from "./storage/androidProvider";
+import {
+  IMPORT_TARGET_NOT_EMPTY,
+  isAndroid,
+  openCharacterFileAndroid,
+  openCharacterFolderAndroid,
+  pickCharacterImportTargetAndroid,
+  type AndroidImportTarget,
+} from "./storage/androidProvider";
 import {
   recentsSupported,
   listRecents,
@@ -35,7 +42,7 @@ import {
   reopenRecent,
   type RecentEntry,
 } from "./storage/recents";
-import { useT } from "./i18n/useI18n";
+import { useT, type StringKey } from "./i18n/useI18n";
 import { SettingsButton, SettingsPage } from "./ui/SettingsMenu";
 import { PromptsButton, PromptsPage } from "./ui/PromptsPage";
 import { RawJsonPage } from "./ui/RawJsonPage";
@@ -53,10 +60,24 @@ import { toolbarCapacity } from "./ui/toolbarLayout";
 import { handleTransientBack, useUiBackDepth, useUiBackHandler } from "./ui/uiBack";
 import { VersionsPage } from "./ui/VersionsPage";
 import { SaveVersionDialog } from "./ui/VersionDialog";
+import { loadCharacter } from "./schema";
+import {
+  listenForCharacterShares,
+  takePendingCharacterShare,
+  type IncomingSharePayload,
+} from "./share/incomingCharacterShare";
+import { IncomingCharacterDialog } from "./ui/IncomingCharacterDialog";
 
-type ToolbarActionId = "dice" | "edit" | "version" | "history" | "export" | "raw" | "prompts" | "settings";
+type ToolbarActionId = "dice" | "edit" | "version" | "history" | "export" | "raw" | "prompts" | "help" | "settings";
 
-const TOOLBAR_PRIORITY: ToolbarActionId[] = ["dice", "edit", "version", "history", "export", "raw", "prompts", "settings"];
+interface PendingIncomingCharacter {
+  id: string;
+  raw: unknown;
+  preview: ReturnType<typeof loadCharacter>;
+  target: AndroidImportTarget | null;
+}
+
+const TOOLBAR_PRIORITY: ToolbarActionId[] = ["dice", "edit", "version", "history", "export", "raw", "prompts", "help", "settings"];
 
 function useToolbarCapacity(
   toolbarRef: RefObject<HTMLElement>,
@@ -109,6 +130,8 @@ export function App() {
   const connect = useCharacter((s) => s.connect);
   const exportCharacter = useCharacter((s) => s.exportCharacter);
   const createVersion = useCharacter((s) => s.createVersion);
+  const replaceCharacter = useCharacter((s) => s.replaceCharacter);
+  const flushPendingSave = useCharacter((s) => s.flushPendingSave);
   const clear = useCharacter((s) => s.clear);
   const t = useT();
   const versionHistory = useSettings((s) => s.versionHistory);
@@ -125,6 +148,8 @@ export function App() {
   const [swipeDirection, setSwipeDirection] = useState<-1 | 1 | null>(null);
   const [overlay, setOverlay] = useState<"settings" | "prompts" | "help" | "json" | "versions" | null>(null);
   const [saveVersionOpen, setSaveVersionOpen] = useState(false);
+  const [incomingCharacter, setIncomingCharacter] = useState<PendingIncomingCharacter | null>(null);
+  const incomingIdRef = useRef<string | null>(null);
   const overlayBackRef = useRef<HTMLButtonElement>(null);
   const toolbarRef = useRef<HTMLElement>(null);
   const toolbarLeftRef = useRef<HTMLDivElement>(null);
@@ -146,6 +171,7 @@ export function App() {
       // In the raw-JSON editor, Escape first dismisses an open completion popup / active snippet
       // (CodeMirror handles it but doesn't stop propagation) — only exit the editor otherwise.
       if (overlay === "json" && document.querySelector(".cm-tooltip-autocomplete, .cm-snippetField")) return;
+      if (handleTransientBack()) return;
       setOverlay(null);
     };
     document.addEventListener("keydown", onKey);
@@ -211,6 +237,45 @@ export function App() {
   useEffect(() => {
     void useUpdate.getState().check();
   }, []);
+
+  const receiveCharacterShare = useCallback((payload: IncomingSharePayload) => {
+    if (payload.status === "empty") return;
+    if (payload.status === "error") {
+      const key = `incoming.error.${payload.error}` as StringKey;
+      useToast.getState().push("error", t(key));
+      return;
+    }
+    if (incomingIdRef.current === payload.id) return;
+    try {
+      const raw = JSON.parse(payload.contents) as unknown;
+      incomingIdRef.current = payload.id;
+      setIncomingCharacter({ id: payload.id, raw, preview: loadCharacter(raw), target: null });
+    } catch {
+      useToast.getState().push("error", t("incoming.error.invalid-json"));
+    }
+  }, [t]);
+
+  // Register first so a warm intent cannot fall through the bootstrap gap, then drain the native
+  // cold-start buffer. The payload id suppresses the one possible overlap between event and pull.
+  useEffect(() => {
+    if (!isAndroid()) return;
+    let disposed = false;
+    let listener: { unregister: () => Promise<void> } | null = null;
+    void listenForCharacterShares((payload) => {
+      if (!disposed) receiveCharacterShare(payload);
+    }).then(async (registered) => {
+      if (disposed) {
+        await registered?.unregister();
+        return;
+      }
+      listener = registered;
+      receiveCharacterShare(await takePendingCharacterShare());
+    }).catch(() => useToast.getState().push("error", t("incoming.error.unreadable")));
+    return () => {
+      disposed = true;
+      if (listener) void listener.unregister();
+    };
+  }, [receiveCharacterShare, t]);
 
   // Warn before leaving with unsaved in-memory edits (live-synced files save themselves).
   // Also covers a live sync that broke and fell back to read-only: liveSync flips false then.
@@ -403,6 +468,47 @@ export function App() {
     setRecents((current) => current.filter((entry) => entry.key !== key));
   }
 
+  async function chooseIncomingTarget() {
+    try {
+      const target = await pickCharacterImportTargetAndroid();
+      if (target) setIncomingCharacter((current) => current ? { ...current, target } : null);
+    } catch (error) {
+      if (error instanceof Error && error.message === IMPORT_TARGET_NOT_EMPTY) {
+        useToast.getState().push("error", t("incoming.targetNotEmpty"));
+        return;
+      }
+      reportOpenError(error);
+    }
+  }
+
+  async function applyIncomingCharacter() {
+    const pending = incomingCharacter;
+    if (!pending || versionBusy) return;
+    if (pending.target?.kind === "existing") {
+      if (!(await flushPendingSave())) return;
+      connect(pending.target.provider, pending.target.raw, pending.target.sourceName, pending.target.images);
+    } else if (pending.target?.kind === "empty") {
+      if (!(await flushPendingSave())) return;
+      try {
+        const loaded = await pending.target.create(pending.preview.character);
+        connect(loaded.provider, loaded.raw, loaded.sourceName, loaded.images);
+        void recordRecent(pending.target.ref);
+        setIncomingCharacter(null);
+        incomingIdRef.current = null;
+        useToast.getState().push("success", t("incoming.applied"));
+      } catch (error) {
+        useToast.getState().push("error", t("versions.replaceFailed"), error instanceof Error ? error.message : String(error));
+      }
+      return;
+    }
+    if (await replaceCharacter(pending.raw, "before-import")) {
+      if (pending.target) void recordRecent(pending.target.ref);
+      setIncomingCharacter(null);
+      incomingIdRef.current = null;
+      useToast.getState().push("success", t("incoming.applied"));
+    }
+  }
+
   return (
     <div className={overlay === "json" ? "app app-rawjson" : "app"}>
       <header className="appbar">
@@ -521,6 +627,7 @@ export function App() {
                   </button>
                 )}
                 {!character && <HelpButton onClick={() => setOverlay("help")} />}
+                {character && visibleToolbarActions.has("help") && <HelpButton onClick={() => setOverlay("help")} />}
                 {character && visibleToolbarActions.has("raw") && (
                   <RawJsonButton active={false} onClick={() => setOverlay("json")} label={t("code.toggle")} />
                 )}
@@ -537,6 +644,7 @@ export function App() {
                     onHistory={() => setOverlay("versions")}
                     onRaw={() => setOverlay("json")}
                     onPrompts={() => setOverlay("prompts")}
+                    onHelp={() => setOverlay("help")}
                     onSettings={() => setOverlay("settings")}
                   />
                 )}
@@ -659,6 +767,36 @@ export function App() {
           }}
         />
       )}
+      {incomingCharacter && (
+        <IncomingCharacterDialog
+          characterName={incomingCharacter.preview.character.meta.name}
+          schemaVersion={incomingCharacter.preview.character.schemaVersion}
+          issues={incomingCharacter.preview.issues}
+          targetName={
+            incomingCharacter.target?.kind === "existing"
+              ? loadCharacter(incomingCharacter.target.raw).character.meta.name
+              : incomingCharacter.target?.kind === "empty"
+                ? incomingCharacter.target.sourceName
+              : character?.meta.name ?? null
+          }
+          nameMismatch={
+            incomingCharacter.target?.kind === "empty"
+              ? false
+              : (incomingCharacter.target?.kind === "existing"
+                  ? loadCharacter(incomingCharacter.target.raw).character.meta.name
+                  : character?.meta.name) !== incomingCharacter.preview.character.meta.name
+          }
+          busy={versionBusy}
+          onApply={() => void applyIncomingCharacter()}
+          onChooseTarget={() => void chooseIncomingTarget()}
+          onCancel={() => {
+            if (!versionBusy) {
+              setIncomingCharacter(null);
+              incomingIdRef.current = null;
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -732,11 +870,12 @@ interface ToolbarOverflowProps {
   onHistory: () => void;
   onRaw: () => void;
   onPrompts: () => void;
+  onHelp: () => void;
   onSettings: () => void;
 }
 
 /** Compact home for lower-priority toolbar actions when the viewport cannot hold every icon. */
-function ToolbarOverflow({ actions, onExport, onEdit, onVersion, versionDisabled, onHistory, onRaw, onPrompts, onSettings }: ToolbarOverflowProps) {
+function ToolbarOverflow({ actions, onExport, onEdit, onVersion, versionDisabled, onHistory, onRaw, onPrompts, onHelp, onSettings }: ToolbarOverflowProps) {
   const t = useT();
   const ref = useRef<HTMLDetailsElement>(null);
   const [open, setOpen] = useState(false);
@@ -768,6 +907,7 @@ function ToolbarOverflow({ actions, onExport, onEdit, onVersion, versionDisabled
     export: { label: t("app.export"), run: onExport },
     raw: { label: t("code.toggle"), run: onRaw, trigger: "json" },
     prompts: { label: t("prompts.title"), run: onPrompts, trigger: "prompts" },
+    help: { label: t("help.title"), run: onHelp, trigger: "help" },
     settings: { label: t("settings.title"), run: onSettings, trigger: "settings" },
   };
 

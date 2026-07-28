@@ -4,7 +4,10 @@ use tauri::{
     AppHandle, Runtime,
 };
 
-use crate::{models::SharePromptRequest, Result};
+use crate::{
+    models::{PendingShare, SharePromptRequest},
+    Result,
+};
 
 pub struct AndroidShare<R: Runtime>(PluginHandle<R>);
 
@@ -21,6 +24,12 @@ impl<R: Runtime> AndroidShare<R> {
     pub fn share_prompt(&self, payload: SharePromptRequest) -> Result<()> {
         self.0
             .run_mobile_plugin("sharePrompt", payload)
+            .map_err(Into::into)
+    }
+
+    pub fn take_pending_share(&self) -> Result<PendingShare> {
+        self.0
+            .run_mobile_plugin("takePendingShare", ())
             .map_err(Into::into)
     }
 }

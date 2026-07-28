@@ -1,3 +1,3 @@
 [default]
-description = "Allows the app to open Android sharing for a validated prompt payload."
-permissions = ["allow-share-prompt"]
+description = "Allows validated Android prompt sharing and receipt of a pending character share."
+permissions = ["allow-share-prompt", "allow-take-pending-share", "allow-listeners"]

@@ -81,19 +81,32 @@ Both implement the same interface; the rest of the app never knows which host it
 **Android prompt sharing (outbound implemented; device matrix pending):** the Prompts page exposes
 Share only on Android and always opens the generic system chooser—there are no chatbot package
 names, provider SDKs, accounts or API keys in JUGALE. The frontend sends the compiled prompt as
-`EXTRA_TEXT` and one `text/plain` cache file, `prompt.txt`, whose clearly delimited sections contain
-the prompt, JSON Schema, current character when required, and migration changelog when applicable.
+part of one clearly delimited bundle containing the prompt, JSON Schema, current character when
+required, and migration changelog when applicable. The same bundle is sent in `EXTRA_TEXT` and in
+one `text/plain` cache file, `prompt.txt`, because receivers may consume only one of the two channels.
 Create never leaks an already-open character. The single-file `ACTION_SEND` contract is deliberate:
 the first device test showed ChatGPT accepting multiple streams but dropping `EXTRA_TEXT`, while
-Gemini and Claude were not offered for `ACTION_SEND_MULTIPLE`/JSON or mixed MIME payloads. Android's
-documented common denominator is `ACTION_SEND` + `text/plain`; no third-party sender library can
-make a receiver declare an intent filter it does not support.
+Gemini and Claude were not offered for `ACTION_SEND_MULTIPLE`/JSON or mixed MIME payloads; the next
+test showed ChatGPT consuming only `EXTRA_TEXT`, while Gemini and Claude accepted `prompt.txt`.
+Android's documented common denominator is `ACTION_SEND` + `text/plain`; no third-party sender
+library can make a receiver declare an intent filter or parser behavior it does not support.
 The local `android-share` Tauri plugin accepts only a small filename/MIME allowlist, enforces per-file
 and aggregate UTF-8 size limits, cleans `cache/shares`, and exposes only that cache through a
 non-exported `FileProvider` with temporary read grants. It never exposes the source character folder.
 The user's tap on Share is the disclosure gesture; no redundant confirmation precedes the system
 chooser. Receiver behavior remains subject to the real-device matrix in
 `.tmp/02-share-intent-mobile.md`.
+
+**Android character sharing (inbound):** the same plugin registers the generated MainActivity for
+one `ACTION_SEND` `application/json` stream. It copies no more than 5 MiB while the URI grant is
+valid, strictly decodes UTF-8, requires a JSON root object and keeps one pending payload. `load`
+captures cold starts; `onNewIntent` emits warm-intent events; the frontend subscribes before draining
+the buffer and deduplicates by SHA-256. No data is written immediately: an accessible EN/IT dialog
+shows name, schema and validation counts, identifies the destination and warns that JSON is replaced
+while images remain. Existing targets use `replaceCharacter(..., "before-import")`, including its
+version-history snapshot. A dedicated SAF picker also accepts another existing folder or a truly
+empty one; non-empty folders without `character.json` are rejected and empty-folder creation is
+deferred until final confirmation.
 
 **Character versions (in progress):** `character.json` remains the only canonical file. A
 writable folder provider may expose the optional `StorageProvider.versions` capability; single
@@ -120,6 +133,19 @@ reason), tolerates corrupt entries independently, and provides icon actions to r
 Restore asks only whether to save the current character to history: Yes creates a `before-restore`
 snapshot, No restores directly, and Cancel does nothing. Deletion removes the snapshot and optional
 title sidecar; there is no automatic retention policy.
+
+**Help Center:** user documentation is rendered from typed, locale-specific catalogs under
+`src/help/`, not embedded as long prose blocks in the page component. EN and IT keep the same six
+task-first topic ids and order; catalog tests enforce parity, localized media and the absence of
+implementation jargon. The home is one non-duplicated topic grid. Topic pages combine short steps,
+real localized screenshots, a compact visual flow where native Android UI cannot be captured, and
+native `details` only for optional troubleshooting. They also provide `#help/<topic>` deep links,
+task-to-task links and previous/next navigation. Help is available before and after opening a
+character. Topic transitions move focus and scroll to the heading; Back/Escape returns home and
+restores focus to the originating card before the overlay closes. Assets under `src/help/assets/`
+come from the deterministic Warlock example at 390×844 and must be refreshed in EN/IT after visible
+UI changes. They are lossless 780×1688 PNG captures (390×844 at 2× density), verified by
+`src/help/assets.test.ts`; no personal character data is allowed.
 
 **Web folder loading (M4, shipped):** `openCharacterFolder()` uses `showDirectoryPicker()` for a live read/write folder, reading `character.json` and scanning a sibling `images/` directory (alphabetical filename order) into object URLs; browsers without that API fall back to a read-only `<input type="file" webkitdirectory>` (`importCharacterFolder`). The scanned images ride alongside the character as a runtime `images` channel on the store — they're object URLs, revoked on reload, and **never written into `character.json`** (the JSON carries no image references at all; images sort by filename and the first is the portrait, so the user specifies nothing). **Native folder/file loading (M4, shipped):** `src/storage/tauriProvider.ts` satisfies the same surface natively — `@tauri-apps/plugin-dialog`'s `open()` for the picker (its scope auto-extends to whatever the user selects, plus a `$HOME/**` capability grant as a backstop) and `@tauri-apps/plugin-fs` for read/write and `images/` directory scanning. `App.tsx` selects it over the browser path via a runtime `isTauri()` check; everything above the `StorageProvider` boundary is unaware which one is active. **Android (dedicated SAF provider):** Android has no real file paths — the OS hands back Storage Access Framework (SAF) `content://` URIs, which the stock `dialog`/`fs` plugins can't write back to, can't persist across restarts, and mishandle as if they were paths (this caused read-only saves, dead recents, and "invalid JSON" on open-folder). So Android gets its own `src/storage/androidProvider.ts` over [`tauri-plugin-android-fs`](https://github.com/aiueo13/tauri-plugin-android-fs) (Rust crate target-gated to Android in `Cargo.toml` + registered in `lib.rs`; JS bindings `tauri-plugin-android-fs-api`, versions pinned to match). It opens a folder (tree URI, the preferred path since it exposes `images/`) or a single file, **persists the read+write permission** (`persistPickerUriPermission`) so Recents reopen after a restart, and reads/writes the URI **in place** — so `character.json` stays the single source of truth at its original location, saved live exactly like desktop, no copy-in or export-only. `App.tsx` routes to it via `isAndroid()` (checked before the desktop `isTauri()` branch). Two SAF-specific gotchas the provider handles: (1) the plugin's `android-fs:default` permission set is `all-without-delete`, which **excludes every write command**, so `capabilities/android.json` grants the exact least-privilege set the provider calls — `allow-write-text-file` included (relying on `default` silently broke live save); (2) persisting the grant is **best-effort** (`tryPersist`) because some providers refuse a persistable permission and throw — swallowing that keeps a Drive-hosted file from failing the open with a misleading "invalid JSON". Cloud document providers (e.g. Google Drive) have real platform limits: Drive is **absent from the folder/tree picker** (no `ACTION_OPEN_DOCUMENT_TREE`), so Drive characters must be opened via the single-file picker; and Drive may refuse write-back, in which case the store falls back to read-only + export like the web path. The provider logic is unit-tested with the plugin mocked, but **SAF runtime behaviour is only verifiable on a real device** — see `docs/RELEASE-TESTING.md`.
 

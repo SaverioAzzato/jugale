@@ -23,6 +23,7 @@ describe("buildPromptSharePayload", () => {
     expect(payload?.files[0].contents).toContain("===== PROMPT =====\nprompt");
     expect(payload?.files[0].contents).toContain("===== character.schema.json =====");
     expect(payload?.files[0].contents).toContain('"name": "Astrid"');
+    expect(payload?.text).toBe(payload?.files[0].contents);
   });
 
   it("never attaches an open character to the create prompt", () => {

@@ -90,9 +90,18 @@ but remains effective only for writable folders. Android outbound prompt sharing
 through a scoped local Tauri plugin and the generic sharesheet, with EN/IT UI, attachment rules,
 frontend tests and debug-APK CI coverage. After the first device test exposed poor compatibility of
 multiple JSON/mixed-MIME shares, outbound payloads now use one `text/plain` prompt bundle plus
-`EXTRA_TEXT`, based on Android's documented receiver contract. Its ChatGPT/Gemini/Claude behavior
-still requires the next real-device matrix before compatibility is claimed. Next is that device
-spike followed by the inbound JSON intent/preview/import flow, then the Help Center. The remaining
+`EXTRA_TEXT`, based on Android's documented receiver contract. Real-device testing then showed
+Gemini and Claude consuming the bundle attachment but ChatGPT consuming only the text channel, so
+the complete bundle is duplicated in both. A final ChatGPT retest of that fallback remains before
+compatibility is claimed. The inbound Android JSON flow is now implemented: restricted manifest
+filter, cold/warm native buffering, validation and deduplication, preview, named current/other/empty
+folder targets, and versioned `before-import` replacement. Its merged manifest and real-device
+cold/warm/error paths remain for the next Dev APK. The Help Center has now been rebuilt from typed
+EN/IT catalogs and revised after adversarial user-task review: one non-duplicated topic home, six
+plain-language guides, real localized screenshots, a visual Android chatbot round-trip, contextual
+links, native troubleshooting accordions, deep links, previous/next navigation, keyboard focus
+restoration and access while a character is open. Catalog tests reject the internal sync/share
+jargon that made the first draft unhelpful. The remaining
 polish backlog still includes list reordering (drag + keyboard), broader Android/device coverage,
 macOS notarization if distribution justifies the paid account, and continued performance work.
 

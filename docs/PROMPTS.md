@@ -18,10 +18,11 @@ On Android, each applicable prompt also has **Share** beside Copy. It opens the 
 JUGALE does not target or require a particular chatbot—and sends one `text/plain` bundle named
 `prompt.txt`. Its delimited sections contain the compiled prompt, `character.schema.json`, the open
 `character.json` when applicable, and `schema-changelog.md` for Migrate. The prompt is also placed in
-Android's `EXTRA_TEXT`. This single-file `ACTION_SEND` shape is intentional: it matches the broadest
-documented Android receiver contract and keeps the prompt available even when a receiving app ignores
-text beside an attachment. The Share control and its explanatory sentence are Android-only; web and
-desktop retain Copy and downloads. The tap itself opens the chooser without an extra confirmation.
+Android's `EXTRA_TEXT` together with the same schema, character and changelog sections. This
+duplicated single-file `ACTION_SEND` shape is intentional: device tests found ChatGPT consuming only
+the text channel, while Gemini and Claude consumed the attachment. The Share control and its
+explanatory sentence are Android-only; web and desktop retain Copy and downloads. The tap itself
+opens the chooser without an extra confirmation.
 
 ## Parameters (filled in the app, printed into the prompt)
 

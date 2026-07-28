@@ -87,11 +87,14 @@ vi.mock("tauri-plugin-android-fs-api", () => {
 });
 
 import {
+  IMPORT_TARGET_NOT_EMPTY,
   openCharacterFolderAndroid,
   openCharacterFileAndroid,
+  pickCharacterImportTargetAndroid,
   reopenAndroid,
   saveJsonAsAndroid,
 } from "./androidProvider";
+import { AndroidFs } from "tauri-plugin-android-fs-api";
 
 beforeEach(() => {
   persist.mockClear();
@@ -153,6 +156,33 @@ describe("openCharacterFileAndroid", () => {
     expect(persist).toHaveBeenCalledWith(JSON_URI);
     expect(res!.ref).toMatchObject({ platform: "android", kind: "file", uri: JSON_URI });
     expect(res!.provider.versions).toBeUndefined();
+  });
+});
+
+describe("pickCharacterImportTargetAndroid", () => {
+  it("previews an existing folder without writing it", async () => {
+    const target = await pickCharacterImportTargetAndroid();
+    expect(target?.kind).toBe("existing");
+    expect(writeText).not.toHaveBeenCalled();
+  });
+
+  it("defers creation in a truly empty folder until confirmation", async () => {
+    vi.mocked(AndroidFs.readDir).mockResolvedValueOnce([]);
+    const target = await pickCharacterImportTargetAndroid();
+    expect(target?.kind).toBe("empty");
+    expect(createNewFile).not.toHaveBeenCalled();
+    if (target?.kind !== "empty") throw new Error("Expected empty target");
+    await target.create({ meta: { name: "New" } });
+    expect(createNewFile).toHaveBeenCalledWith(TREE, "character.json", "application/json");
+    expect(writeText).toHaveBeenCalledWith(VERSION_URI, JSON.stringify({ meta: { name: "New" } }, null, 2));
+  });
+
+  it("rejects a non-empty folder without character.json", async () => {
+    vi.mocked(AndroidFs.readDir).mockResolvedValueOnce([
+      { type: "File", name: "notes.txt", uri: SAVE_URI, lastModified: new Date(0), byteLength: 1, mimeType: "text/plain" },
+    ]);
+    await expect(pickCharacterImportTargetAndroid()).rejects.toThrow(IMPORT_TARGET_NOT_EMPTY);
+    expect(createNewFile).not.toHaveBeenCalled();
   });
 });
 

@@ -62,17 +62,38 @@ Tests are first-class — the schema/model layer is exhaustively unit-tested. CI
 ## Android prompt-share compatibility
 
 Keep outbound chatbot sharing on Android's generic Sharesheet. The tested compatibility contract is
-one `ACTION_SEND` `text/plain` payload: the prompt is in `EXTRA_TEXT` and one scoped cache attachment
-`prompt.txt` contains delimited prompt/schema/character/changelog sections as applicable. Do not
+one `ACTION_SEND` `text/plain` payload: the same delimited prompt/schema/character/changelog bundle
+is sent in both `EXTRA_TEXT` and the scoped cache attachment `prompt.txt`. Do not
 reintroduce multiple JSON/mixed-MIME streams, package-name targeting, guessed deep links, or a
-third-party “share” wrapper: the first device test showed ChatGPT dropping `EXTRA_TEXT` beside
-multiple streams and Gemini/Claude not matching that intent, and sender libraries cannot change a
-receiver's manifest filters. Re-run the device matrix in `.tmp/02-share-intent-mobile.md` after any
-payload change.
+third-party “share” wrapper: device tests showed that ChatGPT may consume only `EXTRA_TEXT`, while
+Gemini and Claude consume the attachment, and sender libraries cannot change a receiver's manifest
+filters or parser. Re-run the device matrix in `.tmp/02-share-intent-mobile.md` after any payload
+change.
+
+Inbound Android sharing accepts one `ACTION_SEND` `application/json` stream through the same local
+plugin. Native code copies at most 5 MiB while the temporary URI grant is live, requires strict
+UTF-8 plus a JSON root object, buffers cold-start payloads and emits warm-intent events. The UI must
+always preview the character and name the destination before writing. Existing folders replace via
+`replaceCharacter(..., "before-import")`; a non-empty folder without `character.json` is rejected,
+and an empty folder is created only after confirmation. Never broaden the manifest filter to `*/*`.
 
 Version titles are optional history metadata stored in `<snapshot>.meta.json`, never inside either
 the canonical `character.json` or the snapshot. All folder providers must keep create/list/delete
 behavior aligned across browser File System Access, desktop Tauri fs, and Android SAF.
+
+## Help Center maintenance
+
+User-facing help lives in the typed EN/IT catalogs under `src/help/content/`; `HelpPage.tsx` is only
+the renderer. Keep the six canonical topic ids/order aligned and update both locales with every
+behavior change. Write for end users: lead with an action and a result; do not expose provider names,
+share-intent mechanics, sync-state jargon or internal data rules outside the clearly marked advanced
+topic. Advanced/troubleshooting material belongs in native collapsed `details`. Help must remain
+reachable with or without an open character, and internal navigation must preserve deep links,
+Back/Escape and focus restoration. Real EN/IT screenshots live in `src/help/assets/`, captured from
+the deterministic Warlock example at a 390×844 viewport and exported as real lossless 780×1688 PNGs
+for 2× displays. Never substitute JPEG bytes with a `.png` extension or upscale a smaller capture;
+`src/help/assets.test.ts` enforces format and dimensions. Refresh both language variants after a
+visible UI change; keep captions/alt text localized and never include personal character data.
 
 ## Cutting a release
 

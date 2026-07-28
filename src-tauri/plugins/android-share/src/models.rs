@@ -15,3 +15,14 @@ pub struct SharePromptRequest {
     pub text: String,
     pub files: Vec<ShareFile>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PendingShare {
+    pub status: String,
+    pub id: Option<String>,
+    pub name: Option<String>,
+    pub mime: Option<String>,
+    pub contents: Option<String>,
+    pub error: Option<String>,
+}
