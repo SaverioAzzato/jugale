@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+
+release_tag=false
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$local_ref" in
+    refs/tags/v*) release_tag=true ;;
+  esac
+done
+
+if [ "$release_tag" = true ]; then
+  echo "Running clean release checks before pushing a version tag..."
+  npm run check:release
+else
+  echo "Running the full project gate before push..."
+  npm run check
+fi

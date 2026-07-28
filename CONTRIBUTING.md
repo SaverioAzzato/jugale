@@ -17,6 +17,8 @@ npm run dev        # Vite dev server
 npm test           # Vitest unit tests
 npm run typecheck  # tsc --noEmit
 npm run build      # typecheck + production web build
+npm run check      # versions + lint + typecheck + tests + web build
+npm run check:release # clean install + full gate + locked Rust check
 ```
 
 Node 20+.

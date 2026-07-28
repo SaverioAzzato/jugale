@@ -4,7 +4,7 @@
 
 | File | Trigger | What it does |
 |---|---|---|
-| `.github/workflows/ci.yml` | every PR + push to `main` | typecheck → unit tests → web build. The required gate before merge. |
+| `.github/workflows/ci.yml` | every PR + push to `main` or `develop` | version alignment → lint → typecheck → unit tests → web build. The required gate before merge or tagging. |
 | `release.yml` *(added in M4)* | stable tag `vX.Y.Z` | builds desktop + a release-signed Android APK into a **draft** Release; skips `-dev` tags. |
 | `android-dev-release.yml` | tag `vX.Y.Z-dev.N` at `develop` HEAD | builds the separately-installable **JUGALE Dev** APK and attaches it to a private draft/prerelease. |
 | `pages.yml` *(added in M4)* | stable tag `vX.Y.Z` | deploys the web build to GitHub Pages; skips `-dev` tags. |
@@ -68,6 +68,29 @@ Desktop builds self-update from GitHub Releases via Tauri's `updater` plugin. `r
 The **public** key lives in `tauri.conf.json` → `plugins.updater.pubkey` (safe to commit). **Back up the private key + password outside GitHub** — losing them means installed apps can no longer verify updates. Two caveats: the endpoint (`.../releases/latest/download/latest.json`) only resolves once a release is **published** (not left as a draft); and auto-update only kicks in from the *next* release onward — a version that predates the updater has no client to check. **Android** can't use this (Tauri's updater is desktop-only), so it does a lightweight in-app GitHub-API version check (`src/update/`) and hands the selected asset metadata to `src-tauri/plugins/android-updater/`. That local Kotlin plugin downloads to private cache, follows GitHub's HTTPS redirects itself, verifies byte count plus the optional SHA-256 digest, then opens Package Installer through `FileProvider`. The browser and Android `DownloadManager` are deliberately not involved. Only release metadata needs `https://api.github.com` in the frontend HTTP capability/CSP; CDN domains are not exposed to the webview.
 
 ## Cutting a release
+
+### Local checks and Git hooks
+
+`npm install` and `npm ci` automatically configure the repository-owned hooks in `.githooks/`
+(without a Husky dependency):
+
+- **pre-commit** runs version alignment, lint and typecheck, providing fast feedback;
+- **pre-push** runs the full `npm run check` gate;
+- when the push contains a `v*` tag, pre-push runs `npm run check:release`: first a clean `npm ci`,
+  then the complete web gate and `cargo check --locked`.
+
+The clean install on release tags is deliberate: it catches undeclared or accidentally local-only
+dependencies that can pass with an old `node_modules` but fail on a fresh GitHub runner. Hooks are a
+local early-warning layer, while CI remains authoritative and now also runs for every push to
+`develop`. Use `--no-verify` only for a diagnosed emergency; never use it when cutting a release.
+
+The same checks can be run explicitly:
+
+```bash
+npm run check:commit   # fast feedback
+npm run check          # full web/CI gate
+npm run check:release  # clean install + web gate + Rust lockfile check
+```
 
 The app version lives in **four files that don't read from each other**, and all must match the release tag:
 

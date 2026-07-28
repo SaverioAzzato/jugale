@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   build-test:
@@ -16,11 +16,5 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Lint
-        run: npm run lint
-      - name: Typecheck
-        run: npm run typecheck
-      - name: Unit tests
-        run: npm test
-      - name: Build (web)
-        run: npm run build
+      - name: Project gate
+        run: npm run check

@@ -17,6 +17,8 @@ Read the spec-first docs before non-trivial work: `docs/ARCHITECTURE.md`, `docs/
 - `npm run typecheck` — `tsc --noEmit`
 - `npm run lint` — ESLint
 - `npm run build` — typecheck + production web build (`vite build`)
+- `npm run check` — the complete web/CI gate (versions + lint + typecheck + tests + build)
+- `npm run check:release` — clean install + complete gate + locked Rust check; mandatory before a release tag
 - `npm run tauri dev` / `npm run tauri build` — desktop development/bundle
 - `npm run tauri android dev` / `npm run tauri android build` — Android development/bundle (requires the Android SDK/NDK)
 
@@ -97,7 +99,7 @@ visible UI change; keep captions/alt text localized and never include personal c
 
 ## Cutting a release
 
-Pushing a stable tag `vX.Y.Z` triggers the web deploy (`pages.yml`) and native builds (`release.yml`, a draft Release); `-dev.N` tags follow the separate procedure below. **The app version lives in four files that must all match the tag — `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock` (or `cargo check --locked` fails CI). Run `scripts/set-version.sh <x.y.z>` to set all four at once** before tagging (don't bump them by hand and forget one). This is the *app* version (`1.x` line), independent of `character.json`'s `schemaVersion` (`2.2.0`). Full checklist: `docs/AUTOMATION.md` → "Cutting a release".
+Pushing a stable tag `vX.Y.Z` triggers the web deploy (`pages.yml`) and native builds (`release.yml`, a draft Release); `-dev.N` tags follow the separate procedure below. **The app version lives in four files that must all match the tag — `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock` (or `cargo check --locked` fails CI). Run `scripts/set-version.sh <x.y.z>` to set all four at once** before tagging (don't bump them by hand and forget one), then run `npm run check:release`. Repository Git hooks install automatically through npm and enforce the same gate before a version tag is pushed. This is the *app* version (`1.x` line), independent of `character.json`'s `schemaVersion` (`2.2.0`). Full checklist: `docs/AUTOMATION.md` → "Cutting a release".
 
 ### Android Dev draft releases
 

@@ -34,6 +34,16 @@ jobs:
           [ "v$version" = "$tag" ] \
             || { echo "::error::tag $tag does not match package version $version"; exit 1; }
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Repository preflight
+        run: npm run check
+
       - uses: actions/setup-java@v4
         with:
           distribution: zulu
@@ -51,13 +61,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - run: npm ci
 
       - name: Initialize Android project
         # Init and build must see the same identifier; otherwise init scaffolds the stable Java

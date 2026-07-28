@@ -16,6 +16,11 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "check:versions": "node scripts/check-versions.mjs",
+    "check:commit": "npm run check:versions && npm run lint && npm run typecheck",
+    "check": "npm run check:versions && npm run lint && npm run typecheck && npm test && npm run build",
+    "check:release": "npm ci && npm run check && cargo check --locked --manifest-path src-tauri/Cargo.toml",
+    "prepare": "node scripts/install-git-hooks.mjs",
     "tauri": "tauri"
   },
   "dependencies": {
