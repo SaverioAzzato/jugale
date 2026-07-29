@@ -438,6 +438,7 @@ export function PromptsPage() {
         </p>
         <p className="prompts-intro prompts-intro-lead"><strong>{t("prompts.introLead")}</strong></p>
         <p className="prompts-intro">{t("prompts.introHow")}</p>
+        <p className="prompts-intro">{t("prompts.introEdit")}</p>
         {isAndroid() && <p className="prompts-intro prompts-share-intro">{t("prompts.shareIntro")}</p>}
 
         <div className="prompts-params">

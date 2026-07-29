@@ -21,6 +21,8 @@ describe("PromptsPage Android sharing", () => {
     render(<PromptsPage />);
 
     expect(screen.getByText(/ready-made prompts with the chatbot you trust/i)).toBeInTheDocument();
+    expect(screen.getByText(/will return either a character\.json file or JSON content/i)).toBeInTheDocument();
+    expect(screen.getByText(/Use Edit if you want to customise/i).tagName).toBe("P");
     expect(screen.getByText("Foundation used by all the other prompts")).toBeInTheDocument();
   });
 
