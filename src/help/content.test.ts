@@ -29,4 +29,16 @@ describe("help catalogs", () => {
       }
     }
   });
+
+  it("explains the complete Android share-back flow in both locales", () => {
+    const enChatbots = JSON.stringify(helpEn.topics.find((topic) => topic.id === "chatbots"));
+    expect(enChatbots).toContain("share that file and choose JUGALE or JUGALE Dev");
+    expect(enChatbots).toContain("If no character is open");
+    expect(enChatbots).toContain("Choose character folder");
+
+    const itChatbots = JSON.stringify(helpIt.topics.find((topic) => topic.id === "chatbots"));
+    expect(itChatbots).toContain("condividi quel file e scegli JUGALE oppure JUGALE Dev");
+    expect(itChatbots).toContain("Se non hai un personaggio aperto");
+    expect(itChatbots).toContain("Scegli cartella personaggio");
+  });
 });

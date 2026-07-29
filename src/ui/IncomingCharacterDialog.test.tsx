@@ -24,6 +24,7 @@ describe("IncomingCharacterDialog", () => {
     expect(screen.getByText("1 warnings", { exact: false })).toBeInTheDocument();
     expect(screen.getByText("Target: Astrid")).toBeInTheDocument();
     expect(screen.getByText(/images are left unchanged/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Choose another character" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Apply to Astrid" }));
     expect(apply).toHaveBeenCalledOnce();
   });
@@ -43,7 +44,7 @@ describe("IncomingCharacterDialog", () => {
       />,
     );
     expect(screen.queryByRole("button", { name: /Apply to/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Choose another character" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Choose character folder" })).toBeInTheDocument();
   });
 
   it("renders the confirmation flow in Italian", () => {

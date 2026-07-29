@@ -115,6 +115,10 @@ describe("EmptyState recents", () => {
       />,
     );
 
+    const guidance = document.querySelector(".empty-onboarding")!;
+    expect(guidance.children).toHaveLength(3);
+    expect(guidance.children[0].tagName).toBe("STRONG");
+
     fireEvent.click(screen.getByRole("button", { name: "empty.createCharacterAction" }));
     fireEvent.click(screen.getByRole("button", { name: "empty.discoverJugaleAction" }));
 

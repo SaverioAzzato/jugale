@@ -51,7 +51,7 @@ export function IncomingCharacterDialog({
           </button>
         )}
         <button type="button" className="btn" disabled={busy} onClick={onChooseTarget}>
-          {t("incoming.chooseOther")}
+          {t(targetName ? "incoming.chooseOther" : "incoming.chooseTarget")}
         </button>
         <button type="button" className="btn" disabled={busy} onClick={onCancel}>
           {t("prompts.cancel")}

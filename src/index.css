@@ -1923,13 +1923,20 @@ button {
   color: var(--accent);
 }
 .empty-onboarding {
-  margin: 18px 0 0;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  margin: 34px 0 0;
   color: var(--muted);
   font-size: 13px;
-  line-height: 1.8;
+  line-height: 1.55;
 }
 .empty-onboarding strong {
   color: var(--text);
+  margin-bottom: 2px;
+}
+.empty-onboarding p {
+  margin: 0;
 }
 .empty-inline-action {
   display: inline-flex;

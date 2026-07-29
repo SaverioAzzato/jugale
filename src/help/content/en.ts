@@ -157,7 +157,8 @@ export const helpEn: HelpCatalog = assertHelpCatalog({
         {
           title: "On Android",
           flow: ["Open Prompts", "Tap Share", "Choose a chatbot", "Finish the update", "Share character.json back to JUGALE"],
-          steps: ["Check the character name and the destination shown by JUGALE.", "Choose another character folder if needed.", "Confirm only when both are correct."],
+          intro: "When the chatbot has finished, download the complete character.json. In Files or Downloads, share that file and choose JUGALE or JUGALE Dev. JUGALE always shows a preview before changing anything.",
+          steps: ["If a character is already open, JUGALE proposes its folder as the destination. Check both names before continuing.", "If no character is open, tap Choose character folder and select the folder you want to update.", "Use Choose another character when the proposed destination is not the right one.", "Confirm only when the received character and destination are correct. The folder's existing images remain in place."],
           details: [{ title: "The chatbot returned JSON as a message, not a file", paragraphs: ["Copy the complete JSON into a plain-text file named character.json, then share that file to JUGALE."] }],
         },
         {

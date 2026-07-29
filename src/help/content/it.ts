@@ -157,7 +157,8 @@ export const helpIt: HelpCatalog = assertHelpCatalog({
         {
           title: "Su Android",
           flow: ["Apri Prompt", "Premi Condividi", "Scegli un chatbot", "Completa l'aggiornamento", "Condividi character.json verso JUGALE"],
-          steps: ["Controlla il nome del personaggio e la destinazione mostrati da JUGALE.", "Se serve, scegli un'altra cartella personaggio.", "Conferma soltanto quando entrambi sono corretti."],
+          intro: "Quando il chatbot ha terminato, scarica il character.json completo. Da File o Download, condividi quel file e scegli JUGALE oppure JUGALE Dev. JUGALE mostra sempre un'anteprima prima di modificare qualcosa.",
+          steps: ["Se hai già un personaggio aperto, JUGALE propone la sua cartella come destinazione. Controlla entrambi i nomi prima di continuare.", "Se non hai un personaggio aperto, premi Scegli cartella personaggio e seleziona la cartella da aggiornare.", "Usa Scegli un altro personaggio quando la destinazione proposta non è quella corretta.", "Conferma soltanto quando personaggio ricevuto e destinazione sono corretti. Le immagini già presenti nella cartella restano al loro posto."],
           details: [{ title: "Il chatbot ha risposto con il JSON nel messaggio, non con un file", paragraphs: ["Copia tutto il JSON in un file di testo chiamato character.json, poi condividi quel file verso JUGALE."] }],
         },
         {

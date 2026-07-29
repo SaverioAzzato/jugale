@@ -100,13 +100,19 @@ export function EmptyState({
             {t("app.open")}
           </button>
         </div>
-        <p className="empty-onboarding">
-          <strong>{t("empty.newHere")}</strong>{" "}{t("empty.use")}{" "}
-          <span className="empty-inline-action"><PromptsButton onClick={onPrompts} label={t("empty.createCharacterAction")} /></span>{" "}
-          {t("empty.createCharacter")}{" "}
-          <span className="empty-inline-action"><HelpButton onClick={onHelp} label={t("empty.discoverJugaleAction")} /></span>{" "}
-          {t("empty.discoverJugale")}
-        </p>
+        <div className="empty-onboarding">
+          <strong>{t("empty.newHere")}</strong>
+          <p>
+            {t("empty.use")}{" "}
+            <span className="empty-inline-action"><PromptsButton onClick={onPrompts} label={t("empty.createCharacterAction")} /></span>{" "}
+            {t("empty.createCharacter")}
+          </p>
+          <p>
+            {t("empty.use")}{" "}
+            <span className="empty-inline-action"><HelpButton onClick={onHelp} label={t("empty.discoverJugaleAction")} /></span>{" "}
+            {t("empty.discoverJugale")}
+          </p>
+        </div>
       </div>
       {recents.length > 0 && (
         <div className="empty-recents">
