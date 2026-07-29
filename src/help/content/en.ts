@@ -14,13 +14,13 @@ export const helpEn: HelpCatalog = assertHelpCatalog({
     {
       id: "start",
       title: "Start with JUGALE",
-      summary: "Create or open your character, then get to the table.",
+      summary: "Create, edit and validate your characters with your favourite chatbot, then open and play them with JUGALE.",
       sections: [
         {
           title: "What you need",
           intro: "To create your character in JUGALE, prepare a folder and open it from the home screen with Open folder. The folder always stays yours and contains:",
           files: [
-            { name: "character.json", description: "Your character sheet. You can create it with your chatbot using the prompts in {book}." },
+            { name: "character.json", description: "Your character sheet. You can create it with your favourite chatbot using the prompts in {book}." },
             { name: "images/", description: "The images you want to see on the sheet, displayed in alphabetical order." },
             { name: "history/", description: "Chronological versions of your character. It is optional: JUGALE creates it automatically when you save your first version." },
           ],

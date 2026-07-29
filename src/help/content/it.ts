@@ -14,13 +14,13 @@ export const helpIt: HelpCatalog = assertHelpCatalog({
     {
       id: "start",
       title: "Inizia con JUGALE",
-      summary: "Crea o apri il tuo personaggio, poi siediti al tavolo.",
+      summary: "Crea, modifica e valida i tuoi personaggi con il tuo chatbot preferito, poi aprili e giocaci con JUGALE.",
       sections: [
         {
           title: "Cosa ti serve",
           intro: "Per creare il tuo personaggio in JUGALE, prepara una cartella e poi aprila dalla schermata iniziale con Apri cartella. La cartella resta sempre tua e contiene:",
           files: [
-            { name: "character.json", description: "La scheda del personaggio. Puoi crearla con il tuo chatbot usando i prompt che trovi in {book}." },
+            { name: "character.json", description: "La scheda del personaggio. Puoi crearla con il tuo chatbot preferito usando i prompt che trovi in {book}." },
             { name: "images/", description: "Le immagini che vuoi vedere nella scheda, mostrate in ordine alfabetico." },
             { name: "history/", description: "Le versioni cronologiche del personaggio. È opzionale: JUGALE la crea automaticamente al primo salvataggio di una versione." },
           ],
