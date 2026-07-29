@@ -18,12 +18,13 @@ export const helpEn: HelpCatalog = assertHelpCatalog({
       sections: [
         {
           title: "What you need",
-          intro: "A JUGALE character is a folder that stays yours: keep it, copy it and open it on any supported device. Inside your character folder you will find:",
+          intro: "To create your character in JUGALE, prepare a folder and open it from the home screen with Open folder. The folder always stays yours and contains:",
           files: [
-            { name: "character.json", description: "Your character sheet and play data." },
-            { name: "images/", description: "Optional portrait and gallery." },
-            { name: "history/", description: "Optional saved versions, created when you save a version." },
+            { name: "character.json", description: "Your character sheet. You can create it with your chatbot using the prompts in {book}." },
+            { name: "images/", description: "The images you want to see on the sheet, displayed in alphabetical order." },
+            { name: "history/", description: "Chronological versions of your character. It is optional: JUGALE creates it automatically when you save your first version." },
           ],
+          note: "You can also open character.json on its own: the sheet still works, but without images or version history.",
           links: [
             { topicId: "files", label: "See how a character folder works" },
             { topicId: "json", label: "See what character.json contains" },

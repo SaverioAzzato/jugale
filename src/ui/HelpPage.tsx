@@ -140,9 +140,10 @@ export function HelpPage() {
           )}
           {section.files && (
             <div className="help-file-tree">
-              {section.files.map((file) => <div key={file.name}><code>{file.name}</code><span>{file.description}</span></div>)}
+              {section.files.map((file) => <div key={file.name}><code>{file.name}</code><span><HelpText text={file.description} /></span></div>)}
             </div>
           )}
+          {section.note && <p className="help-note"><HelpText text={section.note} /></p>}
           {section.links && (
             <nav className="help-section-links" aria-label={t("help.relatedTopics")}>
               {section.links.map((link) => (

@@ -32,6 +32,7 @@ export interface HelpFileItem {
 export interface HelpSection {
   title: string;
   intro?: string;
+  note?: string;
   steps?: string[];
   bullets?: string[];
   details?: HelpDetail[];

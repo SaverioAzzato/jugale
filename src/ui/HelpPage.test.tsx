@@ -33,6 +33,11 @@ describe("HelpPage", () => {
   it("uses Start as a quick start with direct links to the next task", () => {
     render(<HelpPage />);
     fireEvent.click(screen.getByRole("button", { name: /Start with JUGALE/ }));
+    expect(screen.getByText("character.json", { selector: "code" })).toBeInTheDocument();
+    expect(screen.getByText("images/", { selector: "code" })).toBeInTheDocument();
+    expect(screen.getByText("history/", { selector: "code" })).toBeInTheDocument();
+    expect(document.querySelector(".help-file-tree [data-help-icon=\"book\"]")).toBeInTheDocument();
+    expect(screen.getByText(/without images or version history/)).toBeInTheDocument();
     expect(screen.getByRole("img", { name: /welcome screen/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("link", { name: /See how the sheet works/ }));
     expect(screen.getByRole("heading", { level: 1, name: "Use the character sheet" })).toBeInTheDocument();

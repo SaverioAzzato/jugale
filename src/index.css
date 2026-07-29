@@ -686,6 +686,10 @@ a {
   color: var(--muted);
   font-size: 13px;
 }
+.help-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+}
 .help-section-links {
   display: flex;
   flex-wrap: wrap;

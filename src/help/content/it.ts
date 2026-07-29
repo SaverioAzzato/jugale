@@ -18,12 +18,13 @@ export const helpIt: HelpCatalog = assertHelpCatalog({
       sections: [
         {
           title: "Cosa ti serve",
-          intro: "Un personaggio JUGALE è una cartella che resta tua: puoi conservarla, copiarla e aprirla su qualsiasi dispositivo supportato. Nella cartella del personaggio trovi:",
+          intro: "Per creare il tuo personaggio in JUGALE, prepara una cartella e poi aprila dalla schermata iniziale con Apri cartella. La cartella resta sempre tua e contiene:",
           files: [
-            { name: "character.json", description: "La scheda e i dati con cui giochi." },
-            { name: "images/", description: "Ritratto e galleria opzionali." },
-            { name: "history/", description: "Versioni salvate opzionali, create quando salvi una versione." },
+            { name: "character.json", description: "La scheda del personaggio. Puoi crearla con il tuo chatbot usando i prompt che trovi in {book}." },
+            { name: "images/", description: "Le immagini che vuoi vedere nella scheda, mostrate in ordine alfabetico." },
+            { name: "history/", description: "Le versioni cronologiche del personaggio. È opzionale: JUGALE la crea automaticamente al primo salvataggio di una versione." },
           ],
+          note: "Puoi anche aprire soltanto character.json: la scheda funziona, ma senza immagini e senza lo storico delle versioni.",
           links: [
             { topicId: "files", label: "Scopri com'è fatta la cartella" },
             { topicId: "json", label: "Scopri cosa contiene character.json" },
