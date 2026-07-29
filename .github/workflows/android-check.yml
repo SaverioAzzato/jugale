@@ -68,6 +68,9 @@ jobs:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ env.NDK_VERSION }}
 
       - name: Build debug APK
-        run: npx tauri android build --apk --debug --ci
+        # The app's debug-only application ID suffix changes `${applicationId}` but not the
+        # generated MainActivity namespace. Disable it in this production-wiring check so the
+        # merged share manifest matches the stable/Dev release builds this workflow protects.
+        run: npx tauri android build --apk --debug --ci --config '{"bundle":{"android":{"debugApplicationIdSuffix":null}}}'
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ env.NDK_VERSION }}
