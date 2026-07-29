@@ -89,11 +89,14 @@ Versioning defaults to active for new installations
 but remains effective only for writable folders. Android outbound prompt sharing is now implemented
 through a scoped local Tauri plugin and the generic sharesheet, with EN/IT UI, attachment rules,
 frontend tests and debug-APK CI coverage. After the first device test exposed poor compatibility of
-multiple JSON/mixed-MIME shares, outbound payloads now use one `text/plain` prompt bundle plus
-`EXTRA_TEXT`, based on Android's documented receiver contract. Real-device testing then showed
-Gemini and Claude consuming the bundle attachment but ChatGPT consuming only the text channel, so
-the complete bundle is duplicated in both. A final ChatGPT retest of that fallback remains before
-compatibility is claimed. The inbound Android JSON flow is now implemented: restricted manifest
+multiple JSON/mixed-MIME shares, a single `text/plain` bundle plus `EXTRA_TEXT` made Gemini and
+Claude work but left ChatGPT treating the large character as message text rather than a reliable
+file. The chooser now supplies alternate single-file intents: a structured
+`jugale-request.json` primary for receivers such as ChatGPT and the existing `prompt.txt` fallback
+for text-only receivers. A disposable real-device canary harness completed the alternate-intent
+matrix on 2026-07-29: ChatGPT consumed the JSON variant, while Gemini and Claude consumed the text
+variant; each read the file-only marker and returned an edited character. The inbound Android JSON
+flow is now implemented: restricted manifest
 filter, cold/warm native buffering, validation and deduplication, preview, named current/other/empty
 folder targets, and versioned `before-import` replacement. Its merged manifest and real-device
 cold/warm/error paths remain for the next Dev APK. The Help Center has now been rebuilt from typed

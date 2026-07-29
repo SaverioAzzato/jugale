@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { loadCharacter } from "../schema";
+import { SCHEMA_CHANGELOG } from "../schema/changelog";
 
 const { invoke, android } = vi.hoisted(() => ({ invoke: vi.fn(), android: { value: true } }));
 
@@ -16,32 +17,47 @@ beforeEach(() => {
 });
 
 describe("buildPromptSharePayload", () => {
-  it("bundles the prompt, schema and open character into one text/plain share", () => {
+  it("builds a JSON primary and text fallback with the same prompt context", () => {
     const payload = buildPromptSharePayload("level-up", "Level up", "prompt", character);
-    expect(payload?.files).toHaveLength(1);
-    expect(payload?.files[0]).toMatchObject({ name: "prompt.txt", mime: "text/plain" });
-    expect(payload?.files[0].contents).toContain("===== PROMPT =====\nprompt");
-    expect(payload?.files[0].contents).toContain("===== character.schema.json =====");
-    expect(payload?.files[0].contents).toContain('"name": "Astrid"');
-    expect(payload?.text).toBe(payload?.files[0].contents);
+    expect(payload?.variants).toHaveLength(2);
+    expect(payload?.variants[0].file).toMatchObject({
+      name: "jugale-request.json",
+      mime: "application/json",
+    });
+    const request = JSON.parse(payload?.variants[0].file.contents ?? "{}");
+    expect(request).toMatchObject({
+      jugaleRequestVersion: 1,
+      instructions: "prompt",
+      attachments: { "character.json": { meta: { name: "Astrid" } } },
+    });
+    expect(request.attachments["character.schema.json"]).toBeTypeOf("object");
+    expect(payload?.variants[0].text).toBe("prompt");
+    expect(payload?.variants[1].file).toMatchObject({ name: "prompt.txt", mime: "text/plain" });
+    expect(payload?.variants[1].file.contents).toContain("===== PROMPT =====\nprompt");
+    expect(payload?.variants[1].file.contents).toContain("===== character.schema.json =====");
+    expect(payload?.variants[1].file.contents).toContain('"name": "Astrid"');
+    expect(payload?.variants[1].text).toBe(payload?.variants[1].file.contents);
   });
 
   it("never attaches an open character to the create prompt", () => {
-    const contents = buildPromptSharePayload("create", "Create", "prompt", character)?.files[0].contents;
-    expect(contents).toContain("character.schema.json");
-    expect(contents).not.toContain("===== character.json =====");
+    const payload = buildPromptSharePayload("create", "Create", "prompt", character);
+    const request = JSON.parse(payload?.variants[0].file.contents ?? "{}");
+    expect(request.attachments["character.schema.json"]).toBeTypeOf("object");
+    expect(request.attachments).not.toHaveProperty("character.json");
+    expect(payload?.variants[1].file.contents).not.toContain("===== character.json =====");
   });
 
   it("requires a character for update prompts and adds the changelog to migrate", () => {
     expect(buildPromptSharePayload("validate", "Validate", "prompt", null)).toBeNull();
-    expect(buildPromptSharePayload("migrate", "Migrate", "prompt", character)?.files[0].contents).toContain(
-      "===== schema-changelog.md =====",
-    );
+    const payload = buildPromptSharePayload("migrate", "Migrate", "prompt", character);
+    const request = JSON.parse(payload?.variants[0].file.contents ?? "{}");
+    expect(request.attachments["schema-changelog.md"]).toBe(SCHEMA_CHANGELOG);
+    expect(payload?.variants[1].file.contents).toContain("===== schema-changelog.md =====");
   });
 });
 
 describe("sharePromptAndroid", () => {
-  const payload = { title: "Share", text: "prompt", files: [] };
+  const payload = { title: "Share", variants: [] };
 
   it("invokes only the scoped native command", async () => {
     await sharePromptAndroid(payload);

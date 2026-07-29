@@ -63,14 +63,16 @@ Tests are first-class — the schema/model layer is exhaustively unit-tested. CI
 
 ## Android prompt-share compatibility
 
-Keep outbound chatbot sharing on Android's generic Sharesheet. The tested compatibility contract is
-one `ACTION_SEND` `text/plain` payload: the same delimited prompt/schema/character/changelog bundle
-is sent in both `EXTRA_TEXT` and the scoped cache attachment `prompt.txt`. Do not
-reintroduce multiple JSON/mixed-MIME streams, package-name targeting, guessed deep links, or a
-third-party “share” wrapper: device tests showed that ChatGPT may consume only `EXTRA_TEXT`, while
-Gemini and Claude consume the attachment, and sender libraries cannot change a receiver's manifest
-filters or parser. Re-run the device matrix in `.tmp/02-share-intent-mobile.md` after any payload
-change.
+Keep outbound chatbot sharing on Android's generic Sharesheet. The current compatibility contract
+uses two alternate single-file `ACTION_SEND` intents in one chooser: primary
+`application/json` (`jugale-request.json`, with instructions and named context entries) and
+alternate `text/plain` (the same delimited prompt/schema/character/changelog bundle in both
+`EXTRA_TEXT` and `prompt.txt`). Do not use `ACTION_SEND_MULTIPLE`, package-name targeting, guessed
+deep links, `*/*`, or a third-party “share” wrapper: device tests showed that ChatGPT accepts JSON
+streams but ignores the text attachment, while Gemini and Claude consume the text attachment.
+Sender libraries cannot change a receiver's manifest filters or parser. The alternate-intent shape
+was verified on a real device with a disposable canary harness on 2026-07-29; re-run the matrix in
+`.tmp/02-share-intent-mobile.md` after any payload change or major receiver-app update.
 
 Inbound Android sharing accepts one `ACTION_SEND` `application/json` stream through the same local
 plugin. Native code copies at most 5 MiB while the temporary URI grant is live, requires strict

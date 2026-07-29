@@ -14,15 +14,16 @@ Most prompts layer, but one stands alone:
 
 Because every *build/play* task prompt includes the base, the licensing disclaimer and the data contract **travel with every copied prompt** — there's no separate block you have to remember to paste. In the in-app Prompts page the two workflows are split into a **Create, modify & verify** section (base + create/level-up/validate) and a separate **Migrate an old character** section (the standalone migrate prompt + its changelog download).
 
-On Android, each applicable prompt also has **Share** beside Copy. It opens the system sharesheet—
-JUGALE does not target or require a particular chatbot—and sends one `text/plain` bundle named
-`prompt.txt`. Its delimited sections contain the compiled prompt, `character.schema.json`, the open
-`character.json` when applicable, and `schema-changelog.md` for Migrate. The prompt is also placed in
-Android's `EXTRA_TEXT` together with the same schema, character and changelog sections. This
-duplicated single-file `ACTION_SEND` shape is intentional: device tests found ChatGPT consuming only
-the text channel, while Gemini and Claude consumed the attachment. The Share control and its
-explanatory sentence are Android-only; web and desktop retain Copy and downloads. The tap itself
-opens the chooser without an extra confirmation.
+On Android, each applicable prompt also has **Share** beside Copy. It opens one system sharesheet—
+JUGALE does not target or require a particular chatbot—with two single-file `ACTION_SEND` variants.
+The primary `application/json` attachment, `jugale-request.json`, contains the compiled instructions
+and named schema/character/changelog entries. The alternate `text/plain` attachment, `prompt.txt`,
+contains the same material in delimited sections and duplicates that complete bundle in
+`EXTRA_TEXT`. Android chooses the first variant supported by the selected receiver. The dual format
+is intentional: device tests found ChatGPT accepting JSON streams but ignoring a text stream, while
+Gemini and Claude accepted the text attachment. The Share control and its explanatory sentence are
+Android-only; web and desktop retain Copy and downloads. The tap itself opens the chooser without
+an extra confirmation.
 
 ## Parameters (filled in the app, printed into the prompt)
 

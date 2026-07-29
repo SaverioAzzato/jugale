@@ -2,7 +2,10 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { invoke } = vi.hoisted(() => ({
-  invoke: vi.fn(async (_command: string, _args: { payload: { files: Array<{ name: string; contents: string }> } }) => undefined),
+  invoke: vi.fn(async (
+    _command: string,
+    _args: { payload: { variants: Array<{ file: { name: string; contents: string } }> } },
+  ) => undefined),
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke }));
@@ -40,7 +43,7 @@ describe("PromptsPage Android sharing", () => {
     expect(shareButtons[5]).toBeDisabled(); // Migrate
   });
 
-  it("shares level-up immediately as one compatible text bundle", async () => {
+  it("shares level-up immediately with JSON primary and text fallback", async () => {
     useCharacter.getState().loadRaw({ meta: { name: "Astrid" } });
     render(<PromptsPage />);
 
@@ -50,8 +53,11 @@ describe("PromptsPage Android sharing", () => {
 
     await waitFor(() => expect(invoke).toHaveBeenCalledOnce());
     const [, args] = invoke.mock.calls[0];
-    expect(args.payload.files.map((file: { name: string }) => file.name)).toEqual(["prompt.txt"]);
-    expect(args.payload.files[0].contents).toContain("character.schema.json");
-    expect(args.payload.files[0].contents).toContain('"name": "Astrid"');
+    expect(args.payload.variants.map(({ file }: { file: { name: string } }) => file.name)).toEqual([
+      "jugale-request.json",
+      "prompt.txt",
+    ]);
+    expect(args.payload.variants[0].file.contents).toContain('"character.json"');
+    expect(args.payload.variants[0].file.contents).toContain('"name": "Astrid"');
   });
 });

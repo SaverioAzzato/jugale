@@ -78,18 +78,22 @@ load file ─▶ migrate(schemaVersion) ─▶ validate (Zod) ─▶ store.chara
 
 Both implement the same interface; the rest of the app never knows which host it's on. This generalizes the prototype's Electron-vs-browser split (its loader checked `window.electronAPI` to pick a path).
 
-**Android prompt sharing (outbound implemented; device matrix pending):** the Prompts page exposes
+**Android prompt sharing (outbound implemented; transport matrix verified):** the Prompts page exposes
 Share only on Android and always opens the generic system chooser—there are no chatbot package
-names, provider SDKs, accounts or API keys in JUGALE. The frontend sends the compiled prompt as
-part of one clearly delimited bundle containing the prompt, JSON Schema, current character when
-required, and migration changelog when applicable. The same bundle is sent in `EXTRA_TEXT` and in
-one `text/plain` cache file, `prompt.txt`, because receivers may consume only one of the two channels.
-Create never leaks an already-open character. The single-file `ACTION_SEND` contract is deliberate:
-the first device test showed ChatGPT accepting multiple streams but dropping `EXTRA_TEXT`, while
-Gemini and Claude were not offered for `ACTION_SEND_MULTIPLE`/JSON or mixed MIME payloads; the next
-test showed ChatGPT consuming only `EXTRA_TEXT`, while Gemini and Claude accepted `prompt.txt`.
-Android's documented common denominator is `ACTION_SEND` + `text/plain`; no third-party sender
-library can make a receiver declare an intent filter or parser behavior it does not support.
+names, provider SDKs, accounts or API keys in JUGALE. The frontend builds the same prompt, JSON
+Schema, current character when required, and migration changelog when applicable in two single-file
+`ACTION_SEND` variants. The primary `jugale-request.json` is a structured `application/json`
+envelope; the alternate `prompt.txt` is a delimited `text/plain` bundle duplicated in `EXTRA_TEXT`.
+The chooser receives the text form through `EXTRA_ALTERNATE_INTENTS`, so Android uses the preferred
+JSON form for a receiver that accepts both and retains receivers that only accept text. Create never
+leaks an already-open character. This contract follows real-device results: ChatGPT accepted JSON
+streams but ignored `prompt.txt`; Gemini and Claude accepted `prompt.txt`, while the original
+multiple/mixed share hid them. A 2026-07-29 real-device canary test of the final alternate-intent
+shape confirmed that ChatGPT read only the JSON-stream marker, while Gemini and Claude read only the
+text-stream marker. All three could return an updated character; the deliberately oversized stress
+fixture also exposed receiver/model output behavior (Gemini truncated a 420-item response and Claude
+requested confirmation) that is separate from Android transport compatibility. No third-party
+sender library can make a receiver declare an intent filter or parser behavior it does not support.
 The local `android-share` Tauri plugin accepts only a small filename/MIME allowlist, enforces per-file
 and aggregate UTF-8 size limits, cleans `cache/shares`, and exposes only that cache through a
 non-exported `FileProvider` with temporary read grants. It never exposes the source character folder.

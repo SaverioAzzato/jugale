@@ -10,10 +10,16 @@ pub struct ShareFile {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ShareVariant {
+    pub text: String,
+    pub file: ShareFile,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SharePromptRequest {
     pub title: String,
-    pub text: String,
-    pub files: Vec<ShareFile>,
+    pub variants: Vec<ShareVariant>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

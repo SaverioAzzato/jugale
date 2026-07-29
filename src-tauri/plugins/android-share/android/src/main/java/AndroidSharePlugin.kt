@@ -32,10 +32,15 @@ class ShareFileArg {
 }
 
 @InvokeArg
+class ShareVariantArg {
+    lateinit var text: String
+    lateinit var file: ShareFileArg
+}
+
+@InvokeArg
 class SharePromptArgs {
     lateinit var title: String
-    lateinit var text: String
-    var files: Array<ShareFileArg> = emptyArray()
+    var variants: Array<ShareVariantArg> = emptyArray()
 }
 
 // A distinct provider class prevents manifest merging with the updater FileProvider.
@@ -70,10 +75,10 @@ class AndroidSharePlugin(private val activity: Activity) : Plugin(activity) {
         }
 
         try {
-            val uris = prepareFiles(args)
+            val variants = prepareVariants(args)
             activity.runOnUiThread {
                 try {
-                    openChooser(args, uris)
+                    openChooser(args, variants)
                     invoke.resolve()
                 } catch (error: Exception) {
                     invoke.reject(error.message ?: "Could not open Android sharing")
@@ -183,14 +188,17 @@ class AndroidSharePlugin(private val activity: Activity) : Plugin(activity) {
         }
     }
 
-    private fun prepareFiles(args: SharePromptArgs): ArrayList<Uri> {
+    private data class PreparedVariant(val args: ShareVariantArg, val uri: Uri)
+
+    private fun prepareVariants(args: SharePromptArgs): List<PreparedVariant> {
         require(args.title.isNotBlank() && args.title.length <= MAX_TITLE_CHARS) { "Invalid share title" }
-        require(args.text.toByteArray(StandardCharsets.UTF_8).size <= MAX_TEXT_BYTES) { "Prompt is too large" }
-        require(args.files.isNotEmpty() && args.files.size <= MAX_FILES) { "Invalid attachment count" }
+        require(args.variants.isNotEmpty() && args.variants.size <= MAX_VARIANTS) { "Invalid share variant count" }
 
         val names = mutableSetOf<String>()
         var totalBytes = 0
-        args.files.forEach { file ->
+        args.variants.forEach { variant ->
+            require(variant.text.toByteArray(StandardCharsets.UTF_8).size <= MAX_TEXT_BYTES) { "Prompt is too large" }
+            val file = variant.file
             val expectedMime = ALLOWED_FILES[file.name] ?: error("Attachment filename is not allowed")
             require(file.mime == expectedMime) { "Attachment MIME does not match its filename" }
             require(names.add(file.name)) { "Duplicate attachment filename" }
@@ -208,31 +216,38 @@ class AndroidSharePlugin(private val activity: Activity) : Plugin(activity) {
         val requestDir = File(shareRoot, UUID.randomUUID().toString())
         check(requestDir.mkdir()) { "Could not create share request cache" }
 
-        return ArrayList(args.files.map { attachment ->
+        return args.variants.map { variant ->
+            val attachment = variant.file
             val target = File(requestDir, attachment.name)
             target.writeText(attachment.contents, StandardCharsets.UTF_8)
-            FileProvider.getUriForFile(
-                activity,
-                "${activity.packageName}.android-share.fileprovider",
-                target,
+            PreparedVariant(
+                variant,
+                FileProvider.getUriForFile(
+                    activity,
+                    "${activity.packageName}.android-share.fileprovider",
+                    target,
+                ),
             )
-        })
+        }
     }
 
-    private fun openChooser(args: SharePromptArgs, uris: ArrayList<Uri>) {
-        val homogeneousMime = args.files.map { it.mime }.distinct().singleOrNull()
-        val intent = Intent(if (uris.size == 1) Intent.ACTION_SEND else Intent.ACTION_SEND_MULTIPLE).apply {
-            type = homogeneousMime ?: "*/*"
-            putExtra(Intent.EXTRA_TEXT, args.text)
-            putExtra(Intent.EXTRA_TITLE, args.title)
-            if (uris.size == 1) putExtra(Intent.EXTRA_STREAM, uris[0])
-            else putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
-            clipData = ClipData.newUri(activity.contentResolver, args.files[0].name, uris[0]).also { clip ->
-                uris.drop(1).forEach { clip.addItem(ClipData.Item(it)) }
-            }
+    private fun sendIntent(title: String, variant: PreparedVariant) =
+        Intent(Intent.ACTION_SEND).apply {
+            type = variant.args.file.mime
+            putExtra(Intent.EXTRA_TEXT, variant.args.text)
+            putExtra(Intent.EXTRA_TITLE, title)
+            putExtra(Intent.EXTRA_STREAM, variant.uri)
+            clipData = ClipData.newUri(activity.contentResolver, variant.args.file.name, variant.uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
-        activity.startActivity(Intent.createChooser(intent, args.title))
+
+    private fun openChooser(args: SharePromptArgs, variants: List<PreparedVariant>) {
+        val intents = variants.map { sendIntent(args.title, it) }
+        val chooser = Intent.createChooser(intents.first(), args.title)
+        if (intents.size > 1) {
+            chooser.putExtra(Intent.EXTRA_ALTERNATE_INTENTS, intents.drop(1).toTypedArray())
+        }
+        activity.startActivity(chooser)
     }
 
     private companion object {
@@ -241,8 +256,9 @@ class AndroidSharePlugin(private val activity: Activity) : Plugin(activity) {
             "character.json" to "application/json",
             "schema-changelog.md" to "text/markdown",
             "prompt.txt" to "text/plain",
+            "jugale-request.json" to "application/json",
         )
-        const val MAX_FILES = 4
+        const val MAX_VARIANTS = 4
         const val MAX_TITLE_CHARS = 120
         const val MAX_TEXT_BYTES = 1 * 1024 * 1024
         const val MAX_FILE_BYTES = 5 * 1024 * 1024

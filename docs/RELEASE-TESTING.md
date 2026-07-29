@@ -80,13 +80,20 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
   reacts, the button underneath does **not** fire.
 - ☐ **Prompt sharing**: on the Prompts page, Base/Create/Custom can open Android's generic
   sharesheet without a character; Level up/Validate/Migrate are disabled and explain why. With a
-  character open, share Level up and verify the chooser opens immediately. The single `prompt.txt`
-  attachment must contain delimited PROMPT, schema and character sections; Create must omit the
-  current character; Migrate must also contain the changelog section. The full bundle must also be
-  present in the receiving app's text/message channel when it ignores the attachment.
+  character open, share Level up and verify the chooser opens immediately. ChatGPT should receive
+  one `jugale-request.json` attachment with instructions plus schema and character entries. A
+  text-only receiver should instead receive `prompt.txt` with delimited PROMPT, schema and character
+  sections plus the same bundle in its text/message channel. Create must omit the current character;
+  Migrate must also contain the changelog entry/section.
 - ☐ Complete the chatbot matrix for the installed ChatGPT/Gemini/Claude versions: target visible,
-  new-chat behavior, whether `EXTRA_TEXT` pre-fills the composer, whether `prompt.txt` is attached
-  and read correctly, and return MIME. Record app versions and failures as receiver compatibility.
+  new-chat behavior, which JSON/text variant is selected, whether the attachment is read correctly,
+  whether a complete `character.json` can be returned, and return MIME. Record app versions and
+  failures as receiver compatibility.
+  Transport preflight completed on 2026-07-29 with a disposable canary APK: ChatGPT selected/read
+  `jugale-request.json`; Gemini and Claude selected/read `prompt.txt`. All three returned an edited
+  character, although the intentionally oversized 420-item stress output was truncated by Gemini
+  and caused Claude to request one explicit confirmation. Repeat here against the actual Dev APK and
+  a normal-size character before promotion.
 - ☐ **Return a character to JUGALE:** share one `application/json` character file from a chatbot or
   file manager. Test once with JUGALE closed and once already open. The preview must show name,
   schema and issue counts before any write; Android Back/Cancel must leave the target unchanged.
