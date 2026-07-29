@@ -9,8 +9,7 @@ import welcomeImage from "../assets/it/welcome.png";
 import { assertHelpCatalog, type HelpCatalog } from "../model";
 
 export const helpIt: HelpCatalog = assertHelpCatalog({
-  heroTitle: "Come possiamo aiutarti?",
-  heroBody: "Scegli cosa vuoi fare. Ogni guida mostra la schermata utile e il percorso più breve per arrivare al risultato.",
+  heroTitle: "Come usare :JUGALE",
   topics: [
     {
       id: "start",

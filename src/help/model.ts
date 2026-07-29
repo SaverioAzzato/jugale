@@ -51,7 +51,6 @@ export interface HelpTopic {
 
 export interface HelpCatalog {
   heroTitle: string;
-  heroBody: string;
   topics: HelpTopic[];
 }
 

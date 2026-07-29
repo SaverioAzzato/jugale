@@ -437,18 +437,16 @@ a {
   margin-top: 0;
 }
 .help-hero {
-  padding: 24px;
-  margin-bottom: 28px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--accent-weak), var(--surface));
+  margin-bottom: 22px;
 }
 .help-hero h1,
 .help-topic-header h1 {
   font-family: var(--font-display);
   color: var(--gold);
 }
-.help-hero p,
+.help-hero h1 {
+  margin-bottom: 0;
+}
 .help-topic-header p {
   max-width: 680px;
   margin-bottom: 0;
@@ -732,7 +730,6 @@ a {
   .help-center {
     padding: 16px 12px 64px;
   }
-  .help-hero,
   .help-article {
     padding: 16px;
   }

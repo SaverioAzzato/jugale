@@ -34,7 +34,7 @@ describe("HelpPage", () => {
     fireEvent.click(sourceCard);
     await waitFor(() => expect(screen.getByRole("heading", { level: 1, name: "Update with a chatbot" })).toHaveFocus());
     act(() => expect(handleTransientBack()).toBe(true));
-    expect(screen.getByRole("heading", { name: "How can we help?" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "How to use :JUGALE" })).toBeInTheDocument();
     await waitFor(() => expect(screen.getAllByRole("button", { name: /Update with a chatbot/ })[0]).toHaveFocus());
   });
 

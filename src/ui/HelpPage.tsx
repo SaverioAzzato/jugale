@@ -97,7 +97,6 @@ export function HelpPage() {
       <main className="help-center help-home" aria-labelledby="help-home-title">
         <header className="help-hero">
           <h1 id="help-home-title">{catalog.heroTitle}</h1>
-          <p>{catalog.heroBody}</p>
         </header>
         <nav className="help-topic-grid" aria-label={t("help.allSections")}>
           {catalog.topics.map((item) => <TopicCard key={item.id} topic={item} onOpen={openTopic} />)}

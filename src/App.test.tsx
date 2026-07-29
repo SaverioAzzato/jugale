@@ -138,7 +138,7 @@ describe("App — empty state + live editing wiring", () => {
   it("opens the Help page with how-to content and returns to the welcome screen on Back", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "How to use :JUGALE" }));
-    expect(screen.getByRole("heading", { name: "How can we help?" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "How to use :JUGALE" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("heading", { name: /Your character, always yours/i })).toBeInTheDocument();
