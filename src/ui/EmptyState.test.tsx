@@ -28,6 +28,8 @@ describe("EmptyState recents", () => {
         onReopenRecent={onReopenRecent}
         onRemoveRecent={onRemoveRecent}
         onClearRecents={vi.fn()}
+        onPrompts={vi.fn()}
+        onHelp={vi.fn()}
         t={t}
       />,
     );
@@ -48,6 +50,8 @@ describe("EmptyState recents", () => {
         onReopenRecent={vi.fn()}
         onRemoveRecent={vi.fn()}
         onClearRecents={vi.fn()}
+        onPrompts={vi.fn()}
+        onHelp={vi.fn()}
         t={t}
       />,
     );
@@ -65,6 +69,8 @@ describe("EmptyState recents", () => {
         onReopenRecent={vi.fn()}
         onRemoveRecent={vi.fn()}
         onClearRecents={vi.fn()}
+        onPrompts={vi.fn()}
+        onHelp={vi.fn()}
         t={t}
       />,
     );
@@ -89,5 +95,30 @@ describe("EmptyState recents", () => {
     fireEvent.scroll(scroller);
     expect(gradients).toHaveClass("can-scroll-up");
     expect(gradients).not.toHaveClass("can-scroll-down");
+  });
+
+  it("opens character creation and Help from the welcome guidance", () => {
+    const onPrompts = vi.fn();
+    const onHelp = vi.fn();
+    render(
+      <EmptyState
+        onOpenJson={vi.fn()}
+        onOpenFolder={vi.fn()}
+        onSample={vi.fn()}
+        recents={[]}
+        onReopenRecent={vi.fn()}
+        onRemoveRecent={vi.fn()}
+        onClearRecents={vi.fn()}
+        onPrompts={onPrompts}
+        onHelp={onHelp}
+        t={t}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "empty.createCharacterAction" }));
+    fireEvent.click(screen.getByRole("button", { name: "empty.discoverJugaleAction" }));
+
+    expect(onPrompts).toHaveBeenCalledOnce();
+    expect(onHelp).toHaveBeenCalledOnce();
   });
 });

@@ -48,7 +48,7 @@ export const helpIt: HelpCatalog = assertHelpCatalog({
           steps: [
             "Resta in Gioco per gestire PF, risorse, riposi, attacchi e incantesimi.",
             "Usa le tab in alto per vedere attributi, inventario e storia.",
-            "Premi la matita quando vuoi cambiare i contenuti della scheda.",
+            "Premi {pencil} quando vuoi cambiare i contenuti della scheda.",
           ],
           links: [
             { topicId: "play", label: "Scopri come funziona la scheda" },
@@ -115,7 +115,7 @@ export const helpIt: HelpCatalog = assertHelpCatalog({
             alt: "Scheda in modalità Modifica con campi editabili e pulsanti Aggiungi",
             caption: "La matita evidenziata indica che la modalità Modifica è attiva.",
           },
-          steps: ["Premi la matita nella barra in alto.", "Apri la sezione che ti serve e cambia i campi.", "Premi di nuovo la matita quando hai finito."],
+          steps: ["Premi {pencil} nella barra in alto.", "Apri la sezione che ti serve e cambia i campi.", "Premi di nuovo {pencil} quando hai finito."],
         },
         {
           title: "Conserva e ripristina le versioni",
@@ -139,11 +139,11 @@ export const helpIt: HelpCatalog = assertHelpCatalog({
       sections: [
         {
           title: "Scegli cosa vuoi fare",
-          intro: "JUGALE non contiene un'IA. Apri Prompt per chatbot dall'icona del libro e segui le istruzioni mostrate nella pagina: prepara tutto ciò che serve per un'app chatbot separata.",
+          intro: "Apri {book} e scegli cosa vuoi fare. JUGALE prepara tutto per il chatbot che usi già.",
           media: {
             src: promptsImage,
             alt: "Pagina Prompt con parametri del personaggio e azioni sui prompt",
-            caption: "Apri l'icona del libro nella barra in alto per raggiungere Prompt.",
+            caption: "Usa {book} nella barra in alto per aprire Prompt.",
           },
           bullets: [
             "Crea avvia un nuovo personaggio.",

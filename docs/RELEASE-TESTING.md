@@ -11,7 +11,7 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
 - ☐ Open Help from the welcome screen and again with a character open (direct `?` or the `…`
   overflow). The home shows one grid of six distinct topics without duplicate sections or
   horizontal overflow.
-- ☐ Open every topic; advanced details start collapsed, breadcrumb and previous/next work, and the
+- ☐ Open every topic; advanced details start collapsed, breadcrumb and task links work, and the
   URL hash is `#help/<topic>`. Back/Escape first returns to the Help home, then closes Help.
 - ☐ Screenshots match the current UI, use the selected language and load offline. On **Use the
   character sheet**, the four-screen gallery scrolls horizontally without moving the whole page.

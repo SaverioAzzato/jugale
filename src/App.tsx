@@ -67,6 +67,7 @@ import {
   type IncomingSharePayload,
 } from "./share/incomingCharacterShare";
 import { IncomingCharacterDialog } from "./ui/IncomingCharacterDialog";
+import { PencilIcon } from "./ui/AppIcons";
 
 type ToolbarActionId = "dice" | "edit" | "version" | "history" | "export" | "raw" | "prompts" | "help" | "settings";
 
@@ -156,12 +157,11 @@ export function App() {
   const tabbarRef = useRef<HTMLElement>(null);
   const transientBackDepth = useUiBackDepth();
 
-  // Settings/Prompts are full-page overlays, not floating popovers — nothing else behind
-  // them is reachable (the toolbar's other buttons and the footer all unmount while one is
-  // open), so a full Tab-trap isn't needed. Just move focus in, let Escape close, and give
-  // it back to whatever opened the overlay once it's gone. The triggering button (Settings/
-  // Prompts) unmounts while the overlay is open and a structurally-new one remounts once it
-  // closes — a saved DOM-node ref would be stale by then, so this re-queries by
+  // Full-page overlays keep only the shared navigation actions in the toolbar, so the sheet
+  // behind them is unreachable and a full Tab-trap isn't needed. Move focus in, let Escape
+  // close, and give it back to the action that opened the overlay once it's gone. The current
+  // overlay's trigger unmounts while open and a structurally-new one remounts once it closes,
+  // so a saved DOM-node ref would be stale; this re-queries by
   // [data-overlay-trigger] for a live node instead of holding onto one.
   useEffect(() => {
     if (!overlay) return;
@@ -576,9 +576,9 @@ export function App() {
             )}
           </div>
           <div className="toolbar-right">
-            {overlay === "json" && character && (
-              <RawJsonButton active onClick={handleUiBack} label={t("code.toggle")} />
-            )}
+            {overlay && overlay !== "prompts" && <PromptsButton onClick={() => setOverlay("prompts")} />}
+            {overlay && overlay !== "help" && <HelpButton onClick={() => setOverlay("help")} />}
+            {overlay && overlay !== "settings" && <SettingsButton onClick={() => setOverlay("settings")} />}
             {!overlay && (
               <>
                 {character && visibleToolbarActions.has("export") && (
@@ -626,11 +626,11 @@ export function App() {
                     <HistoryIcon />
                   </button>
                 )}
-                {!character && <HelpButton onClick={() => setOverlay("help")} />}
-                {character && visibleToolbarActions.has("help") && <HelpButton onClick={() => setOverlay("help")} />}
                 {character && visibleToolbarActions.has("raw") && (
                   <RawJsonButton active={false} onClick={() => setOverlay("json")} label={t("code.toggle")} />
                 )}
+                {!character && <HelpButton onClick={() => setOverlay("help")} />}
+                {character && visibleToolbarActions.has("help") && <HelpButton onClick={() => setOverlay("help")} />}
                 {visibleToolbarActions.has("dice") && <DicePalette />}
                 {visibleToolbarActions.has("prompts") && <PromptsButton onClick={() => setOverlay("prompts")} />}
                 {visibleToolbarActions.has("settings") && <SettingsButton onClick={() => setOverlay("settings")} />}
@@ -716,6 +716,8 @@ export function App() {
           onReopenRecent={handleReopenRecent}
           onRemoveRecent={handleRemoveRecent}
           onClearRecents={handleClearRecents}
+          onPrompts={() => setOverlay("prompts")}
+          onHelp={() => setOverlay("help")}
           t={t}
         />
       )}
@@ -798,26 +800,6 @@ export function App() {
         />
       )}
     </div>
-  );
-}
-
-/** Pencil glyph for the Edit-mode toggle (Lucide "pencil"). */
-function PencilIcon() {
-  return (
-    <svg
-      className="settings-icon"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
-      <path d="m15 5 4 4" />
-    </svg>
   );
 }
 

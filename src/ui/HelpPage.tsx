@@ -4,15 +4,16 @@ import { helpIt } from "../help/content/it";
 import { HELP_TOPIC_IDS, type HelpCatalog, type HelpTopicId } from "../help/model";
 import { useI18n, useT } from "../i18n/useI18n";
 import { useUiBackHandler } from "./uiBack";
+import { BookIcon, PencilIcon } from "./AppIcons";
 
-export function HelpButton({ onClick }: { onClick: () => void }) {
+export function HelpButton({ onClick, label }: { onClick: () => void; label?: string }) {
   const t = useT();
   return (
     <button
       type="button"
       className="btn btn-icon help-button"
-      title={t("help.title")}
-      aria-label={t("help.title")}
+      title={label ?? t("help.title")}
+      aria-label={label ?? t("help.title")}
       data-overlay-trigger="help"
       onClick={onClick}
     >
@@ -51,8 +52,7 @@ export function HelpPage() {
   const [topicId, setTopicId] = useState<HelpTopicId | null>(() => topicFromHash());
   const topicHeadingRef = useRef<HTMLHeadingElement>(null);
   const lastTopicRef = useRef<HelpTopicId | null>(topicId);
-  const topicIndex = topicId ? catalog.topics.findIndex((topic) => topic.id === topicId) : -1;
-  const topic = topicIndex >= 0 ? catalog.topics[topicIndex] : null;
+  const topic = topicId ? catalog.topics.find((item) => item.id === topicId) ?? null : null;
 
   const openTopic = useCallback((id: HelpTopicId) => {
     lastTopicRef.current = id;
@@ -119,16 +119,16 @@ export function HelpPage() {
       {topic.sections.map((section, sectionIndex) => (
         <section className="help-article" key={section.title} aria-labelledby={`help-section-${sectionIndex}`}>
           <h2 id={`help-section-${sectionIndex}`}>{section.title}</h2>
-          {section.intro && <p>{section.intro}</p>}
+          {section.intro && <p><HelpText text={section.intro} /></p>}
           {section.media && <HelpFigure media={section.media} />}
-          {section.steps && <ol className="help-steps">{section.steps.map((step) => <li key={step}>{step}</li>)}</ol>}
-          {section.bullets && <ul>{section.bullets.map((item) => <li key={item}>{item}</li>)}</ul>}
+          {section.steps && <ol className="help-steps">{section.steps.map((step) => <li key={step}><HelpText text={step} /></li>)}</ol>}
+          {section.bullets && <ul>{section.bullets.map((item) => <li key={item}><HelpText text={item} /></li>)}</ul>}
           {section.gallery && (
             <div className="help-tour-grid">
               {section.gallery.map((item) => (
                 <article className="help-tour-card" key={item.title}>
                   <HelpFigure media={item.media} />
-                  <div><h3>{item.title}</h3><p>{item.body}</p></div>
+                  <div><h3>{item.title}</h3><p><HelpText text={item.body} /></p></div>
                 </article>
               ))}
             </div>
@@ -156,19 +156,28 @@ export function HelpPage() {
             <details className="help-details" key={detail.title}>
               <summary id={`help-detail-${sectionIndex}-${detailIndex}`}>{detail.title}</summary>
               <div>
-                {detail.paragraphs?.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-                {detail.bullets && <ul>{detail.bullets.map((item) => <li key={item}>{item}</li>)}</ul>}
+                {detail.paragraphs?.map((paragraph) => <p key={paragraph}><HelpText text={paragraph} /></p>)}
+                {detail.bullets && <ul>{detail.bullets.map((item) => <li key={item}><HelpText text={item} /></li>)}</ul>}
               </div>
             </details>
           ))}
         </section>
       ))}
-      <nav className="help-topic-nav" aria-label={t("help.topicNavigation")}>
-        {topicIndex > 0 ? <button type="button" className="btn" onClick={() => openTopic(catalog.topics[topicIndex - 1].id)}>← {catalog.topics[topicIndex - 1].title}</button> : <span />}
-        {topicIndex < catalog.topics.length - 1 ? <button type="button" className="btn" onClick={() => openTopic(catalog.topics[topicIndex + 1].id)}>{catalog.topics[topicIndex + 1].title} →</button> : <button type="button" className="btn" onClick={openHome}>{t("help.allSections")}</button>}
-      </nav>
     </main>
   );
+}
+
+function HelpText({ text }: { text: string }) {
+  const t = useT();
+  return text.split(/(\{book\}|\{pencil\})/g).map((part, index) => {
+    if (part === "{book}") {
+      return <span className="help-inline-icon" data-help-icon="book" role="img" aria-label={t("prompts.title")} key={`${part}-${index}`}><BookIcon /></span>;
+    }
+    if (part === "{pencil}") {
+      return <span className="help-inline-icon" data-help-icon="pencil" role="img" aria-label={t("edit.toggle")} key={`${part}-${index}`}><PencilIcon /></span>;
+    }
+    return part;
+  });
 }
 
 function HelpFigure({ media }: { media: NonNullable<HelpCatalog["topics"][number]["sections"][number]["media"]> }) {
@@ -177,7 +186,7 @@ function HelpFigure({ media }: { media: NonNullable<HelpCatalog["topics"][number
       <div className="help-figure-frame">
         <img src={media.src} alt={media.alt} loading="lazy" />
       </div>
-      <figcaption>{media.caption}</figcaption>
+      <figcaption><HelpText text={media.caption} /></figcaption>
     </figure>
   );
 }

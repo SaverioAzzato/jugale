@@ -17,6 +17,13 @@ beforeEach(() => {
 });
 
 describe("PromptsPage Android sharing", () => {
+  it("introduces the workflow and identifies Base as the shared foundation", () => {
+    render(<PromptsPage />);
+
+    expect(screen.getByText(/ready-made prompts with the chatbot you trust/i)).toBeInTheDocument();
+    expect(screen.getByText("Foundation used by all the other prompts")).toBeInTheDocument();
+  });
+
   it("shows every share action and disables character-dependent prompts without a character", () => {
     render(<PromptsPage />);
     const shareButtons = screen.getAllByRole("button", { name: "Share" });

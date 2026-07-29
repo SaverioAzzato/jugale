@@ -144,6 +144,29 @@ describe("App — empty state + live editing wiring", () => {
     expect(screen.getByRole("heading", { name: /Your character, always yours/i })).toBeInTheDocument();
   });
 
+  it("keeps shared page shortcuts visible and hides the shortcut for the current page", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.queryByRole("button", { name: "Settings" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "How to use :JUGALE" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "GPT prompts" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "How to use :JUGALE" }));
+    expect(screen.queryByRole("button", { name: "How to use :JUGALE" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "GPT prompts" })).toBeInTheDocument();
+  });
+
+  it("places Raw JSON before Help without changing responsive priority", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
+
+    const raw = screen.getByRole("button", { name: "Raw JSON editor" });
+    const help = screen.getByRole("button", { name: "How to use :JUGALE" });
+    expect(raw.compareDocumentPosition(help) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("turns the sheet into an editor when the pencil toggle is pressed", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Warlock" }));

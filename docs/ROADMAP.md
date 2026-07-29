@@ -99,7 +99,7 @@ folder targets, and versioned `before-import` replacement. Its merged manifest a
 cold/warm/error paths remain for the next Dev APK. The Help Center has now been rebuilt from typed
 EN/IT catalogs and revised after adversarial user-task review: one non-duplicated topic home, six
 plain-language guides, real localized screenshots, a visual Android chatbot round-trip, contextual
-links, native troubleshooting accordions, deep links, previous/next navigation, keyboard focus
+links, native troubleshooting accordions, deep links, keyboard focus
 restoration and access while a character is open. Catalog tests reject the internal sync/share
 jargon that made the first draft unhelpful. The remaining
 polish backlog still includes list reordering (drag + keyboard), broader Android/device coverage,

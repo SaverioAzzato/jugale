@@ -48,7 +48,7 @@ export const helpEn: HelpCatalog = assertHelpCatalog({
           steps: [
             "Stay in Play to manage HP, resources, rests, attacks and spells.",
             "Use the tabs at the top to see attributes, inventory and story.",
-            "Tap the pencil when you want to change the character sheet itself.",
+            "Tap {pencil} when you want to change the character sheet itself.",
           ],
           links: [
             { topicId: "play", label: "See how the sheet works" },
@@ -115,7 +115,7 @@ export const helpEn: HelpCatalog = assertHelpCatalog({
             alt: "Character sheet in Edit mode with editable fields and Add buttons",
             caption: "The highlighted pencil means Edit mode is active.",
           },
-          steps: ["Tap the pencil in the top bar.", "Open the section you need and change its fields.", "Tap the pencil again when you are done."],
+          steps: ["Tap {pencil} in the top bar.", "Open the section you need and change its fields.", "Tap {pencil} again when you are done."],
         },
         {
           title: "Keep and restore versions",
@@ -139,11 +139,11 @@ export const helpEn: HelpCatalog = assertHelpCatalog({
       sections: [
         {
           title: "Choose what you want to do",
-          intro: "JUGALE does not contain an AI. Open GPT prompts from the book icon and follow the instructions on that page: it prepares everything you need for a separate chatbot app.",
+          intro: "Open {book} and choose what you want to do. JUGALE prepares everything for the chatbot you already use.",
           media: {
             src: promptsImage,
             alt: "Prompts page with character parameters and prompt actions",
-            caption: "Open the book icon in the top bar to reach Prompts.",
+            caption: "Use {book} in the top bar to open Prompts.",
           },
           bullets: [
             "Create starts a new character.",

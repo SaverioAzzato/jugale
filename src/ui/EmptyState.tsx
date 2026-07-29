@@ -9,6 +9,8 @@ import fighter from "../../characters/example-fighter/character.json";
 import cleric from "../../characters/example-cleric/character.json";
 import sorcerer from "../../characters/example-sorcerer/character.json";
 import multiclass from "../../characters/example-multiclass/character.json";
+import { HelpButton } from "./HelpPage";
+import { PromptsButton } from "./PromptsPage";
 
 // Sample images bundled at build time so the example portraits/gallery work with no real folder.
 const imageModules = import.meta.glob("../../characters/*/images/*", {
@@ -45,6 +47,8 @@ export function EmptyState({
   onReopenRecent,
   onRemoveRecent,
   onClearRecents,
+  onPrompts,
+  onHelp,
   t,
 }: {
   onOpenJson: () => void;
@@ -54,6 +58,8 @@ export function EmptyState({
   onReopenRecent: (entry: RecentEntry) => void;
   onRemoveRecent: (key: string) => void;
   onClearRecents: () => void;
+  onPrompts: () => void;
+  onHelp: () => void;
   t: TFn;
 }) {
   const recentListRef = useRef<HTMLDivElement>(null);
@@ -94,6 +100,13 @@ export function EmptyState({
             {t("app.open")}
           </button>
         </div>
+        <p className="empty-onboarding">
+          <strong>{t("empty.newHere")}</strong>{" "}{t("empty.use")}{" "}
+          <span className="empty-inline-action"><PromptsButton onClick={onPrompts} label={t("empty.createCharacterAction")} /></span>{" "}
+          {t("empty.createCharacter")}{" "}
+          <span className="empty-inline-action"><HelpButton onClick={onHelp} label={t("empty.discoverJugaleAction")} /></span>{" "}
+          {t("empty.discoverJugale")}
+        </p>
       </div>
       {recents.length > 0 && (
         <div className="empty-recents">

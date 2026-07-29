@@ -18,6 +18,16 @@ describe("HelpPage", () => {
     expect(window.location.hash).toBe("#help/manage");
     expect(screen.getByText("I cannot find Save version").closest("details")).not.toHaveAttribute("open");
     expect(screen.getByRole("img", { name: /Character sheet in Edit mode/ })).toBeInTheDocument();
+    expect(document.querySelectorAll('[data-help-icon="pencil"]')).not.toHaveLength(0);
+    expect(document.querySelector(".help-topic-nav")).not.toBeInTheDocument();
+  });
+
+  it("uses the real book glyph when it points to Prompts", () => {
+    render(<HelpPage />);
+    fireEvent.click(screen.getByRole("button", { name: /Update with a chatbot/ }));
+
+    expect(document.querySelectorAll('[data-help-icon="book"]')).not.toHaveLength(0);
+    expect(screen.queryByText(/book icon/i)).not.toBeInTheDocument();
   });
 
   it("uses Start as a quick start with direct links to the next task", () => {

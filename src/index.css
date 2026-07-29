@@ -111,6 +111,7 @@ a {
   gap: 8px;
   min-height: 28px;
   flex: 0 0 auto;
+  min-width: 0;
 }
 
 /* Lower-priority actions collapse here when the measured toolbar width is exhausted. */
@@ -235,6 +236,9 @@ a {
 .toolbar-title {
   font-weight: 600;
   font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .settings-page {
   max-width: 480px;
@@ -714,11 +718,21 @@ a {
   color: var(--muted);
   font-size: 14px;
 }
-.help-topic-nav {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 22px;
+.help-inline-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5em;
+  height: 1.5em;
+  margin: 0 0.16em;
+  color: var(--accent);
+  vertical-align: -0.32em;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--accent-weak);
+}
+.help-inline-icon svg {
+  width: 1em;
+  height: 1em;
 }
 @media (max-width: 620px) {
   .help-topic-grid {
@@ -750,9 +764,6 @@ a {
     grid-template-columns: 1fr;
     gap: 4px;
   }
-  .help-topic-nav .btn {
-    flex: 1 1 0;
-  }
 }
 .prompts-banner {
   margin: 0 0 14px;
@@ -769,6 +780,11 @@ a {
   font-size: 13px;
   color: var(--muted);
   line-height: 1.5;
+}
+.prompts-intro-lead {
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 14px;
 }
 .prompts-params {
   margin-bottom: 18px;
@@ -861,6 +877,17 @@ a {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--accent);
+}
+.prompt-block-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  min-width: 0;
+}
+.prompt-block-title > span {
+  color: var(--muted);
+  font-size: 12px;
 }
 .prompt-block-tools {
   display: flex;
@@ -1885,6 +1912,29 @@ button {
 .empty-action svg {
   flex: 0 0 auto;
   color: var(--accent);
+}
+.empty-onboarding {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.empty-onboarding strong {
+  color: var(--text);
+}
+.empty-inline-action {
+  display: inline-flex;
+  vertical-align: middle;
+}
+.empty-inline-action .btn-icon {
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 5px;
+}
+.empty-inline-action .settings-icon {
+  width: 18px;
+  height: 18px;
 }
 /* Recents — last-opened characters, between the central card and the samples. */
 .empty-recents {
