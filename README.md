@@ -38,7 +38,7 @@ npm run lint       # ESLint
 npm run build      # production web build
 ```
 
-Requires Node 20+.
+Requires Node 20.19+.
 
 ### Desktop (Tauri)
 

@@ -22,7 +22,7 @@ Read the spec-first docs before non-trivial work: `docs/ARCHITECTURE.md`, `docs/
 - `npm run tauri dev` / `npm run tauri build` — desktop development/bundle
 - `npm run tauri android dev` / `npm run tauri android build` — Android development/bundle (requires the Android SDK/NDK)
 
-Node 20+. Native builds additionally require Rust; Android builds require the Android SDK/NDK. The UI uses the project's own CSS token/theme system, not Tailwind.
+Node 20.19+. Native builds additionally require Rust; Android builds require the Android SDK/NDK. The UI uses the project's own CSS token/theme system, not Tailwind.
 
 ## Architecture
 
