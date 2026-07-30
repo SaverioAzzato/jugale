@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { render, screen, fireEvent, renderHook, act } from "@testing-library/react";
-import { Stepper, useHoldRepeat } from "./controls";
+import { render, screen, fireEvent, act } from "@testing-library/react";
+import { Stepper } from "./controls";
 
 describe("Stepper", () => {
   it("steps on a keyboard-triggered click (no mousedown/touchstart, as a real Enter/Space activation produces)", () => {
@@ -16,19 +16,33 @@ describe("Stepper", () => {
     expect(onChange).toHaveBeenCalledWith(6);
   });
 
-  it("steps exactly once per pointer tap (mouse, touch, or pen)", () => {
+  it("commits exactly once when a pointer tap is released", () => {
     const onChange = vi.fn();
     render(<Stepper value={5} onChange={onChange} min={0} max={10} label="Test" />);
     const inc = screen.getByRole("button", { name: "Increase" });
 
     // One tap: a single pointerdown/up, then the browser's trailing compatibility click
     // (detail >= 1). Previously a touch tap also fired a synthesized mousedown, double-stepping.
-    fireEvent.pointerDown(inc);
-    fireEvent.pointerUp(inc);
+    fireEvent.pointerDown(inc, { pointerId: 1, isPrimary: true, button: 0, clientX: 20, clientY: 20 });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.pointerUp(inc, { pointerId: 1, clientX: 20, clientY: 20 });
     fireEvent.click(inc, { detail: 1 });
 
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledWith(6);
+  });
+
+  it("cancels without changing the value when the pointer starts scrolling", () => {
+    const onChange = vi.fn();
+    render(<Stepper value={5} onChange={onChange} min={0} max={10} label="Test" />);
+    const inc = screen.getByRole("button", { name: "Increase" });
+
+    fireEvent.pointerDown(inc, { pointerId: 1, isPrimary: true, button: 0, clientX: 20, clientY: 20 });
+    fireEvent.pointerMove(inc, { pointerId: 1, clientX: 22, clientY: 45 });
+    fireEvent.pointerUp(inc, { pointerId: 1, clientX: 22, clientY: 45 });
+    fireEvent.click(inc, { detail: 1 });
+
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it("does not step past its bounds via keyboard", () => {
@@ -45,41 +59,42 @@ describe("Stepper", () => {
   });
 });
 
-describe("useHoldRepeat", () => {
+describe("press repeat", () => {
   afterEach(() => vi.useRealTimers());
 
-  it("fires once immediately, then accelerates while held and stops on release", () => {
+  it("starts after the hold delay, then accelerates and stops on release", () => {
     vi.useFakeTimers();
-    const cb = vi.fn();
-    const { result } = renderHook(() => useHoldRepeat(cb));
+    const onChange = vi.fn();
+    render(<Stepper value={5} onChange={onChange} min={0} max={10} label="Test" />);
+    const inc = screen.getByRole("button", { name: "Increase" });
 
-    act(() => result.current.start());
-    expect(cb).toHaveBeenCalledTimes(1); // immediate step on press
+    fireEvent.pointerDown(inc, { pointerId: 1, isPrimary: true, button: 0, clientX: 20, clientY: 20 });
+    expect(onChange).not.toHaveBeenCalled();
 
-    act(() => vi.advanceTimersByTime(399)); // still within the initial delay
-    expect(cb).toHaveBeenCalledTimes(1);
-    act(() => vi.advanceTimersByTime(1)); // 400ms: first auto-repeat
-    expect(cb).toHaveBeenCalledTimes(2);
+    act(() => vi.advanceTimersByTime(399));
+    expect(onChange).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1)); // 400ms: the hold wins over a possible scroll
+    expect(onChange).toHaveBeenCalledTimes(1);
 
     // Consecutive repeats get faster: the 180ms gap fires, then the ramped ~144ms gap.
     act(() => vi.advanceTimersByTime(180));
-    expect(cb).toHaveBeenCalledTimes(3);
+    expect(onChange).toHaveBeenCalledTimes(2);
     act(() => vi.advanceTimersByTime(144));
-    expect(cb).toHaveBeenCalledTimes(4);
+    expect(onChange).toHaveBeenCalledTimes(3);
 
-    act(() => result.current.stop());
+    fireEvent.pointerUp(inc, { pointerId: 1, clientX: 20, clientY: 20 });
     act(() => vi.advanceTimersByTime(1000));
-    expect(cb).toHaveBeenCalledTimes(4); // no more firing after release
+    expect(onChange).toHaveBeenCalledTimes(3);
   });
 
-  it("stops repeating once the callback signals a bound with false", () => {
+  it("does not start a repeat when the button is disabled at its bound", () => {
     vi.useFakeTimers();
-    const cb = vi.fn().mockReturnValueOnce(undefined).mockReturnValue(false);
-    const { result } = renderHook(() => useHoldRepeat(cb));
+    const onChange = vi.fn();
+    render(<Stepper value={10} onChange={onChange} min={0} max={10} label="Test" />);
+    const inc = screen.getByRole("button", { name: "Increase" });
 
-    act(() => result.current.start()); // 1st call: undefined → keeps going
-    act(() => vi.advanceTimersByTime(400)); // 2nd call: false → self-stops
+    fireEvent.pointerDown(inc, { pointerId: 1, isPrimary: true, button: 0, clientX: 20, clientY: 20 });
     act(() => vi.advanceTimersByTime(2000));
-    expect(cb).toHaveBeenCalledTimes(2);
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

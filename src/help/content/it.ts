@@ -97,6 +97,7 @@ export const helpIt: HelpCatalog = assertHelpCatalog({
           title: "Azioni utili durante una partita",
           bullets: [
             "Premi un attacco o un incantesimo per aprirne tutti i dettagli.",
+            "Premi una volta +, −, Danno o Cura per un singolo passo, oppure tieni premuto per modifiche ripetute più rapide. Se fai scorrere il dito, la pagina si muove senza cambiare il valore.",
             "Usa Riposo breve o Riposo lungo per recuperare ciò che è configurato per quel riposo.",
             "Premi il dado nella barra in alto ogni volta che serve un tiro.",
             "Usa + condizione e Ispirazione in Gioco per tenere visibile la situazione attuale.",

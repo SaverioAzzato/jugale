@@ -97,6 +97,7 @@ export const helpEn: HelpCatalog = assertHelpCatalog({
           title: "Useful actions during a game",
           bullets: [
             "Tap an attack or spell to open all of its details.",
+            "Tap +, −, Damage or Heal once for a single step, or keep holding for faster repeated changes. Sliding your finger scrolls without changing the value.",
             "Use Short rest or Long rest to recover everything configured for that rest.",
             "Tap the die in the top bar whenever you need a roll.",
             "Use + condition and Inspiration in Play to keep the current situation visible.",

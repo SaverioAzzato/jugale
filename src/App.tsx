@@ -703,7 +703,9 @@ export function App() {
               : `sheet-swipe sheet-swipe-${swipeDirection > 0 ? "from-right" : "from-left"}`
           }
           onTouchStart={swipeTabs.onTouchStart}
+          onTouchMove={swipeTabs.onTouchMove}
           onTouchEnd={swipeTabs.onTouchEnd}
+          onTouchCancel={swipeTabs.onTouchCancel}
         >
           <Sheet c={character} tab={tab} />
         </div>

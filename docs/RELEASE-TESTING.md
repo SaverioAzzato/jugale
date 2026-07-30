@@ -76,6 +76,9 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
   prompts, Raw JSON, Export and Edit disappear in that order; dice disappears last. Back remains.
 - ☐ Make the tab row overflow, then swipe between sheet pages: the active tab label automatically
   scrolls into view without moving the document vertically.
+- ☐ Start vertical and horizontal swipes on `+`, `−`, Damage, Heal and ordinary sheet buttons:
+  the sheet scrolls/pages without firing the button. A stationary tap still changes once and a
+  stationary hold still repeats with acceleration.
 - ☐ **Dice on a button**: roll a die so it rests over a button; tap/hold the die → only the die
   reacts, the button underneath does **not** fire.
 - ☐ **Prompt sharing**: on the Prompts page, Base/Create/Custom can open Android's generic

@@ -25,6 +25,22 @@ describe("useHorizontalSwipe", () => {
     expect(swipe({ clientX: 100, clientY: 100 }, { clientX: 130, clientY: 300 })).not.toHaveBeenCalled();
   });
 
+  it("suppresses a trailing control click once movement becomes a drag", () => {
+    const onSwipe = vi.fn();
+    const { result } = renderHook(() => useHorizontalSwipe(onSwipe));
+    const button = document.createElement("button");
+    const start = { clientX: 100, clientY: 100 };
+    const end = { clientX: 105, clientY: 180 };
+    const preventDefault = vi.fn();
+
+    result.current.onTouchStart(touch([start], [start], button));
+    result.current.onTouchMove(touch([end], [end], button));
+    result.current.onTouchEnd({ ...touch([], [end], button), preventDefault } as unknown as React.TouchEvent);
+
+    expect(preventDefault).toHaveBeenCalledOnce();
+    expect(onSwipe).not.toHaveBeenCalled();
+  });
+
   it("ignores short horizontal movement (a tap wobble)", () => {
     expect(swipe({ clientX: 100, clientY: 100 }, { clientX: 130, clientY: 100 })).not.toHaveBeenCalled();
   });

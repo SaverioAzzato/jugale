@@ -2,7 +2,8 @@ import { type ReactNode } from "react";
 import type { Character } from "../schema";
 import { abilityModifierFor, derivedArmorClass, maxHitDice } from "../schema";
 import { Panel, fmtMod } from "./primitives";
-import { Stepper, useHoldRepeat } from "./controls";
+import { Stepper } from "./controls";
+import { usePressRepeat } from "./usePressRepeat";
 import { Field, NumberInput, OptionalNumber } from "./editControls";
 import { useCharacter } from "../state/store";
 import { useT } from "../i18n/useI18n";
@@ -30,18 +31,10 @@ function HpControl({ c }: { c: Character }) {
   const maxHd = maxHitDice(c);
   const pct = hp.max > 0 ? Math.round((hp.current / hp.max) * 100) : 0;
 
-  // Damage/Heal apply 1 per activation, but hold-to-repeat ramps it up for bigger hits. Pointer
-  // events fire once per interaction (mouse/touch/pen), so a single mobile tap no longer applies
-  // the change twice (the old touch + synthesized-mouse pair double-fired). Keyboard activation
-  // runs on a detail-0 click.
-  const holdDamage = useHoldRepeat(() => damage(1));
-  const holdHeal = useHoldRepeat(() => heal(1));
-
-  const keyActivate = (hold: ReturnType<typeof useHoldRepeat>) => (e: { detail: number }) => {
-    if (e.detail !== 0) return; // a pointer tap already applied it on pointerdown
-    hold.start();
-    hold.stop();
-  };
+  // A tap applies 1 on release; a stationary hold accelerates for bigger changes. Starting to
+  // scroll over either button cancels before applying damage/healing.
+  const holdDamage = usePressRepeat(() => damage(1));
+  const holdHeal = usePressRepeat(() => heal(1));
 
   return (
     <div className="hp-control">
@@ -61,22 +54,14 @@ function HpControl({ c }: { c: Character }) {
         <button
           type="button"
           className="btn btn-danger"
-          onPointerDown={holdDamage.start}
-          onPointerUp={holdDamage.stop}
-          onPointerLeave={holdDamage.stop}
-          onPointerCancel={holdDamage.stop}
-          onClick={keyActivate(holdDamage)}
+          {...holdDamage}
         >
           {t("vitals.damage")}
         </button>
         <button
           type="button"
           className="btn btn-heal"
-          onPointerDown={holdHeal.start}
-          onPointerUp={holdHeal.stop}
-          onPointerLeave={holdHeal.stop}
-          onPointerCancel={holdHeal.stop}
-          onClick={keyActivate(holdHeal)}
+          {...holdHeal}
         >
           {t("vitals.heal")}
         </button>

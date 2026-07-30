@@ -1,47 +1,7 @@
 /** Small interactive primitives for live play-state editing. */
 
-import { useRef, useCallback } from "react";
 import { useT } from "../i18n/useI18n";
-
-// Hold-to-repeat with acceleration ("typematic"): a pause before auto-repeat, then intervals that
-// shrink geometrically while held, so a quick hold nudges by a few and a long hold races. Numbers in
-// the ballpark of OS key-repeat: ~400 ms initial delay, first repeat ~180 ms, accelerating to a 30 ms
-// floor over ~8 repeats. The step stays 1 — we speed up, not coarsen.
-const HOLD_DELAY_MS = 400;
-const HOLD_START_MS = 180;
-const HOLD_MIN_MS = 30;
-const HOLD_RAMP = 0.8;
-
-/** Fires `cb` immediately, then repeatedly while held — pausing HOLD_DELAY_MS, then accelerating.
- *  Uses a ref so each repeat sees the latest `cb` (avoids stale closures). If `cb` returns false
- *  (e.g. a bound was reached) the repeat self-stops. */
-export function useHoldRepeat(cb: () => void | boolean) {
-  const cbRef = useRef(cb);
-  cbRef.current = cb;
-
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const stop = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = null;
-  }, []);
-
-  const start = useCallback(() => {
-    if (cbRef.current() === false) return; // already at a bound: don't schedule a repeat
-    let interval = HOLD_START_MS;
-    const tick = () => {
-      if (cbRef.current() === false) {
-        stop();
-        return;
-      }
-      timerRef.current = setTimeout(tick, interval);
-      interval = Math.max(HOLD_MIN_MS, interval * HOLD_RAMP);
-    };
-    timerRef.current = setTimeout(tick, HOLD_DELAY_MS);
-  }, [stop]);
-
-  return { start, stop };
-}
+import { usePressRepeat } from "./usePressRepeat";
 
 export function Stepper({
   value,
@@ -61,26 +21,14 @@ export function Stepper({
 }) {
   const t = useT();
   // Return false at the bound so a held button stops instead of running past it.
-  const dec = useHoldRepeat(() => {
+  const dec = usePressRepeat(() => {
     if (value <= min) return false;
     onChange(value - 1);
   });
-  const inc = useHoldRepeat(() => {
+  const inc = usePressRepeat(() => {
     if (max != null && value >= max) return false;
     onChange(value + 1);
   });
-
-  // Pointer events unify mouse/touch/pen into a single event stream, so a tap fires `start()`
-  // exactly once. (The old mouse+touch handler pair double-fired on mobile — a touchstart plus
-  // the browser's synthesized mousedown both stepped, so one tap moved by 2.) A pointer tap still
-  // emits a trailing compatibility `click`, but that reports `detail >= 1`; keyboard activation
-  // (Enter/Space) fires a `click` with `detail === 0` and no pointerdown. So onClick only runs the
-  // keyboard path, where start()+stop() steps exactly once and cancels the pending hold-repeat.
-  const onKeyboardClick = (repeat: ReturnType<typeof useHoldRepeat>) => (e: React.MouseEvent) => {
-    if (e.detail !== 0) return;
-    repeat.start();
-    repeat.stop();
-  };
 
   return (
     <span className="stepper" role="group" aria-label={label}>
@@ -89,11 +37,7 @@ export function Stepper({
         className="stepper-btn"
         disabled={value <= min}
         aria-label={t("stepper.decrease")}
-        onPointerDown={dec.start}
-        onPointerUp={dec.stop}
-        onPointerLeave={dec.stop}
-        onPointerCancel={dec.stop}
-        onClick={onKeyboardClick(dec)}
+        {...dec}
       >
         −
       </button>
@@ -106,11 +50,7 @@ export function Stepper({
         className="stepper-btn"
         disabled={max != null && value >= max}
         aria-label={t("stepper.increase")}
-        onPointerDown={inc.start}
-        onPointerUp={inc.stop}
-        onPointerLeave={inc.stop}
-        onPointerCancel={inc.stop}
-        onClick={onKeyboardClick(inc)}
+        {...inc}
       >
         +
       </button>
