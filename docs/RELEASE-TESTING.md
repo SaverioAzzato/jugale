@@ -73,7 +73,8 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
   inaccessible fixed bar appears. The background reaches the bottom without a color seam. Close/
   reopen the app and confirm the selected scale persists.
 - ☐ Settings → Dice button persists all three positions across restart: top bar, floating bottom
-  right (default on a clean install), and floating bottom left. Check safe areas and 80%, 100%, 120%.
+  right (default on a clean install), and floating bottom left. Confirm both floating variants have
+  the larger touch target while the toolbar variant stays compact. Check safe areas and 80%, 100%, 120%.
 - ☐ With the dice button in the top bar, at a narrow viewport / 120% scale, toolbar actions that do
   not fit move into `…` in this order: Settings, Help, Export, Versions, Save version, prompts, Raw
   JSON, Edit, dice. Unavailable version actions are skipped; dice disappears last. Back remains.

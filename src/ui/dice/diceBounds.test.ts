@@ -12,8 +12,8 @@ describe("dice UI bounds", () => {
 
   it("moves a die away from a floating dice button without leaving the viewport", () => {
     expect(resolveCircleBounds({ x: 350, y: 784 }, 52, viewport, [
-      { left: 326, top: 760, right: 374, bottom: 808 },
-    ])).toEqual({ x: 274, y: 784 });
+      { left: 322, top: 756, right: 378, bottom: 812 },
+    ])).toEqual({ x: 270, y: 784 });
   });
 
   it("keeps a die above the live-sync status bar", () => {

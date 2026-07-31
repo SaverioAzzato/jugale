@@ -2753,12 +2753,16 @@ code {
   left: max(16px, env(safe-area-inset-left));
 }
 .dice-palette-floating .dice-toggle {
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-color: var(--border-strong);
   border-radius: 50%;
   background: var(--surface-2);
   box-shadow: var(--shadow);
+}
+.dice-palette-floating .die-3d-icon {
+  width: 30px;
+  height: 30px;
 }
 .dice-toggle {
   touch-action: none;
