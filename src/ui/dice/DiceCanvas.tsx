@@ -10,8 +10,9 @@ import { useCharacter } from "../../state/store";
  * All interaction (tap to dismiss, drag to move) lives in DiceScene; React only
  * owns the lifecycle. If WebGL is unavailable the layer simply no-ops.
  */
-export function DiceCanvas() {
+export function DiceCanvas({ layoutKey }: { layoutKey: string }) {
   const ref = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<DiceScene | null>(null);
 
   useEffect(() => {
     const el = ref.current;
@@ -23,6 +24,7 @@ export function DiceCanvas() {
       console.error("Dice layer unavailable (WebGL init failed)", err);
       return;
     }
+    sceneRef.current = scene;
     scene.onTap = (id) => useDice.getState().dismiss(id);
     scene.sync(useDice.getState().dice);
     const unsubDice = useDice.subscribe((s) => scene.sync(s.dice));
@@ -36,9 +38,15 @@ export function DiceCanvas() {
       unsubTheme();
       unsubSettings();
       unsubCharacter();
+      sceneRef.current = null;
       scene.dispose();
     };
   }, []);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => sceneRef.current?.reflowBounds());
+    return () => window.cancelAnimationFrame(frame);
+  }, [layoutKey]);
 
   return <div className="dice-canvas" ref={ref} aria-hidden="true" />;
 }

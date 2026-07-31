@@ -84,9 +84,10 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
   stationary hold still repeats with acceleration.
 - ☐ **Dice on a button**: roll a die so it rests over a button; tap/hold the die → only the die
   reacts, the button underneath does **not** fire.
-- ☐ Roll and drag dice toward the top edge: no die may enter either toolbar or tab row. Repeat with
-  the trigger floating on each side: dice must spawn and drag around it, while the dice-selection
-  menu remains visually above resting dice. Repeat at 80%, 100%, 120% and with browser zoom.
+- ☐ Roll and drag dice toward the top and bottom edges: no die may enter either toolbar, tab row,
+  or the bottom live-sync/status bar when it is visible. Repeat with the trigger floating on each
+  side: dice must spawn and drag around it, while the dice-selection menu remains visually above
+  resting dice. Repeat at 80%, 100%, 120% and with browser zoom.
 - ☐ **Prompt sharing**: on the Prompts page, Base/Create/Custom can open Android's generic
   sharesheet without a character; Level up/Validate/Migrate are disabled and explain why. With a
   character open, share Level up and verify the chooser opens immediately. ChatGPT should receive

@@ -764,7 +764,7 @@ export function App() {
 
       <UpdateBanner />
       {diceButtonPosition !== "toolbar" && <DicePalette placement={diceButtonPosition} />}
-      <DiceCanvas />
+      <DiceCanvas layoutKey={`${overlay ?? "sheet"}:${character ? "character" : "empty"}:${readOnly}`} />
       <Toasts />
       {saveVersionOpen && (
         <SaveVersionDialog

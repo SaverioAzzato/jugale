@@ -155,7 +155,8 @@ They are lossless 780×1688 PNG captures (390×844 at 2× density), verified by
 **Dice UI:** the dice trigger is a persisted app preference rather than character data. It defaults
 to a bottom-right floating control and can move to the bottom left or back into the measured toolbar.
 The WebGL scene remains full-viewport, but spawn and drag positions are resolved in visual client
-pixels against live DOM rectangles for the complete app bar and floating trigger. This avoids
+pixels against live DOM rectangles for the complete app bar, conditional bottom status bar, and
+floating trigger. This avoids
 double-scaling under both Interface scale and browser zoom. App chrome, trigger and selection menu
 share a stacking layer above the transparent dice canvas; geometric collision remains the source of
 truth for where a die may rest rather than relying on visual occlusion alone.

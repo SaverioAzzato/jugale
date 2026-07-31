@@ -109,7 +109,7 @@ export const helpIt: HelpCatalog = assertHelpCatalog({
           bullets: [
             "Premi il pulsante dei dadi, poi scegli quello da lanciare. Il menu di selezione resta sempre davanti ai dadi già presenti sulla scheda.",
             "Trascina un risultato per spostarlo; premilo per rimuoverlo.",
-            "I dadi restano sotto l'intera barra superiore e lontani dal pulsante floating, anche quando cambi la Scala interfaccia o lo zoom del browser.",
+            "I dadi restano sotto l'intera barra superiore, sopra la barra di stato inferiore e lontani dal pulsante floating, anche quando cambi la Scala interfaccia o lo zoom del browser.",
           ],
         },
       ],

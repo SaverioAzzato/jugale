@@ -109,7 +109,7 @@ export const helpEn: HelpCatalog = assertHelpCatalog({
           bullets: [
             "Tap the dice button, then choose the die you want. The selection menu always stays in front of dice already on the sheet.",
             "Drag a result to move it; tap it to remove it.",
-            "Dice stay below the complete top bar and away from a floating dice button, including when you change Interface scale or browser zoom.",
+            "Dice stay below the complete top bar, above the bottom status bar, and away from a floating dice button, including when you change Interface scale or browser zoom.",
           ],
         },
       ],

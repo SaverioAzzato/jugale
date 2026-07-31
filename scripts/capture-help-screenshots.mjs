@@ -155,5 +155,7 @@ try {
 } finally {
   socket?.close();
   chrome.kill("SIGTERM");
-  await rm(profile, { recursive: true, force: true });
+  // Chrome helpers may release extension-storage files a fraction after the browser process.
+  // Let fs.rm retry that short ENOTEMPTY race so a successful capture exits successfully.
+  await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 }

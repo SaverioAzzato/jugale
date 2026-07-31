@@ -60,7 +60,7 @@ export class DiceScene {
   private theme: ThemeColors;
   private raf = 0;
   private running = false;
-  private appbarObserver?: ResizeObserver;
+  private uiObstacleObserver?: ResizeObserver;
   private drag: {
     entry: Entry;
     offset: THREE.Vector3;
@@ -103,11 +103,8 @@ export class DiceScene {
     // click and keeps the gesture ours, while pointer events still drive the drag.
     window.addEventListener("touchstart", this.onTouchStart, { passive: false, capture: true });
     if (typeof ResizeObserver !== "undefined") {
-      const appbar = document.querySelector(".appbar");
-      if (appbar) {
-        this.appbarObserver = new ResizeObserver(() => this.reflowBounds());
-        this.appbarObserver.observe(appbar);
-      }
+      this.uiObstacleObserver = new ResizeObserver(() => this.reflowBounds());
+      this.observeUiObstacles();
     }
     this.renderOnce();
   }
@@ -140,7 +137,7 @@ export class DiceScene {
     window.removeEventListener("pointermove", this.onPointerMove, true);
     window.removeEventListener("pointerup", this.onPointerUp, true);
     window.removeEventListener("touchmove", this.onTouchMove, true);
-    this.appbarObserver?.disconnect();
+    this.uiObstacleObserver?.disconnect();
     for (const e of this.entries) e.die.dispose();
     this.entries = [];
     this.renderer.dispose();
@@ -306,8 +303,11 @@ export class DiceScene {
     this.start();
   };
 
-  /** Re-home resting dice when the app bar, floating button, viewport or selected UI scale moves. */
+  /** Re-home resting dice when a UI bar, floating button, viewport or selected UI scale moves. */
   reflowBounds(): void {
+    // The status bar is conditionally mounted. Observe the current obstacle nodes whenever a
+    // layout change asks for a reflow so a newly-created footer is tracked from then on.
+    this.observeUiObstacles();
     for (const entry of this.entries) {
       if (entry.leaving) continue;
       let point = this.resolveUiBounds(entry.group.position);
@@ -320,8 +320,21 @@ export class DiceScene {
     this.renderOnce();
   }
 
+  private uiObstacleElements(): HTMLElement[] {
+    return Array.from(
+      document.querySelectorAll<HTMLElement>(
+        ".appbar, .statusbar, .dice-palette-floating [data-dice-toggle]",
+      ),
+    );
+  }
+
+  private observeUiObstacles(): void {
+    if (!this.uiObstacleObserver) return;
+    for (const element of this.uiObstacleElements()) this.uiObstacleObserver.observe(element);
+  }
+
   private uiObstacles(): Rect[] {
-    return Array.from(document.querySelectorAll<HTMLElement>(".appbar, .dice-palette-floating [data-dice-toggle]"))
+    return this.uiObstacleElements()
       .map((element) => element.getBoundingClientRect())
       .filter((rect) => rect.width > 0 && rect.height > 0)
       .map((rect) => ({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom }));
