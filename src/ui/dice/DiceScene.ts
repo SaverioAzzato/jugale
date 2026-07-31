@@ -2,8 +2,10 @@ import * as THREE from "three";
 import { makeDie, type DieObject, type ThemeColors } from "./geometry";
 import type { RolledDie } from "../useDice";
 import { pointToNdc, type ViewportRect } from "../zoomCoordinates";
+import { resolveCircleBounds, type Rect } from "./diceBounds";
 
 const DIE_PX = 52; // bounding-sphere radius in px → dice ~104px across
+const DIE_BOUNDS_PX = 68; // includes the brief enter-animation overshoot around that sphere
 const DRAG_THRESH = 6; // px of movement before a press becomes a drag (vs a tap)
 const SPAWN_MIN_DIST = DIE_PX * 2.25; // a little breathing room between freshly-rolled dice
 const DRAG_MIN_DIST = DIE_PX * 2; // touching distance — a dragged die can't pass through another
@@ -58,6 +60,7 @@ export class DiceScene {
   private theme: ThemeColors;
   private raf = 0;
   private running = false;
+  private appbarObserver?: ResizeObserver;
   private drag: {
     entry: Entry;
     offset: THREE.Vector3;
@@ -99,6 +102,13 @@ export class DiceScene {
     // event. Swallowing touchstart (non-passive) when a die is under the finger cancels that
     // click and keeps the gesture ours, while pointer events still drive the drag.
     window.addEventListener("touchstart", this.onTouchStart, { passive: false, capture: true });
+    if (typeof ResizeObserver !== "undefined") {
+      const appbar = document.querySelector(".appbar");
+      if (appbar) {
+        this.appbarObserver = new ResizeObserver(() => this.reflowBounds());
+        this.appbarObserver.observe(appbar);
+      }
+    }
     this.renderOnce();
   }
 
@@ -130,6 +140,7 @@ export class DiceScene {
     window.removeEventListener("pointermove", this.onPointerMove, true);
     window.removeEventListener("pointerup", this.onPointerUp, true);
     window.removeEventListener("touchmove", this.onTouchMove, true);
+    this.appbarObserver?.disconnect();
     for (const e of this.entries) e.die.dispose();
     this.entries = [];
     this.renderer.dispose();
@@ -163,7 +174,7 @@ export class DiceScene {
     const boxX = Math.min(w * 0.3, 360);
     const boxY = Math.min(h, 640);
     const others = this.entries.filter((e) => !e.leaving);
-    const pick = () => ({
+    const pick = () => this.resolveUiBounds({
       x: (Math.random() * 2 - 1) * boxX,
       y: (Math.random() * 0.5 - 0.18) * boxY,
     });
@@ -295,6 +306,45 @@ export class DiceScene {
     this.start();
   };
 
+  /** Re-home resting dice when the app bar, floating button, viewport or selected UI scale moves. */
+  reflowBounds(): void {
+    for (const entry of this.entries) {
+      if (entry.leaving) continue;
+      let point = this.resolveUiBounds(entry.group.position);
+      for (let pass = 0; pass < 3; pass += 1) {
+        point = this.resolveDragCollisions(entry, point);
+        point = this.resolveUiBounds(point);
+      }
+      entry.group.position.set(point.x, point.y, 0);
+    }
+    this.renderOnce();
+  }
+
+  private uiObstacles(): Rect[] {
+    return Array.from(document.querySelectorAll<HTMLElement>(".appbar, .dice-palette-floating [data-dice-toggle]"))
+      .map((element) => element.getBoundingClientRect())
+      .filter((rect) => rect.width > 0 && rect.height > 0)
+      .map((rect) => ({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom }));
+  }
+
+  private resolveUiBounds(point: { x: number; y: number }): { x: number; y: number } {
+    const viewport = this.viewportRect();
+    const clientPoint = {
+      x: viewport.left + viewport.width / 2 + point.x,
+      y: viewport.top + viewport.height / 2 - point.y,
+    };
+    const resolved = resolveCircleBounds(clientPoint, DIE_BOUNDS_PX, {
+      left: viewport.left,
+      top: viewport.top,
+      right: viewport.left + viewport.width,
+      bottom: viewport.top + viewport.height,
+    }, this.uiObstacles());
+    return {
+      x: resolved.x - viewport.left - viewport.width / 2,
+      y: viewport.top + viewport.height / 2 - resolved.y,
+    };
+  }
+
   /** While a die is being dragged, keep touch gestures from scrolling the sheet underneath. */
   private onTouchMove = (e: TouchEvent): void => {
     if (this.drag) e.preventDefault();
@@ -320,7 +370,11 @@ export class DiceScene {
     if (this.drag.moved) {
       const wp = this.worldOnPlane(e.clientX, e.clientY);
       const target = { x: wp.x - this.drag.offset.x, y: wp.y - this.drag.offset.y };
-      const p = this.resolveDragCollisions(this.drag.entry, target);
+      let p = this.resolveUiBounds(target);
+      for (let pass = 0; pass < 3; pass += 1) {
+        p = this.resolveDragCollisions(this.drag.entry, p);
+        p = this.resolveUiBounds(p);
+      }
       this.drag.entry.group.position.set(p.x, p.y, 0);
     }
   };
@@ -383,7 +437,7 @@ export class DiceScene {
     this.camera.updateProjectionMatrix();
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     this.renderer.setSize(w, h, false);
-    this.renderOnce();
+    this.reflowBounds();
   };
 }
 

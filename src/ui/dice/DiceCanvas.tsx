@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { DiceScene } from "./DiceScene";
 import { useDice } from "../useDice";
 import { useTheme } from "../../theme/useTheme";
+import { useSettings } from "../useSettings";
+import { useCharacter } from "../../state/store";
 
 /**
  * Mounts the WebGL dice layer and keeps it in sync with the dice store and theme.
@@ -25,9 +27,15 @@ export function DiceCanvas() {
     scene.sync(useDice.getState().dice);
     const unsubDice = useDice.subscribe((s) => scene.sync(s.dice));
     const unsubTheme = useTheme.subscribe(() => scene.applyTheme());
+    const unsubSettings = useSettings.subscribe(() => window.requestAnimationFrame(() => scene.reflowBounds()));
+    const unsubCharacter = useCharacter.subscribe((state, previous) => {
+      if (state.character !== previous.character) window.requestAnimationFrame(() => scene.reflowBounds());
+    });
     return () => {
       unsubDice();
       unsubTheme();
+      unsubSettings();
+      unsubCharacter();
       scene.dispose();
     };
   }, []);

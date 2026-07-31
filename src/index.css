@@ -30,7 +30,8 @@ a {
 .appbar {
   position: sticky;
   top: 0;
-  z-index: 10;
+  /* Above the transparent WebGL dice layer: dice can never cover the toolbar or its tabs. */
+  z-index: 50;
   background: var(--surface);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
@@ -2735,10 +2736,29 @@ code {
   }
 }
 
-/* ---- dice palette (topbar) + thrown dice ---- */
+/* ---- dice palette (topbar or floating) + thrown dice ---- */
 .dice-palette {
   position: relative;
   display: inline-flex;
+}
+.dice-palette-floating {
+  position: fixed;
+  z-index: 50;
+  bottom: calc(48px + env(safe-area-inset-bottom));
+}
+.dice-palette-floating.floating-right {
+  right: max(16px, env(safe-area-inset-right));
+}
+.dice-palette-floating.floating-left {
+  left: max(16px, env(safe-area-inset-left));
+}
+.dice-palette-floating .dice-toggle {
+  width: 48px;
+  height: 48px;
+  border-color: var(--border-strong);
+  border-radius: 50%;
+  background: var(--surface-2);
+  box-shadow: var(--shadow);
 }
 .dice-toggle {
   touch-action: none;
@@ -2787,7 +2807,9 @@ code {
 
 .dice-menu {
   position: fixed;
-  z-index: 40;
+  /* The palette and appbar are themselves above .dice-canvas; this keeps the menu above their
+     buttons as well, even while resting dice remain on screen. */
+  z-index: 70;
   display: flex;
   flex-direction: column;
   gap: 2px;

@@ -37,3 +37,15 @@ export function fixedAnchorAbove(
     right: (viewport.width - anchor.right) / uiScale,
   };
 }
+
+export function fixedAnchorAboveLeft(
+  anchor: Pick<DOMRect, "top" | "left">,
+  viewportHeight: number,
+  uiScale: number,
+  gap = 8,
+): { bottom: number; left: number } {
+  return {
+    bottom: (viewportHeight - anchor.top) / uiScale + gap,
+    left: anchor.left / uiScale,
+  };
+}

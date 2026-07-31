@@ -4,6 +4,7 @@ import { create } from "zustand";
 const KEY = "dndm.settings";
 
 export type UnitSystem = "imperial" | "metric";
+export type DiceButtonPosition = "toolbar" | "floating-right" | "floating-left";
 export const UI_SCALES = [80, 90, 100, 110, 120] as const;
 export type UiScale = (typeof UI_SCALES)[number];
 
@@ -12,12 +13,23 @@ interface Persisted {
   units: UnitSystem;
   uiScale: UiScale;
   versionHistory: boolean;
+  diceButtonPosition: DiceButtonPosition;
 }
 
-const DEFAULTS: Persisted = { toastSeconds: 10, units: "imperial", uiScale: 100, versionHistory: true };
+const DEFAULTS: Persisted = {
+  toastSeconds: 10,
+  units: "imperial",
+  uiScale: 100,
+  versionHistory: true,
+  diceButtonPosition: "floating-right",
+};
 
 function isUiScale(value: unknown): value is UiScale {
   return typeof value === "number" && UI_SCALES.includes(value as UiScale);
+}
+
+function isDiceButtonPosition(value: unknown): value is DiceButtonPosition {
+  return value === "toolbar" || value === "floating-right" || value === "floating-left";
 }
 
 function applyUiScale(uiScale: UiScale): void {
@@ -35,6 +47,9 @@ function load(): Persisted {
       units: saved.units === "metric" || saved.units === "imperial" ? saved.units : DEFAULTS.units,
       uiScale: isUiScale(saved.uiScale) ? saved.uiScale : DEFAULTS.uiScale,
       versionHistory: typeof saved.versionHistory === "boolean" ? saved.versionHistory : DEFAULTS.versionHistory,
+      diceButtonPosition: isDiceButtonPosition(saved.diceButtonPosition)
+        ? saved.diceButtonPosition
+        : DEFAULTS.diceButtonPosition,
     };
   } catch {
     return DEFAULTS;
@@ -46,6 +61,7 @@ interface SettingsState extends Persisted {
   setUnits: (u: UnitSystem) => void;
   setUiScale: (scale: UiScale) => void;
   setVersionHistory: (enabled: boolean) => void;
+  setDiceButtonPosition: (position: DiceButtonPosition) => void;
 }
 
 function persist(state: Persisted) {
@@ -64,6 +80,7 @@ function currentPersisted(get: () => SettingsState, patch: Partial<Persisted>): 
     units: state.units,
     uiScale: state.uiScale,
     versionHistory: state.versionHistory,
+    diceButtonPosition: state.diceButtonPosition,
     ...patch,
   };
 }
@@ -86,5 +103,9 @@ export const useSettings = create<SettingsState>((set, get) => ({
   setVersionHistory: (versionHistory) => {
     set({ versionHistory });
     persist(currentPersisted(get, { versionHistory }));
+  },
+  setDiceButtonPosition: (diceButtonPosition) => {
+    set({ diceButtonPosition });
+    persist(currentPersisted(get, { diceButtonPosition }));
   },
 }));

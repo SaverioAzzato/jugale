@@ -1,6 +1,12 @@
 import { THEMES, useTheme, type ThemeId } from "../theme/useTheme";
 import { LOCALES, useI18n, useT, type Locale } from "../i18n/useI18n";
-import { UI_SCALES, useSettings, type UiScale, type UnitSystem } from "./useSettings";
+import {
+  UI_SCALES,
+  useSettings,
+  type DiceButtonPosition,
+  type UiScale,
+  type UnitSystem,
+} from "./useSettings";
 import { Panel } from "../render/primitives";
 import { isTauri } from "../storage/tauriProvider";
 import { useUpdate } from "../update/useUpdate";
@@ -51,6 +57,8 @@ export function SettingsPage() {
   const setUiScale = useSettings((s) => s.setUiScale);
   const versionHistory = useSettings((s) => s.versionHistory);
   const setVersionHistory = useSettings((s) => s.setVersionHistory);
+  const diceButtonPosition = useSettings((s) => s.diceButtonPosition);
+  const setDiceButtonPosition = useSettings((s) => s.setDiceButtonPosition);
   const versionsAvailable = useCharacter((s) => Boolean(s.provider?.versions));
   const checking = useUpdate((s) => s.state.status === "checking");
   const checkForUpdates = useUpdate((s) => s.check);
@@ -104,6 +112,17 @@ export function SettingsPage() {
           <select value={units} onChange={(e) => setUnits(e.target.value as UnitSystem)}>
             <option value="imperial">{t("settings.unitsImperial")}</option>
             <option value="metric">{t("settings.unitsMetric")}</option>
+          </select>
+        </label>
+        <label className="settings-row">
+          <span>{t("settings.diceButton")}</span>
+          <select
+            value={diceButtonPosition}
+            onChange={(e) => setDiceButtonPosition(e.target.value as DiceButtonPosition)}
+          >
+            <option value="toolbar">{t("settings.diceButtonToolbar")}</option>
+            <option value="floating-right">{t("settings.diceButtonFloatingRight")}</option>
+            <option value="floating-left">{t("settings.diceButtonFloatingLeft")}</option>
           </select>
         </label>
         <label className="settings-row">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fixedAnchorAbove, fixedAnchorBelow, pointToNdc } from "./zoomCoordinates";
+import { fixedAnchorAbove, fixedAnchorAboveLeft, fixedAnchorBelow, pointToNdc } from "./zoomCoordinates";
 
 describe("zoom-aware coordinates", () => {
   it("maps client coordinates relative to the rendered canvas rectangle", () => {
@@ -18,6 +18,10 @@ describe("zoom-aware coordinates", () => {
     expect(fixedAnchorAbove({ top: 700, right: 300 }, { width: 412, height: 844 }, 1.2)).toEqual({
       bottom: 128,
       right: 93.33333333333334,
+    });
+    expect(fixedAnchorAboveLeft({ top: 700, left: 24 }, 844, 1.2)).toEqual({
+      bottom: 128,
+      left: 20,
     });
   });
 });

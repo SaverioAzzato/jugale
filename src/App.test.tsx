@@ -37,6 +37,7 @@ describe("App — empty state + live editing wiring", () => {
     useCharacter.setState({ character: null, liveSync: false, dirty: false });
     useSettings.getState().setUiScale(100);
     useSettings.getState().setVersionHistory(false);
+    useSettings.getState().setDiceButtonPosition("floating-right");
     androidBack.enabled = false;
     androidBack.handler = null;
     androidBack.unregister.mockReset();
@@ -167,6 +168,19 @@ describe("App — empty state + live editing wiring", () => {
     expect(raw.compareDocumentPosition(help) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("uses a bottom-right floating dice button by default and follows the saved setting", () => {
+    const { container } = render(<App />);
+    expect(container.querySelector(".dice-palette-floating.floating-right")).toBeInTheDocument();
+    expect(container.querySelector(".toolbar .dice-toggle")).not.toBeInTheDocument();
+
+    act(() => useSettings.getState().setDiceButtonPosition("floating-left"));
+    expect(container.querySelector(".dice-palette-floating.floating-left")).toBeInTheDocument();
+
+    act(() => useSettings.getState().setDiceButtonPosition("toolbar"));
+    expect(container.querySelector(".dice-palette-floating")).not.toBeInTheDocument();
+    expect(container.querySelector(".toolbar .dice-toggle")).toBeInTheDocument();
+  });
+
   it("turns the sheet into an editor when the pencil toggle is pressed", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
@@ -250,6 +264,7 @@ describe("App — empty state + live editing wiring", () => {
   });
 
   it("moves low-priority toolbar actions into More when scaled controls no longer fit", () => {
+    useSettings.getState().setDiceButtonPosition("toolbar");
     const { container } = render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
     const toolbar = container.querySelector<HTMLElement>(".toolbar")!;
@@ -261,13 +276,15 @@ describe("App — empty state + live editing wiring", () => {
 
     expect(screen.getByRole("button", { name: "Roll a die" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Edit sheet" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Export JSON" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Raw JSON editor" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "GPT prompts" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "GPT prompts" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Export JSON" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "How to use :JUGALE" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Settings" })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText("•••"));
-    expect(screen.getByRole("menuitem", { name: "GPT prompts" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Export JSON" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "How to use :JUGALE" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Settings" })).toBeInTheDocument();
   });
 

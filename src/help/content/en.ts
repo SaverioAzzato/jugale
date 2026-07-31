@@ -99,8 +99,17 @@ export const helpEn: HelpCatalog = assertHelpCatalog({
             "Tap an attack or spell to open all of its details.",
             "Tap +, −, Damage or Heal once for a single step, or keep holding for faster repeated changes. Sliding your finger scrolls without changing the value.",
             "Use Short rest or Long rest to recover everything configured for that rest.",
-            "Tap the die in the top bar whenever you need a roll.",
+            "Tap the floating die at the bottom right whenever you need a roll.",
             "Use + condition and Inspiration in Play to keep the current situation visible.",
+          ],
+        },
+        {
+          title: "Roll and move dice",
+          intro: "The dice button floats at the bottom right by default. In Settings → Dice button you can move it to the bottom left or put it in the top bar.",
+          bullets: [
+            "Tap the dice button, then choose the die you want. The selection menu always stays in front of dice already on the sheet.",
+            "Drag a result to move it; tap it to remove it.",
+            "Dice stay below the complete top bar and away from a floating dice button, including when you change Interface scale or browser zoom.",
           ],
         },
       ],

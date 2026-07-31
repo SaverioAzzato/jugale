@@ -4,7 +4,13 @@ import { useSettings } from "./useSettings";
 describe("UI settings", () => {
   beforeEach(() => {
     localStorage.clear();
-    useSettings.setState({ toastSeconds: 10, units: "imperial", uiScale: 100, versionHistory: false });
+    useSettings.setState({
+      toastSeconds: 10,
+      units: "imperial",
+      uiScale: 100,
+      versionHistory: false,
+      diceButtonPosition: "floating-right",
+    });
     document.documentElement.style.removeProperty("--ui-scale");
   });
 
@@ -13,6 +19,7 @@ describe("UI settings", () => {
     useSettings.getState().setToastSeconds(15);
     useSettings.getState().setUiScale(120);
     useSettings.getState().setVersionHistory(true);
+    useSettings.getState().setDiceButtonPosition("floating-left");
 
     expect(document.documentElement.style.getPropertyValue("--ui-scale")).toBe("1.2");
     expect(JSON.parse(localStorage.getItem("dndm.settings") || "{}")).toEqual({
@@ -20,6 +27,7 @@ describe("UI settings", () => {
       units: "metric",
       uiScale: 120,
       versionHistory: true,
+      diceButtonPosition: "floating-left",
     });
   });
 
@@ -28,5 +36,6 @@ describe("UI settings", () => {
     vi.resetModules();
     const { useSettings: freshSettings } = await import("./useSettings");
     expect(freshSettings.getState().versionHistory).toBe(true);
+    expect(freshSettings.getState().diceButtonPosition).toBe("floating-right");
   });
 });

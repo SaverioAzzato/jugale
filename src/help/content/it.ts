@@ -99,8 +99,17 @@ export const helpIt: HelpCatalog = assertHelpCatalog({
             "Premi un attacco o un incantesimo per aprirne tutti i dettagli.",
             "Premi una volta +, −, Danno o Cura per un singolo passo, oppure tieni premuto per modifiche ripetute più rapide. Se fai scorrere il dito, la pagina si muove senza cambiare il valore.",
             "Usa Riposo breve o Riposo lungo per recuperare ciò che è configurato per quel riposo.",
-            "Premi il dado nella barra in alto ogni volta che serve un tiro.",
+            "Premi il dado floating in basso a destra ogni volta che serve un tiro.",
             "Usa + condizione e Ispirazione in Gioco per tenere visibile la situazione attuale.",
+          ],
+        },
+        {
+          title: "Lancia e sposta i dadi",
+          intro: "Il pulsante dei dadi è floating in basso a destra per impostazione predefinita. In Impostazioni → Pulsante dei dadi puoi spostarlo in basso a sinistra oppure inserirlo nella barra in alto.",
+          bullets: [
+            "Premi il pulsante dei dadi, poi scegli quello da lanciare. Il menu di selezione resta sempre davanti ai dadi già presenti sulla scheda.",
+            "Trascina un risultato per spostarlo; premilo per rimuoverlo.",
+            "I dadi restano sotto l'intera barra superiore e lontani dal pulsante floating, anche quando cambi la Scala interfaccia o lo zoom del browser.",
           ],
         },
       ],

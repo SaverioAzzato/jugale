@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useT } from "../i18n/useI18n";
 import { useDice } from "./useDice";
 import { useFocusTrap } from "./useFocusTrap";
-import { useSettings } from "./useSettings";
+import { useSettings, type DiceButtonPosition } from "./useSettings";
 import { useUiBackHandler } from "./uiBack";
-import { fixedAnchorBelow } from "./zoomCoordinates";
+import { fixedAnchorAbove, fixedAnchorAboveLeft, fixedAnchorBelow } from "./zoomCoordinates";
 
 /** Each die type maps to a simple regular polygon (n sides, rotation) used as its glyph. */
 const DICE: { sides: number; n: number; rot: number }[] = [
@@ -54,19 +54,28 @@ function Die3DIcon() {
   );
 }
 
+function paletteMenuPosition(r: DOMRect, placement: DiceButtonPosition, uiScale: number): CSSProperties {
+  if (placement === "floating-left") return fixedAnchorAboveLeft(r, window.innerHeight, uiScale);
+  if (placement === "floating-right") {
+    return fixedAnchorAbove(r, { width: window.innerWidth, height: window.innerHeight }, uiScale);
+  }
+  return fixedAnchorBelow(r, window.innerWidth, uiScale);
+}
+
 /**
- * Topbar dice palette. Two ways to roll:
+ * Dice palette, either in the top bar or floating at a bottom corner. Two ways to roll:
  *  - tap the toggle to open, then click a die;
  *  - press the toggle, drag onto a die, and release (faster).
  * Releasing on empty space cancels; tapping the toggle again closes it.
  */
-export function DicePalette() {
+export function DicePalette({ placement = "toolbar" }: { placement?: DiceButtonPosition }) {
   const t = useT();
   const roll = useDice((s) => s.roll);
   const uiScale = useSettings((s) => s.uiScale / 100);
   const [open, setOpen] = useState(false);
-  // The menu is position:fixed (the toolbar clips overflow), anchored under the toggle.
-  const [pos, setPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
+  // The menu is fixed because the toolbar clips overflow. It opens below the topbar button and
+  // above either floating button; DOMRects are converted back through the root Interface scale.
+  const [pos, setPos] = useState<CSSProperties>({ top: 0, right: 0 });
   const ref = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -80,7 +89,7 @@ export function DicePalette() {
 
   const openMenu = () => {
     const r = toggleRef.current?.getBoundingClientRect();
-    if (r) setPos(fixedAnchorBelow(r, window.innerWidth, uiScale));
+    if (r) setPos(paletteMenuPosition(r, placement, uiScale));
     setOpen(true);
   };
 
@@ -95,7 +104,7 @@ export function DicePalette() {
     };
     const reposition = () => {
       const r = toggleRef.current?.getBoundingClientRect();
-      if (r) setPos(fixedAnchorBelow(r, window.innerWidth, uiScale));
+      if (r) setPos(paletteMenuPosition(r, placement, uiScale));
     };
     document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
@@ -107,7 +116,7 @@ export function DicePalette() {
       window.removeEventListener("resize", reposition);
       window.visualViewport?.removeEventListener("resize", reposition);
     };
-  }, [open, uiScale]);
+  }, [open, placement, uiScale]);
 
   const dieAt = (x: number, y: number): number | null => {
     const el = document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-die]");
@@ -157,7 +166,10 @@ export function DicePalette() {
   };
 
   return (
-    <div className="dice-palette" ref={ref}>
+    <div
+      className={placement === "toolbar" ? "dice-palette" : `dice-palette dice-palette-floating ${placement}`}
+      ref={ref}
+    >
       <button
         ref={toggleRef}
         type="button"
@@ -172,7 +184,7 @@ export function DicePalette() {
         <Die3DIcon />
       </button>
       {open && (
-        <div className="dice-menu" role="menu" ref={menuRef} style={{ top: pos.top, right: pos.right }}>
+        <div className="dice-menu" role="menu" ref={menuRef} style={pos}>
           {DICE.map((d) => (
             <button
               key={d.sides}

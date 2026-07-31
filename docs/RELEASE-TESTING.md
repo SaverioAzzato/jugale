@@ -72,8 +72,11 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
   and Raw JSON. Text, icons, buttons and spacing scale together; no horizontal page overflow or
   inaccessible fixed bar appears. The background reaches the bottom without a color seam. Close/
   reopen the app and confirm the selected scale persists.
-- ☐ At a narrow viewport / 120% scale, toolbar actions that do not fit move into `…`: Settings,
-  prompts, Raw JSON, Export and Edit disappear in that order; dice disappears last. Back remains.
+- ☐ Settings → Dice button persists all three positions across restart: top bar, floating bottom
+  right (default on a clean install), and floating bottom left. Check safe areas and 80%, 100%, 120%.
+- ☐ With the dice button in the top bar, at a narrow viewport / 120% scale, toolbar actions that do
+  not fit move into `…` in this order: Settings, Help, Export, Versions, Save version, prompts, Raw
+  JSON, Edit, dice. Unavailable version actions are skipped; dice disappears last. Back remains.
 - ☐ Make the tab row overflow, then swipe between sheet pages: the active tab label automatically
   scrolls into view without moving the document vertically.
 - ☐ Start vertical and horizontal swipes on `+`, `−`, Damage, Heal and ordinary sheet buttons:
@@ -81,6 +84,9 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
   stationary hold still repeats with acceleration.
 - ☐ **Dice on a button**: roll a die so it rests over a button; tap/hold the die → only the die
   reacts, the button underneath does **not** fire.
+- ☐ Roll and drag dice toward the top edge: no die may enter either toolbar or tab row. Repeat with
+  the trigger floating on each side: dice must spawn and drag around it, while the dice-selection
+  menu remains visually above resting dice. Repeat at 80%, 100%, 120% and with browser zoom.
 - ☐ **Prompt sharing**: on the Prompts page, Base/Create/Custom can open Android's generic
   sharesheet without a character; Level up/Validate/Migrate are disabled and explain why. With a
   character open, share Level up and verify the chooser opens immediately. ChatGPT should receive

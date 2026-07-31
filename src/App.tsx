@@ -78,7 +78,7 @@ interface PendingIncomingCharacter {
   target: AndroidImportTarget | null;
 }
 
-const TOOLBAR_PRIORITY: ToolbarActionId[] = ["dice", "edit", "version", "history", "export", "raw", "prompts", "help", "settings"];
+const TOOLBAR_PRIORITY: ToolbarActionId[] = ["dice", "edit", "raw", "prompts", "version", "history", "export", "help", "settings"];
 
 function useToolbarCapacity(
   toolbarRef: RefObject<HTMLElement>,
@@ -156,6 +156,7 @@ export function App() {
   const toolbarLeftRef = useRef<HTMLDivElement>(null);
   const tabbarRef = useRef<HTMLElement>(null);
   const transientBackDepth = useUiBackDepth();
+  const diceButtonPosition = useSettings((s) => s.diceButtonPosition);
 
   // Full-page overlays keep only the shared navigation actions in the toolbar, so the sheet
   // behind them is unreachable and a full Tab-trap isn't needed. Move focus in, let Escape
@@ -187,9 +188,15 @@ export function App() {
 
   const presentToolbarActions = useMemo<ToolbarActionId[]>(
     () => character
-      ? TOOLBAR_PRIORITY.filter((id) => !["version", "history"].includes(id) || (versionHistory && versionsAvailable))
-      : ["dice", "prompts", "settings"],
-    [character, versionHistory, versionsAvailable],
+      ? TOOLBAR_PRIORITY.filter((id) =>
+          (id !== "dice" || diceButtonPosition === "toolbar") &&
+          (!["version", "history"].includes(id) || (versionHistory && versionsAvailable)))
+      : [
+          ...(diceButtonPosition === "toolbar" ? (["dice"] as ToolbarActionId[]) : []),
+          "prompts",
+          "settings",
+        ],
+    [character, diceButtonPosition, versionHistory, versionsAvailable],
   );
   const toolbarActionCapacity = useToolbarCapacity(
     toolbarRef,
@@ -756,6 +763,7 @@ export function App() {
       )}
 
       <UpdateBanner />
+      {diceButtonPosition !== "toolbar" && <DicePalette placement={diceButtonPosition} />}
       <DiceCanvas />
       <Toasts />
       {saveVersionOpen && (

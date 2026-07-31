@@ -33,4 +33,21 @@ describe("DicePalette", () => {
 
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
+
+  it("opens above a scaled bottom-left floating button", () => {
+    useSettings.getState().setUiScale(120);
+    render(<DicePalette placement="floating-left" />);
+    const toggle = screen.getByRole("button", { name: "Roll a die" });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
+    Object.defineProperty(toggle, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({ top: 700, left: 24 }),
+    });
+
+    fireEvent.pointerDown(toggle, { button: 0, clientX: 42, clientY: 720 });
+
+    const menu = screen.getByRole("menu");
+    expect(menu.style.bottom).toBe("128px");
+    expect(menu.style.left).toBe("20px");
+  });
 });

@@ -74,9 +74,16 @@ Four tabs; each auto-hides if it would have no content.
 
 ## Mobile interaction and interface scale
 
+Refresh the deterministic EN/IT Help captures after visible UI changes with
+`node scripts/capture-help-screenshots.mjs` while `npm run dev` is running. The script uses a
+390×844 viewport at device scale factor 2 and writes native 780×1688 PNGs; override Chrome with
+`JUGALE_CHROME_PATH` or pass a different local base URL as the first argument when necessary.
+
 - Page-level pinch/double-tap zoom is disabled in the mobile viewport: the native-app surface stays stable while the gallery lightbox provides its own intentional zoom.
 - Settings persists an **Interface scale** from 80% to 120%. It is applied at the document layout level, so typography, spacing, buttons, form controls, icons, panels, overlays, sticky/fixed chrome, the JSON editor and empty/settings/help screens all scale together. It is not a visual transform: layout and hit testing use the scaled sizes and responsive wrapping is recalculated.
-- The character toolbar measures its rendered space after Interface scale is applied. When actions no longer fit, lower-priority ones move into **More (`…`)** in this survival order: dice, Edit, Export, Raw JSON, prompts, Settings. The Back button is independent and always remains visible.
+- Settings also persists the **Dice button** position: floating at the bottom right (default), floating at the bottom left, or in the top bar. Floating placement respects system safe areas and remains available on full-page app views.
+- The character toolbar measures its rendered space after Interface scale is applied. When actions no longer fit, lower-priority ones move into **More (`…`)** in this disappearance order: Settings, Help, Export, Versions, Save version, prompts, Raw JSON, Edit, dice. Version actions are omitted when unavailable; dice participates only when its selected position is the top bar. The Back button is independent and always remains visible.
+- Thrown dice use visual-pixel DOM measurements after Interface scale and browser zoom. Their centers are constrained so the complete sticky app bar (toolbar plus tabs) and the active floating dice button are expanded by the die radius into collision obstacles. The menu and both dice-button placements share a stacking layer above the WebGL canvas, so the selector and app chrome are never painted behind resting dice.
 - The tab row may scroll horizontally. Whenever a click or sheet swipe selects an off-screen tab, the row scrolls only far enough to reveal its active label; it never moves the page vertically.
 
 ## Cross-cutting data model
