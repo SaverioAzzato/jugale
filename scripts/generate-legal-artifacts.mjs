@@ -18,13 +18,14 @@ const sbomPath = join(root, "public", "third-party-sbom.spdx.json");
 const checkOnly = process.argv.includes("--check");
 
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+const readNormalized = (path) => readFileSync(path, "utf8").replace(/\r\n?/g, "\n");
 const lockFingerprint = sha256(
-  Buffer.concat([
-    Buffer.from("package-lock.json\0"),
-    readFileSync(packageLockPath),
-    Buffer.from("\0src-tauri/Cargo.lock\0"),
-    readFileSync(cargoLockPath),
-  ]),
+  [
+    "package-lock.json\0",
+    readNormalized(packageLockPath),
+    "\0src-tauri/Cargo.lock\0",
+    readNormalized(cargoLockPath),
+  ].join(""),
 );
 
 function creationTimestamp() {
@@ -138,7 +139,9 @@ function expectedPurlsFromLocks() {
     purls.push(npmPurl(manifest.name ?? lockPath.slice("node_modules/".length), locked.version ?? manifest.version));
   }
 
-  const cargoLock = readFileSync(cargoLockPath, "utf8");
+  // Git may check text files out with CRLF on Windows. Parse normalized text so
+  // the same committed lockfiles always produce the same inventory and hash.
+  const cargoLock = readNormalized(cargoLockPath);
   for (const match of cargoLock.matchAll(/\[\[package\]\]\n([\s\S]*?)(?=\n\[\[package\]\]|$)/g)) {
     const block = match[1];
     if (!/^source\s*=\s*"/m.test(block)) continue;
