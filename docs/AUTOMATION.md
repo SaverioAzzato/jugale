@@ -100,6 +100,33 @@ components/licences and commit both generated files. The full build and release 
 artifacts. The readable notice preserves upstream licence/notice texts; the SPDX file is the
 machine-readable software bill of materials.
 
+### Dependency-licensing check at release time
+
+The automated check proves that the generated inventory matches the committed lockfiles; it does
+**not** decide whether every newly introduced licence is acceptable. Use this small review on every
+stable or Dev release:
+
+1. Run `scripts/set-version.sh <version>`, then `npm run legal:generate`. The version command updates
+   both lockfiles' root-package metadata, so regeneration is required even when no dependency was
+   added or upgraded.
+2. Review the diff of `public/THIRD_PARTY_NOTICES.txt` and
+   `public/third-party-sbom.spdx.json`. If dependencies did not change, the component set and licence
+   expressions should remain unchanged; fingerprint, document namespace and JUGALE metadata may
+   change with the version.
+3. If dependencies did change, review every added or upgraded component's declared licence, source
+   URL, exact archive and preserved licence/NOTICE files. Stop before tagging if an entry says
+   `NOASSERTION`, lacks expected licence text, uses a non-standard/proprietary licence, or introduces
+   unexpected reciprocal terms such as GPL, AGPL, LGPL or MPL. Determine the actual redistribution,
+   source-availability and notice obligations first. An `OR` expression means the package offers a
+   choice; record and comply with the chosen permitted option where that choice matters.
+4. Run `npm run legal:check`, then the mandatory `npm run check:release`. Commit both generated
+   artifacts with the lockfiles and version files; never edit generated notice or SBOM content by
+   hand.
+
+For an ordinary version-only release, this is therefore a quick confirmation, not a new legal audit
+of every currently inventoried component. A full dependency review is needed only for additions,
+upgrades, vendored or patched third-party code, or changed upstream licence metadata.
+
 The app version lives in **five files that don't read from each other**, and all must match the release tag:
 
 | File | Why it has a version |
@@ -112,7 +139,7 @@ The app version lives in **five files that don't read from each other**, and all
 
 Keep them in lockstep:
 
-1. **Run `scripts/set-version.sh <x.y.z>`** (no `v` prefix, e.g. `1.4.0`) — it sets all five at once, **including both lockfiles** (skip `Cargo.lock` and `cargo check --locked` fails CI). Then run **`npm run legal:generate`**, because the lockfile fingerprint changed even when only JUGALE's own version changed. Follow SemVer: patch for fixes, minor for features, major for breaking changes. Commit the version and generated legal artifacts together. *(Doing it by hand instead? Edit all five — forgetting `tauri.conf.json` ships installers labelled with the wrong version, stale lockfile metadata weakens release provenance, forgetting `Cargo.lock` breaks CI, and forgetting the legal regeneration makes the release gate reject the tag.)*
+1. **Run `scripts/set-version.sh <x.y.z>`** (no `v` prefix, e.g. `1.4.0`) — it sets all five at once, **including both lockfiles** (skip `Cargo.lock` and `cargo check --locked` fails CI). Then run **`npm run legal:generate`** and complete the dependency-licensing check above, because the lockfile fingerprint changed even when only JUGALE's own version changed. Follow SemVer: patch for fixes, minor for features, major for breaking changes. Commit the version and generated legal artifacts together. *(Doing it by hand instead? Edit all five — forgetting `tauri.conf.json` ships installers labelled with the wrong version, stale lockfile metadata weakens release provenance, forgetting `Cargo.lock` breaks CI, and forgetting the legal regeneration makes the release gate reject the tag.)*
 2. After merging to `main`, create and push the matching tag **`v<version>`** (e.g. `v1.3.0`). The tag is what triggers `pages.yml` (web deploy) and `release.yml` (native draft).
 3. Publish the drafted GitHub Release once the native assets are attached.
 

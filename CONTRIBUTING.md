@@ -43,7 +43,7 @@ The schema/derivation/migration layer is exhaustively unit-tested (`*.test.ts` n
 - Keep the implementation simple and the diff easy to review. Avoid unrelated cleanup or drive-by refactors, and split independent changes into separate PRs.
 - For a large feature, schema change, new dependency, or shift in product direction, open a focused issue before investing heavily so the approach can be discussed.
 - If you're touching `src/schema/`, also check whether `docs/SCHEMA.md` needs updating to match.
-- If a JavaScript or Rust dependency changes, run `npm run legal:generate`, review the new licence/source entries, and commit both generated files. CI rejects a notice/SBOM whose lockfile fingerprint or component list is stale.
+- If a JavaScript or Rust dependency changes, run `npm run legal:generate`, review the new licence/source entries, and commit both generated files. CI rejects a notice/SBOM whose lockfile fingerprint or component list is stale, but it cannot decide whether a new licence is acceptable; stop on `NOASSERTION`, missing expected notices, proprietary terms or unexpected copyleft until the obligations are understood.
 - If you're shipping a UI feature beyond what's already scoped in the roadmap, add a line to the relevant milestone in `docs/ROADMAP.md` once it ships.
 
 This project is maintained in personal time. Opening an issue or PR does not create a promise or timeline for a reply, review, merge, or release; a response may be delayed, and I may not be able to respond to every proposal.
