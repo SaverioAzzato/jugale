@@ -5,7 +5,7 @@
     "player": "To fill in",
     "summary": "Tiefling Warlock — Pact of the Tome. Example v2 template.",
     "ruleset": [
-      "SRD"
+      "SRD 5.1"
     ],
     "tags": [
       "warlock",
@@ -156,35 +156,28 @@
       "title": "Spells (pact slots, lvl 3)",
       "entries": [
         {
-          "name": "Hex",
-          "link": "https://www.dndbeyond.com/spells/hex",
+          "name": "Hellish Rebuke",
+          "link": "https://www.dndbeyond.com/spells/hellish-rebuke",
           "level": "1",
-          "school": "Enchantment",
+          "school": "Evocation",
           "castingTime": {
-            "type": "bonus",
+            "type": "reaction",
             "value": "",
-            "condition": ""
+            "condition": "when damaged by a creature you can see within 60 ft"
           },
-          "range": "90 ft",
+          "range": "60 ft",
           "components": {
             "verbal": true,
             "somatic": true,
-            "material": true
+            "material": false
           },
-          "duration": "Concentration, 1 hour",
-          "concentration": true,
+          "duration": "Instantaneous",
+          "concentration": false,
           "attack": "—",
-          "defense": "—",
-          "effect": "+1d6 on each attack against the target; disadvantage on one chosen ability",
-          "damageType": "necrotic",
-          "materials": [
-            {
-              "text": "the petrified eye of a newt",
-              "cost": null,
-              "consumable": false
-            }
-          ],
-          "higherLevels": "3rd–4th-level slot: up to 8 hours; 5th+ slot: up to 24 hours"
+          "defense": "Dex save",
+          "effect": "2d10 fire damage on a failed save, half on success",
+          "damageType": "fire",
+          "higherLevels": "+1d10 damage for each slot level above 1st"
         }
       ]
     }
@@ -315,8 +308,8 @@
       }
     ],
     "backgroundFeature": {
-      "name": "Researcher",
-      "description": "You know where and from whom to get information."
+      "name": "Archive Habit",
+      "description": "When a question cannot be answered immediately, note the likely archive or expert to consult next."
     }
   },
   "narrative": {

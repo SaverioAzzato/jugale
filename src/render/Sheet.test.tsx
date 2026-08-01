@@ -26,7 +26,7 @@ describe("Sheet — Gioco tab", () => {
     sheet(warlock, "gioco");
     expect(screen.getByText(/DC 14, attack \+6/)).toBeInTheDocument(); // CHA 17 (+3), PB +3 (default locale: en)
     // Spells are collapsed rows: the wiki link lives in the expanded body.
-    fireEvent.click(screen.getByRole("button", { name: /Hex/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Hellish Rebuke/ }));
     const link = screen.getByRole("link", { name: /wiki/i });
     expect(link).toHaveAttribute("href", expect.stringContaining("dndbeyond.com"));
   });

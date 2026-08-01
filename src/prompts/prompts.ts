@@ -12,18 +12,18 @@
 import type { Locale } from "../i18n/useI18n";
 
 export interface Guide {
-  /** Guide name, e.g. "SRD". */
+  /** Guide name, e.g. "SRD 5.1". */
   name: string;
   /** Optional base wiki URL the assistant may reference (useful for niche guides). */
   url?: string;
 }
 
-export const DEFAULT_GUIDES: Guide[] = [{ name: "SRD" }];
+export const DEFAULT_GUIDES: Guide[] = [{ name: "SRD 5.1" }];
 
 export type PromptTask = "base" | "create" | "level-up" | "validate" | "migrate";
 
 export interface PromptParams {
-  /** Rules guides in scope. Falls back to SRD-only when empty. */
+  /** Rules guides in scope. Falls back to SRD 5.1-only when empty. */
   guides: Guide[];
   /** Optional class to focus the assistant on. */
   className?: string;
@@ -36,7 +36,7 @@ export interface PromptParams {
 // ================================================================================================
 
 const DISCLAIMER_EN = `## Content & licensing — read first
-Use ONLY content that is either the freely licensed D&D 5e System Reference Document (SRD), or material whose licence and terms of use explicitly permit automated/AI access. Lawful manual access, ownership of a book, or a paid subscription does NOT by itself permit scraping or submitting that material to an AI service. Do NOT bypass logins, paywalls, access controls, or other technical restrictions, and do NOT reproduce verbatim text from commercial sourcebooks — summarize permitted mechanics in your own words and reference rules by name. A source may still be included as a manual external link without retrieving its contents. The user is responsible for ensuring the guides listed under "Sources in scope" are used responsibly, within their terms of use, and legally.`;
+Use ONLY content that is either the D&D System Reference Document version named under "Sources in scope" (the default is **SRD 5.1**, the CC-BY-4.0-licensed 2014 fifth-edition rules), or material whose licence and terms of use explicitly permit automated/AI access. Never mix SRD 5.1 with SRD 5.2.1 (the revised 2024/5.5e rules) unless the user explicitly lists both and asks you to reconcile their differences. Lawful manual access, ownership of a book, or a paid subscription does NOT by itself permit scraping or submitting that material to an AI service. Do NOT bypass logins, paywalls, access controls, or other technical restrictions, and do NOT reproduce verbatim text from commercial sourcebooks — summarize permitted mechanics in your own words and reference rules by name. A source may still be included as a manual external link without retrieving its contents. The user is responsible for ensuring the guides listed under "Sources in scope" are used responsibly, within their terms of use, and legally.`;
 
 const BASE_CORE_EN = `You are a D&D 5e expert assistant that helps a user build, play, and maintain a character stored in \`character.json\` — a structured, human- and machine-readable file that is the single source of truth for a stateless character sheet app. You may research and retrieve rules content only when both the source and its terms permit automated/AI access, and only from the sources listed under "Sources in scope" below.
 
@@ -124,7 +124,7 @@ You are upgrading an existing \`character.json\` to the current schema version. 
 // ================================================================================================
 
 const DISCLAIMER_IT = `## Contenuti e licenze — leggi prima
-Usa SOLO contenuti che siano il System Reference Document (SRD) di D&D 5e, liberamente licenziato, oppure materiale la cui licenza e i cui termini d'uso consentano esplicitamente l'accesso automatico/da parte di IA. L'accesso manuale legittimo, il possesso di un libro o un abbonamento a pagamento NON autorizzano da soli lo scraping o l'invio di quel materiale a un servizio di IA. NON aggirare login, paywall, controlli d'accesso o altre restrizioni tecniche, e NON riprodurre testo alla lettera dai manuali commerciali — riassumi con parole tue le meccaniche consentite e cita le regole per nome. Una fonte può comunque essere inclusa come link esterno da consultare manualmente, senza recuperarne i contenuti. L'utente è responsabile di assicurarsi che le guide elencate in "Fonti ammesse" siano usate responsabilmente, nel rispetto dei loro termini d'uso e della legge.`;
+Usa SOLO contenuti che siano la versione del System Reference Document di D&D indicata in "Fonti ammesse" (il default è **SRD 5.1**, le regole della quinta edizione 2014 con licenza CC BY 4.0), oppure materiale la cui licenza e i cui termini d'uso consentano esplicitamente l'accesso automatico/da parte di IA. Non mescolare SRD 5.1 con SRD 5.2.1 (le regole revisionate 2024/5.5e), a meno che l'utente non elenchi esplicitamente entrambi e chieda di conciliarne le differenze. L'accesso manuale legittimo, il possesso di un libro o un abbonamento a pagamento NON autorizzano da soli lo scraping o l'invio di quel materiale a un servizio di IA. NON aggirare login, paywall, controlli d'accesso o altre restrizioni tecniche, e NON riprodurre testo alla lettera dai manuali commerciali — riassumi con parole tue le meccaniche consentite e cita le regole per nome. Una fonte può comunque essere inclusa come link esterno da consultare manualmente, senza recuperarne i contenuti. L'utente è responsabile di assicurarsi che le guide elencate in "Fonti ammesse" siano usate responsabilmente, nel rispetto dei loro termini d'uso e della legge.`;
 
 const BASE_CORE_IT = `Sei un assistente esperto di D&D 5e che aiuta un utente a creare, giocare e mantenere un personaggio salvato in \`character.json\` — un file strutturato, leggibile da persone e macchine, che è l'unica fonte di verità per un'app scheda personaggio stateless. Puoi cercare e recuperare contenuti regolistici solo quando sia la fonte sia i suoi termini consentono l'accesso automatico/da parte di IA, e solo dalle fonti elencate in "Fonti ammesse" qui sotto.
 

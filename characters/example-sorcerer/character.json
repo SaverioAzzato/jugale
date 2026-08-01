@@ -3,6 +3,9 @@
   "meta": {
     "name": "Example Sorcerer",
     "summary": "Tiefling Sorcerer (Draconic Bloodline) — sorcery-points caster + metamagic.",
+    "ruleset": [
+      "SRD 5.1"
+    ],
     "tags": [
       "sorcerer",
       "example",

@@ -14,6 +14,7 @@ describe("loadCharacter", () => {
     expect(character.abilities.str.score).toBe(10);
     expect(character.inventory.currencies.gp).toBe(0);
     expect(character.combat.armorClassOverride).toBeNull();
+    expect(character.meta.ruleset).toEqual(["SRD 5.1"]);
     expect(character.senses).toEqual([]);
     expect(character.defenses).toEqual({
       resistances: [],

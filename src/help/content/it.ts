@@ -231,6 +231,27 @@ export const helpIt: HelpCatalog = assertHelpCatalog({
           intro: "Scarica character.schema.json da Prompt quando un editor o un chatbot deve conoscere l'elenco esatto dei campi accettati. Descrive il formato; non è il tuo personaggio.",
           bullets: ["Conserva character.json come file con cui giochi.", "Esporta o salva una versione prima di una grossa modifica manuale.", "Se un file non si apre più, ripristina una versione oppure correggi la sintassi JSON in un editor di testo."],
         },
+        {
+          title: "Contenuti regolistici, licenze e privacy",
+          intro: "JUGALE è indipendente e non è affiliato, approvato, sponsorizzato né avallato da Wizards of the Coast. Gli esempi inclusi usano SRD 5.1 (le regole 2014) con licenza CC BY 4.0; SRD 5.2.1 è una linea di regole revisionata diversa e va indicata esplicitamente. I tuoi file restano tuoi e JUGALE non ha account, pubblicità o un backend di analytics.",
+          details: [
+            {
+              title: "Attribuzione SRD 5.1 e modifiche",
+              paragraphs: [
+                "This work includes material taken from the System Reference Document 5.1 (“SRD 5.1”) by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+                "JUGALE seleziona, abbrevia, traduce, adatta e codifica in forma strutturata parti di quel materiale. Per il materiale SRD si basa su CC BY 4.0, non sulla Fan Content Policy.",
+              ],
+            },
+            {
+              title: "Contenuti esterni e chatbot",
+              paragraphs: ["Sei responsabile dei contenuti e dei link che aggiungi. JUGALE non recupera le pagine collegate. I contenuti escono da JUGALE solo quando li esporti o condividi esplicitamente; da quel momento valgono termini e privacy del servizio ricevente."],
+            },
+            {
+              title: "Licenze del software e delle dipendenze",
+              paragraphs: ["Il codice di JUGALE è sotto licenza MIT. Le immagini di esempio e documentazione del progetto hanno termini CC BY 4.0 separati. Ogni build include THIRD_PARTY_NOTICES.txt e una SBOM SPDX con l'insieme esatto delle dipendenze JavaScript e Rust bloccate e le rispettive licenze."],
+            },
+          ],
+        },
       ],
     },
   ],

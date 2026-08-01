@@ -199,6 +199,17 @@ export function EmptyState({
         <span className="empty-footer-sep" aria-hidden>
           ·
         </span>
+        <a
+          className="empty-footer-link"
+          href="https://github.com/SaverioAzzato/jugale/blob/main/docs/LEGAL.md"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t("empty.legal")}
+        </a>
+        <span className="empty-footer-sep" aria-hidden>
+          ·
+        </span>
         <span className="empty-footer-version">{__APP_VERSION__}</span>
       </footer>
     </div>

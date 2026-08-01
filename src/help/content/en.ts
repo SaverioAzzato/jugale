@@ -231,6 +231,27 @@ export const helpEn: HelpCatalog = assertHelpCatalog({
           intro: "Download character.schema.json from Prompts when an editor or chatbot needs the exact list of accepted fields. It describes the file; it is not your character.",
           bullets: ["Keep character.json as the file you play with.", "Export or save a version before a large manual change.", "If a file no longer opens, restore a version or correct the JSON syntax in a text editor."],
         },
+        {
+          title: "Rules content, licences and privacy",
+          intro: "JUGALE is independent and is not affiliated with, endorsed, sponsored or approved by Wizards of the Coast. Bundled examples use SRD 5.1 (the 2014 rules) under CC BY 4.0; SRD 5.2.1 is a different revised rules line and must be named explicitly. Your files remain yours, and JUGALE has no account, advertising or analytics backend.",
+          details: [
+            {
+              title: "SRD 5.1 attribution and changes",
+              paragraphs: [
+                "This work includes material taken from the System Reference Document 5.1 (“SRD 5.1”) by Wizards of the Coast LLC and available at https://dnd.wizards.com/resources/systems-reference-document. The SRD 5.1 is licensed under the Creative Commons Attribution 4.0 International License available at https://creativecommons.org/licenses/by/4.0/legalcode.",
+                "JUGALE selects, shortens, translates, adapts and structurally encodes portions of that material. It relies on CC BY 4.0 for SRD material, not on the Fan Content Policy.",
+              ],
+            },
+            {
+              title: "External content and chatbots",
+              paragraphs: ["You are responsible for content and links you add. JUGALE does not retrieve linked pages. Content leaves JUGALE only when you explicitly export or share it; the receiving service's terms and privacy policy then apply."],
+            },
+            {
+              title: "Software and dependency licences",
+              paragraphs: ["JUGALE code is MIT-licensed. Project example/documentation images have separate CC BY 4.0 terms. Every build includes THIRD_PARTY_NOTICES.txt and an SPDX SBOM listing the exact locked JavaScript and Rust dependency set and their own licences."],
+            },
+          ],
+        },
       ],
     },
   ],

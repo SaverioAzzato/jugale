@@ -3,12 +3,12 @@ import { composePrompt, composeCustom, composeHeader, defaultSegments, DEFAULT_G
 
 describe("composePrompt", () => {
   it("base includes the disclaimer, interaction style, the sources, and the data contract", () => {
-    const text = composePrompt("base", { guides: [{ name: "SRD" }] });
+    const text = composePrompt("base", { guides: [{ name: "SRD 5.1" }] });
     expect(text).toContain("Content & licensing");
     expect(text).toContain("Interaction style");
     expect(text).toContain("one decision at a time");
     expect(text).toContain("Sources in scope");
-    expect(text).toContain("- SRD");
+    expect(text).toContain("- SRD 5.1");
     expect(text).toContain("How to edit character.json");
     expect(text).toContain("Retrieve rules; don't lean on memory"); // grounding over recall
     // base carries no task-specific section
@@ -16,7 +16,7 @@ describe("composePrompt", () => {
   });
 
   it("task prompts are base + that task (disclaimer travels)", () => {
-    const create = composePrompt("create", { guides: [{ name: "SRD" }] });
+    const create = composePrompt("create", { guides: [{ name: "SRD 5.1" }] });
     expect(create).toContain("Content & licensing");
     expect(create).toContain("Task: create a character");
     expect(create).toContain("step by step");
@@ -24,7 +24,7 @@ describe("composePrompt", () => {
 
   it("migrate is a standalone, mechanical prompt (no base) referencing its attachments", () => {
     expect(PROMPTS.map((p) => p.id)).toContain("migrate");
-    const migrate = composePrompt("migrate", { guides: [{ name: "SRD" }] });
+    const migrate = composePrompt("migrate", { guides: [{ name: "SRD 5.1" }] });
     expect(migrate).not.toContain("Content & licensing"); // base does NOT travel
     expect(migrate).not.toContain("Sources in scope");
     expect(migrate).toContain("Migrate a character.json to the current schema");
@@ -34,7 +34,7 @@ describe("composePrompt", () => {
   });
 
   it("base teaches modelling an extra-ability AC bonus as a bonus-only item, not an override", () => {
-    const base = composePrompt("base", { guides: [{ name: "SRD" }] });
+    const base = composePrompt("base", { guides: [{ name: "SRD 5.1" }] });
     expect(base).toContain("Unarmored Defense");
     expect(base).toContain("bonus-only");
     expect(base).toContain("stays live");
@@ -43,6 +43,12 @@ describe("composePrompt", () => {
   it("falls back to SRD-only when no guides are given", () => {
     const text = composePrompt("base", { guides: [] });
     expect(text).toContain(`- ${DEFAULT_GUIDES[0].name}`);
+  });
+
+  it("preserves a character-supplied guide name without reinterpreting it", () => {
+    const text = composeHeader({ guides: [{ name: "SRD" }] });
+    expect(text).toContain("- SRD");
+    expect(text).not.toContain("- SRD 5.1");
   });
 
   it("renders a guide's optional URL", () => {
@@ -56,21 +62,21 @@ describe("composePrompt", () => {
       baseIntro: "MY CUSTOM INTRO",
       tasks: { ...DEFAULT_SEGMENTS.tasks, create: "MY CUSTOM CREATE TASK" },
     };
-    const base = composePrompt("base", { guides: [{ name: "SRD" }] }, custom);
+    const base = composePrompt("base", { guides: [{ name: "SRD 5.1" }] }, custom);
     expect(base).toContain("MY CUSTOM INTRO");
     expect(base).toContain("Sources in scope"); // header still generated
     expect(base).not.toContain("Content & licensing"); // default intro replaced
 
-    const create = composePrompt("create", { guides: [{ name: "SRD" }] }, custom);
+    const create = composePrompt("create", { guides: [{ name: "SRD 5.1" }] }, custom);
     expect(create).toContain("MY CUSTOM INTRO");
     expect(create).toContain("MY CUSTOM CREATE TASK");
     expect(create).not.toContain("guided, step by step"); // default task replaced
   });
 
   it("adds a Focus section only when class/race are provided", () => {
-    const none = composePrompt("base", { guides: [{ name: "SRD" }] });
+    const none = composePrompt("base", { guides: [{ name: "SRD 5.1" }] });
     expect(none).not.toContain("## Focus");
-    const focused = composePrompt("base", { guides: [{ name: "SRD" }], className: "Warlock", race: "Tiefling" });
+    const focused = composePrompt("base", { guides: [{ name: "SRD 5.1" }], className: "Warlock", race: "Tiefling" });
     expect(focused).toContain("## Focus");
     expect(focused).toContain("**Warlock**");
     expect(focused).toContain("**Tiefling**");
@@ -85,7 +91,7 @@ describe("prompt localization (EN / IT)", () => {
   });
 
   it("composes an Italian prompt from Italian segments + a localized header", () => {
-    const it = composePrompt("base", { guides: [{ name: "SRD" }] }, defaultSegments("it"), "it");
+    const it = composePrompt("base", { guides: [{ name: "SRD 5.1" }] }, defaultSegments("it"), "it");
     expect(it).toContain("Contenuti e licenze"); // disclaimer
     expect(it).toContain("Fonti ammesse"); // generated header, localized
     expect(it).toContain("Come modificare character.json"); // data contract
@@ -100,7 +106,7 @@ describe("prompt localization (EN / IT)", () => {
   });
 
   it("localizes the generated header's Focus labels", () => {
-    const it = composeHeader({ guides: [{ name: "SRD" }], className: "Warlock", race: "Tiefling" }, "it");
+    const it = composeHeader({ guides: [{ name: "SRD 5.1" }], className: "Warlock", race: "Tiefling" }, "it");
     expect(it).toContain("Fonti ammesse");
     expect(it).toContain("la classe **Warlock**");
     expect(it).toContain("la razza/specie **Tiefling**");
@@ -115,7 +121,7 @@ describe("prompt localization (EN / IT)", () => {
 });
 
 describe("custom instruction + base-prompt guidance", () => {
-  const params = { guides: [{ name: "SRD" }] };
+  const params = { guides: [{ name: "SRD 5.1" }] };
 
   it("composeCustom prepends the base prompt and adds a localized custom heading", () => {
     const en = composeCustom(params, DEFAULT_SEGMENTS, "en", "Always offer a backup.");

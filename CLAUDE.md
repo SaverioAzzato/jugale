@@ -18,6 +18,7 @@ Read the spec-first docs before non-trivial work: `docs/ARCHITECTURE.md`, `docs/
 - `npm test` — Vitest unit tests (`npm run test:watch` for watch mode)
 - `npm run typecheck` — `tsc --noEmit`
 - `npm run build` — typecheck + production web build (`vite build`)
+- `npm run legal:generate` / `npm run legal:check` — regenerate or verify the lockfile-derived third-party notice and SPDX SBOM
 
 Node 20+. Tauri (desktop/mobile) tooling and a Tailwind design system arrive in later milestones (M2/M4); they are not wired up yet.
 
@@ -52,7 +53,7 @@ Rules that matter when editing character data (also encoded in `.github/agents/*
 - Preserve all existing JSON fields when editing — don't drop fields outside the requested change. Unknown keys are intentionally preserved.
 - Preserve clickable `link` properties on spells, feats, weapons, background, class features, etc.
 - Images stay in the character's `images/` folder with alphabetically-sortable filenames; the UI scans the folder, never a hardcoded list.
-- **Keep legal/licensing risk low.** `meta.ruleset` defaults to `["SRD"]` (the freely-licensed 5e SRD) — never hardcode a commercial sourcebook (PHB, Xanathar, Tasha, third-party content, etc.) into schema defaults, prompts, `.github/agents/`, or docs as anything other than a clearly-labeled, README-only example. Other rulesets are the user's own choice and licensing responsibility, never ours. There is **no in-app chat/LLM** — that milestone was deliberately dropped (see `docs/ROADMAP.md`, "Explicitly out of scope"); external chatbots via the published JSON Schema are the supported integration point.
+- **Keep legal/licensing risk low.** `meta.ruleset` defaults to `["SRD 5.1"]` (the CC-BY-4.0-licensed 2014 fifth-edition rules); SRD 5.2.1 is the revised 2024/5.5e line and must be named explicitly — never hardcode a commercial sourcebook (PHB, Xanathar, Tasha, third-party content, etc.) into schema defaults, prompts, `.github/agents/`, or docs as anything other than a clearly-labeled, README-only example. Other rulesets are the user's own choice and licensing responsibility, never ours. There is **no in-app chat/LLM** — that milestone was deliberately dropped (see `docs/ROADMAP.md`, "Explicitly out of scope"); external chatbots via the published JSON Schema are the supported integration point.
 
 ## Testing & CI
 
@@ -60,7 +61,7 @@ Tests are first-class — the schema/model layer is exhaustively unit-tested. CI
 
 ## Cutting a release
 
-Pushing a tag `v*` triggers the web deploy (`pages.yml`) and native builds (`release.yml`, a draft Release). **The app version lives in four files that must all match the tag — `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock` (or `cargo check --locked` fails CI). Run `scripts/set-version.sh <x.y.z>` to set all four at once** before tagging (don't bump them by hand and forget one). This is the *app* version (`1.x` line), independent of `character.json`'s `schemaVersion` (`2.0.0`). Full checklist: `docs/AUTOMATION.md` → "Cutting a release".
+Pushing a tag `v*` triggers the web deploy (`pages.yml`) and native builds (`release.yml`, a draft Release). **The app version lives in five files that must all match the tag — `package.json`, `package-lock.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock` (or the release checks fail). Run `scripts/set-version.sh <x.y.z>` to set all five at once, then `npm run legal:generate` because the lockfile fingerprint changed** before tagging (don't bump them by hand and forget either step). This is the *app* version (`1.x` line), independent of `character.json`'s `schemaVersion` (`2.2.0`). Full checklist: `docs/AUTOMATION.md` → "Cutting a release".
 
 ## Agents & automation
 

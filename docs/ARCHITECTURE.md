@@ -13,7 +13,7 @@ A character-sheet platform where **the JSON is the character** and the app is a 
 4. **Freedom within structure.** The schema is structured enough to validate rules and generate UI, free enough for any class/homebrew, and simple enough for an LLM to manipulate by hand. (See `SCHEMA.md`.)
 5. **Free & open distribution.** No app stores required, no hosting bills. GitHub Releases + GitHub Pages.
 6. **Spec-first, tested, automated.** Architecture and schema specs precede code; everything is covered by tests; CI/CD does the building and shipping.
-7. **Low legal & licensing risk, on purpose.** Ship only freely licensed example content (the 5e SRD) as defaults — never a commercial sourcebook hardcoded into schema defaults, prompts, or seed material. User-authored links remain first-class references, but the app only opens them externally: it never fetches, scrapes, caches, previews, proxies, indexes, or reproduces the destination. No in-app chat/LLM ingests arbitrary user-supplied content; external chatbots via the published JSON Schema are the supported integration point instead, and prompts permit automated retrieval only where the source's licence and terms expressly allow it. See `ROADMAP.md` ("Explicitly out of scope") and the M3 prompts section.
+7. **Low legal & licensing risk, on purpose.** Ship only CC-BY-4.0-licensed SRD 5.1 example content (the 2014 fifth-edition rules) as defaults — SRD 5.2.1 is a distinct revised rules line that must be named explicitly, and a commercial sourcebook is never hardcoded into schema defaults, prompts, or seed material. User-authored links remain first-class references, but the app only opens them externally: it never fetches, scrapes, caches, previews, proxies, indexes, or reproduces the destination. No in-app chat/LLM ingests arbitrary user-supplied content; external chatbots via the published JSON Schema are the supported integration point instead, and prompts permit automated retrieval only where the source's licence and terms expressly allow it. See `LEGAL.md`, `ROADMAP.md` ("Explicitly out of scope") and the M3 prompts section.
 
 ## 2. Stack decision (resolved)
 
@@ -23,7 +23,7 @@ A character-sheet platform where **the JSON is the character** and the app is a 
 | UI framework | **React 18 + Vite** | Best ecosystem & agent familiarity, fast HMR, trivial static build for Pages. |
 | Data validation | **Zod** (schema-as-code) → emits **JSON Schema** | One definition validates at runtime *and* exports a JSON Schema we publish for GPTs/external tools. |
 | State | **Zustand** | Tiny, testable, no boilerplate; the app state is basically "one character + session + UI flags". |
-| Styling | **Tailwind + design tokens (CSS vars)** | Utility speed + a bespoke "D&D Digital" token layer; themes (dark/night/light + flagship D&D theme) via CSS variables. |
+| Styling | **Project CSS + design tokens (CSS vars)** | A bespoke Arcane token layer; themes (dark/night/light) are selected through CSS variables. |
 | Native shell | **Tauri 2** | Single shell for desktop (Win/Mac/Linux) **and** mobile (Android/iOS), wrapping the same web build. Tiny binaries, secure, mostly-config Rust. |
 | Web target | **Same Vite build → GitHub Pages** | The website *is* the app. |
 | Unit/component tests | **Vitest + Testing Library** | Vite-native, fast. |

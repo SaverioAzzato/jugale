@@ -12,7 +12,7 @@ describe("SpellsSection", () => {
     renderSection(warlock);
     expect(screen.getByText("Cantrips")).toBeInTheDocument();
     expect(screen.getByText("Eldritch Blast")).toBeInTheDocument();
-    expect(screen.getByText("Hex")).toBeInTheDocument();
+    expect(screen.getByText("Hellish Rebuke")).toBeInTheDocument();
   });
 
   it("renders nothing for a non-caster", () => {

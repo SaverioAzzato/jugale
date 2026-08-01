@@ -4,6 +4,7 @@
 #
 # JUGALE's app version lives in places that don't read from each other:
 #   - package.json            -> baked into the web bundle / welcome footer (__APP_VERSION__)
+#   - package-lock.json         -> npm root-package metadata / dependency provenance
 #   - src-tauri/tauri.conf.json -> version stamped into the installed desktop/Android app
 #   - src-tauri/Cargo.toml      -> the Rust crate version (metadata)
 #   - src-tauri/Cargo.lock      -> must match Cargo.toml, or CI's `cargo check --locked` fails
@@ -21,6 +22,7 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 
 # JSON: replace only the first (top-level) "version" value, leaving formatting untouched.
 perl -0777 -i -pe 's/("version"\s*:\s*")[^"]*(")/${1}'"$ver"'${2}/' "$root/package.json"
+perl -0777 -i -pe 's/(\A\{\n  "name": "jugale",\n  "version": ")[^"]*(")/${1}'"$ver"'${2}/; s/("": \{\n      "name": "jugale",\n      "version": ")[^"]*(")/${1}'"$ver"'${2}/' "$root/package-lock.json"
 perl -0777 -i -pe 's/("version"\s*:\s*")[^"]*(")/${1}'"$ver"'${2}/' "$root/src-tauri/tauri.conf.json"
 
 # Cargo.toml: the standalone `version = "..."` under [package] starts at column 0,
@@ -32,6 +34,7 @@ perl -0777 -i -pe 's/(name = "jugale"\nversion = ")[^"]*(")/${1}'"$ver"'${2}/' "
 
 echo "Set version to $ver in:"
 echo "  package.json              -> $(perl -0777 -ne 'print $1 if /"version"\s*:\s*"([^"]*)"/' "$root/package.json")"
+echo "  package-lock.json         -> $(perl -0777 -ne 'print $1 if /\A\{\n  "name": "jugale",\n  "version": "([^"]*)"/' "$root/package-lock.json")"
 echo "  src-tauri/tauri.conf.json -> $(perl -0777 -ne 'print $1 if /"version"\s*:\s*"([^"]*)"/' "$root/src-tauri/tauri.conf.json")"
 echo "  src-tauri/Cargo.toml      -> $(perl -0777 -ne 'print $1 if /^version = "([^"]*)"/m' "$root/src-tauri/Cargo.toml")"
 echo "  src-tauri/Cargo.lock      -> $(perl -0777 -ne 'print $1 if /name = "jugale"\nversion = "([^"]*)"/' "$root/src-tauri/Cargo.lock")"

@@ -20,6 +20,13 @@ beforeEach(() => {
 });
 
 describe("PromptsPage Android sharing", () => {
+  it("shows a character-supplied guide name without reinterpreting it", () => {
+    useCharacter.getState().loadRaw({ meta: { name: "Legacy", ruleset: ["SRD"] } });
+    render(<PromptsPage />);
+
+    expect(screen.getByLabelText("Guide name (e.g. SRD 5.1)")).toHaveValue("SRD");
+  });
+
   it("introduces the workflow and identifies Base as the shared foundation", () => {
     render(<PromptsPage />);
 

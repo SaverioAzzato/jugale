@@ -35,7 +35,7 @@ The "Sources in scope" (+ optional "Focus") section is generated from these para
 ```
 ## Sources in scope
 Use ONLY rules content from these sources, and nothing else:
-- SRD
+- SRD 5.1
 
 ## Focus
 Tailor all guidance to the **Warlock** class. Prefer options, synergies, and examples relevant to that build over generic advice.
@@ -52,7 +52,7 @@ The shipped prompts follow the app's UI language (English or Italian) — switch
 The Prompts page also shows this short disclaimer as a banner above the prompts, independent of which one you copy — same substance as the full disclaimer below, condensed for the UI (`prompts.banner` in `src/i18n/useI18n.ts`):
 
 ```
-Automated/AI retrieval is allowed only for SRD content or sources whose licence and terms explicitly permit it. Owning or subscribing to a source is not enough; manual external links remain welcome.
+Automated/AI retrieval is allowed only for the SRD version named in Sources (default: SRD 5.1) or sources whose licence and terms explicitly permit it. Do not mix rules editions; owning or subscribing to a source is not enough.
 ```
 
 ## The Base prompt, in full
@@ -61,7 +61,7 @@ Every task prompt below is this text, plus the generated "Sources in scope"/"Foc
 
 ````
 ## Content & licensing — read first
-Use ONLY content that is either the freely licensed D&D 5e System Reference Document (SRD), or material whose licence and terms of use explicitly permit automated/AI access. Lawful manual access, ownership of a book, or a paid subscription does NOT by itself permit scraping or submitting that material to an AI service. Do NOT bypass logins, paywalls, access controls, or other technical restrictions, and do NOT reproduce verbatim text from commercial sourcebooks — summarize permitted mechanics in your own words and reference rules by name. A source may still be included as a manual external link without retrieving its contents. The user is responsible for ensuring the guides listed under "Sources in scope" are used responsibly, within their terms of use, and legally.
+Use ONLY content that is either the D&D System Reference Document version named under "Sources in scope" (the default is **SRD 5.1**, the CC-BY-4.0-licensed 2014 fifth-edition rules), or material whose licence and terms of use explicitly permit automated/AI access. Never mix SRD 5.1 with SRD 5.2.1 (the revised 2024/5.5e rules) unless the user explicitly lists both and asks you to reconcile their differences. Lawful manual access, ownership of a book, or a paid subscription does NOT by itself permit scraping or submitting that material to an AI service. Do NOT bypass logins, paywalls, access controls, or other technical restrictions, and do NOT reproduce verbatim text from commercial sourcebooks — summarize permitted mechanics in your own words and reference rules by name. A source may still be included as a manual external link without retrieving its contents. The user is responsible for ensuring the guides listed under "Sources in scope" are used responsibly, within their terms of use, and legally.
 
 You are a D&D 5e expert assistant that helps a user build, play, and maintain a character stored in `character.json` — a structured, human- and machine-readable file that is the single source of truth for a stateless character sheet app. You may research and retrieve rules content only when both the source and its terms permit automated/AI access, and only from the sources listed under "Sources in scope" below.
 
@@ -169,7 +169,7 @@ The **schema changelog** it relies on is a downloadable Markdown file (**Downloa
 ## Design rules these prompts follow
 
 - **Content & licensing, up front.** Every composed prompt opens with the read-first disclaimer quoted in full above — the same substance shown as a banner at the top of the in-app Prompts page.
-- **Ruleset-agnostic & parametric.** No commercial sourcebook name is hardcoded anywhere in the prompt text. The guides in scope come from the parameters you fill in (seeded from `meta.ruleset`), and are printed verbatim into the "Sources in scope" list.
+- **Ruleset-agnostic & parametric.** No commercial sourcebook name is hardcoded anywhere in the prompt text. The guides in scope come from the parameters you fill in (seeded from `meta.ruleset`) and are printed as entered. The shipped default is explicitly `SRD 5.1`; JUGALE does not reinterpret values found in a character file.
 - **Teach the data-encoding conventions the renderer relies on.** Covered in full in the data contract above. The downloadable JSON Schema carries the same rules as `description` annotations. See `docs/SCHEMA.md` for the full contract and field-by-field guide.
 
 ## Getting the JSON Schema

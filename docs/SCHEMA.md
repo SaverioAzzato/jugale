@@ -58,10 +58,12 @@ Only `schemaVersion` and `meta.name` are strictly required; every section has a 
   "summary": "Tiefling Warlock, Patto del Tomo.",
   // No image fields. The app reads the folder's images/ in alphabetical order and uses the
   // first as the portrait — the JSON never references an image path (the user just names files).
-  "ruleset": ["SRD", { "name": "My Homebrew Wiki", "url": "https://wiki.example/srd" }],
+  "ruleset": ["SRD 5.1", { "name": "My Homebrew Wiki", "url": "https://wiki.example/srd" }],
                          // rules guides in scope; drives the prompts. Each entry is a bare name
                          // string or { name, url } (base wiki URL for niche guides). Default is the
-                         // freely licensed SRD only. Other entries may remain clickable manual
+                         // CC-BY-4.0-licensed SRD 5.1 (2014 rules). Write "SRD 5.2.1" explicitly
+                         // for the revised 2024/5.5e rules; do not use an ambiguous bare "SRD".
+                         // Other entries may remain clickable manual
                          // references; automated/AI retrieval additionally requires the source's
                          // licence and terms to permit it explicitly.
   "tags": ["warlock", "draconide"]
@@ -320,4 +322,4 @@ The Zod schema in `src/schema/character.ts` is the source of truth, but a field 
 - **Prompts** — the data-contract bullets in `src/prompts/prompts.ts` **and** their mirror in `docs/PROMPTS.md`, plus `src/ui/HelpPage.tsx` (EN+IT) and the `.github/agents/*.agent.md` seed prompts.
 - **Verify** — `npm run typecheck && npm test && npm run build`, then exercise the field in the live preview in both Play and Edit modes.
 
-Keep it SRD-only: never bake a commercial sourcebook's content into schema defaults, examples, prompts, or docs (generic 5e mechanics terminology is fine; proprietary creative content is not).
+Keep shipped content SRD 5.1-only unless another freely licensed rules version is deliberately added with its own attribution: never bake a commercial sourcebook's content into schema defaults, examples, prompts, or docs (generic 5e mechanics terminology is fine; proprietary creative content is not).

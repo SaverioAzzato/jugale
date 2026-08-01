@@ -38,7 +38,7 @@ const Abilities = z
   .default({});
 
 /**
- * A rules guide in scope for this character: a bare name (e.g. "SRD") or, for niche
+ * A rules guide in scope for this character: a bare name (e.g. "SRD 5.1") or, for niche
  * guides, `{ name, url }` where `url` is the base wiki URL the assistant may reference.
  */
 const RulesetEntry = z.union([
@@ -58,10 +58,12 @@ const Meta = z
     // preserved by .passthrough() but ignored.
     ruleset: z
       .array(RulesetEntry)
-      .default(["SRD"])
+      .default(["SRD 5.1"])
       .describe(
-        "Rules guides in scope for this character. Default is the freely licensed SRD only; " +
-          "each entry is a name string or { name, url } for a guide's base wiki URL. Adding other " +
+        "Rules guides in scope for this character. Default is the CC-BY-4.0-licensed SRD 5.1 " +
+          "(the 2014 fifth-edition rules); name another version explicitly rather than writing " +
+          "an ambiguous bare SRD. Each entry is a name string or { name, url } for a guide's " +
+          "base wiki URL. Adding other " +
           "sources expands the manual reference scope, but automated/AI retrieval requires their " +
           "licences and terms to permit it explicitly.",
       ),

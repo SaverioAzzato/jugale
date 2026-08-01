@@ -17,6 +17,7 @@ Read the spec-first docs before non-trivial work: `docs/ARCHITECTURE.md`, `docs/
 - `npm run typecheck` — `tsc --noEmit`
 - `npm run lint` — ESLint
 - `npm run build` — typecheck + production web build (`vite build`)
+- `npm run legal:generate` / `npm run legal:check` — regenerate or verify the lockfile-derived third-party notice and SPDX SBOM
 - `npm run check` — the complete web/CI gate (versions + lint + typecheck + tests + build)
 - `npm run check:release` — clean install + complete gate + locked Rust check; mandatory before a release tag
 - `npm run tauri dev` / `npm run tauri build` — desktop development/bundle
@@ -55,7 +56,7 @@ Rules that matter when editing character data (also encoded in `.github/agents/*
 - Preserve all existing JSON fields when editing — don't drop fields outside the requested change. Unknown keys are intentionally preserved.
 - Preserve clickable `link` properties on spells, feats, weapons, background, class features, etc.
 - Images stay in the character's `images/` folder with alphabetically-sortable filenames; the UI scans the folder, never a hardcoded list.
-- **Keep legal/licensing risk low.** `meta.ruleset` defaults to `["SRD"]` (the freely-licensed 5e SRD) — never hardcode a commercial sourcebook (PHB, Xanathar, Tasha, third-party content, etc.) into schema defaults, prompts, `.github/agents/`, or docs as anything other than a clearly-labeled, README-only example. Other rulesets are the user's own choice and licensing responsibility, never ours. There is **no in-app chat/LLM** — that milestone was deliberately dropped (see `docs/ROADMAP.md`, "Explicitly out of scope"); external chatbots via the published JSON Schema are the supported integration point.
+- **Keep legal/licensing risk low.** `meta.ruleset` defaults to `["SRD 5.1"]` (the CC-BY-4.0-licensed 2014 fifth-edition rules); SRD 5.2.1 is the revised 2024/5.5e line and must be named explicitly — never hardcode a commercial sourcebook (PHB, Xanathar, Tasha, third-party content, etc.) into schema defaults, prompts, `.github/agents/`, or docs as anything other than a clearly-labeled, README-only example. Other rulesets are the user's own choice and licensing responsibility, never ours. There is **no in-app chat/LLM** — that milestone was deliberately dropped (see `docs/ROADMAP.md`, "Explicitly out of scope"); external chatbots via the published JSON Schema are the supported integration point.
 
 ## Testing & CI
 
@@ -101,7 +102,7 @@ visible UI change; keep captions/alt text localized and never include personal c
 
 ## Cutting a release
 
-Pushing a stable tag `vX.Y.Z` triggers the web deploy (`pages.yml`) and native builds (`release.yml`, a draft Release); `-dev.N` tags follow the separate procedure below. **The app version lives in four files that must all match the tag — `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock` (or `cargo check --locked` fails CI). Run `scripts/set-version.sh <x.y.z>` to set all four at once** before tagging (don't bump them by hand and forget one), then run `npm run check:release`. Repository Git hooks install automatically through npm and enforce the same gate before a version tag is pushed. This is the *app* version (`1.x` line), independent of `character.json`'s `schemaVersion` (`2.2.0`). Full checklist: `docs/AUTOMATION.md` → "Cutting a release".
+Pushing a stable tag `vX.Y.Z` triggers the web deploy (`pages.yml`) and native builds (`release.yml`, a draft Release); `-dev.N` tags follow the separate procedure below. **The app version lives in five files that must all match the tag — `package.json`, `package-lock.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock` (or the release checks fail). Run `scripts/set-version.sh <x.y.z>` to set all five at once, then `npm run legal:generate` because the lockfile fingerprint changed** before tagging (don't bump them by hand and forget either step), then run `npm run check:release`. Repository Git hooks install automatically through npm and enforce the same gate before a version tag is pushed. This is the *app* version (`1.x` line), independent of `character.json`'s `schemaVersion` (`2.2.0`). Full checklist: `docs/AUTOMATION.md` → "Cutting a release".
 
 ### Android Dev draft releases
 
@@ -110,7 +111,8 @@ Private device-test APKs use a separate app/channel and must follow
 
 - Work from `develop`; a Dev tag is accepted only when it points exactly at `origin/develop` HEAD.
 - Use monotonically increasing tags/versions `vX.Y.Z-dev.N` (for example
-  `v1.13.0-dev.1`), set in all four version files with `scripts/set-version.sh X.Y.Z-dev.N`.
+  `v1.13.0-dev.1`), set in all five version files with `scripts/set-version.sh X.Y.Z-dev.N`, then
+  run `npm run legal:generate` for the changed Cargo lockfile fingerprint.
 - Push `develop` first, then the matching tag. `.github/workflows/android-dev-release.yml` creates
   a private draft/prerelease containing only the release-signed APK.
 - The APK is `JUGALE Dev` / `it.azzato.jugale.dev`, so it installs beside stable JUGALE and later
@@ -119,7 +121,8 @@ Private device-test APKs use a separate app/channel and must follow
   have explicit guards. Do not publish a Dev draft. Download/test it, then delete the draft if no
   longer needed; prefer a new `.N` tag over deleting/reusing a tag.
 - To promote: merge the tested work to `main`, run `scripts/set-version.sh X.Y.Z` without a suffix,
-  commit/push, tag `vX.Y.Z`, and push the tag. Review the stable draft, then publish it. Stable tags
+  run `npm run legal:generate`, commit/push, tag `vX.Y.Z`, and push the tag. Review the stable draft,
+  then publish it. Stable tags
   also deploy Pages. Sync the stable release commit back into `develop` before starting the next line.
 
 ## Agents & automation

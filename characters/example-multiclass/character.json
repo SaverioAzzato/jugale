@@ -3,6 +3,9 @@
   "meta": {
     "name": "Example Multiclass",
     "summary": "Paladin 3 / Sorcerer 2 — multiclass test: two casters, two save DCs, shared slots.",
+    "ruleset": [
+      "SRD 5.1"
+    ],
     "tags": [
       "paladin",
       "sorcerer",
@@ -212,27 +215,21 @@
       "title": "Sorcerer — known",
       "entries": [
         {
-          "name": "Chromatic Orb",
-          "link": "https://www.dndbeyond.com/spells/chromatic-orb",
+          "name": "Magic Missile",
+          "link": "https://www.dndbeyond.com/spells/magic-missile",
           "level": "1",
-          "range": "90 ft",
+          "range": "120 ft",
           "components": {
             "verbal": true,
             "somatic": true,
-            "material": true
+            "material": false
           },
           "concentration": false,
-          "attack": "Ranged spell attack",
+          "attack": "—",
           "defense": "—",
-          "effect": "3d8 damage of a chosen type (acid/cold/fire/lightning/poison/thunder); +1d8 per higher slot",
-          "materials": [
-            {
-              "text": "a diamond worth at least 50 gp",
-              "cost": 50,
-              "consumable": false
-            }
-          ],
-          "higherLevels": "+1d8 damage for each slot level above 1st"
+          "effect": "3 darts that automatically hit for 1d4 + 1 force damage each",
+          "damageType": "force",
+          "higherLevels": "+1 dart for each slot level above 1st"
         },
         {
           "name": "Fire Bolt",

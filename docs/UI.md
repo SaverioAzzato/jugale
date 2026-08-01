@@ -1,7 +1,7 @@
 # UI design — character sheet makeover (M2)
 
 > Status: **agreed design, pre-implementation** · Outcome of the guided makeover brainstorm.
-> This is the structural/UX contract for the sheet. Visual identity (the "D&D Digital" skin) is deliberately **out of scope here** — it is decided later, purely through the centralized theme tokens (`src/theme/themes.css`), without touching the structure described below.
+> This is the structural/UX contract for the sheet. Visual identity (the Arcane theme) is deliberately **out of scope here** — it is decided later, purely through the centralized theme tokens (`src/theme/themes.css`), without touching the structure described below.
 
 ## Principles
 

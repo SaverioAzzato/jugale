@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 const packageVersion = JSON.parse(read("package.json")).version;
+const packageLockVersion = JSON.parse(read("package-lock.json")).version;
 const tauriVersion = JSON.parse(read("src-tauri/tauri.conf.json")).version;
 
 const cargoToml = read("src-tauri/Cargo.toml");
@@ -17,6 +18,7 @@ const cargoLockVersion = cargoLock.match(
 
 const versions = {
   "package.json": packageVersion,
+  "package-lock.json": packageLockVersion,
   "src-tauri/tauri.conf.json": tauriVersion,
   "src-tauri/Cargo.toml": cargoTomlVersion,
   "src-tauri/Cargo.lock": cargoLockVersion,

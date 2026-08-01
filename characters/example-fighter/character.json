@@ -3,6 +3,9 @@
   "meta": {
     "name": "Example Fighter",
     "summary": "Human Fighter (Champion) — no spells, exercises the engine's generality on a non-caster.",
+    "ruleset": [
+      "SRD 5.1"
+    ],
     "tags": [
       "fighter",
       "example",
@@ -208,8 +211,8 @@
       }
     ],
     "backgroundFeature": {
-      "name": "Military Rank",
-      "description": "You're recognized by allied soldiers."
+      "name": "Field Experience",
+      "description": "You know the routines, etiquette, and visible rank signs common to military camps."
     }
   },
   "narrative": {

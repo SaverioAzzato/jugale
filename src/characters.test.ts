@@ -16,6 +16,7 @@ describe("sample characters", () => {
       expect(r.migrated).toBe(false);
       expect(r.issues.filter((i) => i.severity === "error")).toHaveLength(0);
       expect(totalLevel(r.character)).toBe(5); // every sample is a level-5 build
+      expect(r.character.meta.ruleset).toEqual(["SRD 5.1"]);
     });
   }
 });

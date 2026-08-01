@@ -74,10 +74,10 @@ The **public** key lives in `tauri.conf.json` → `plugins.updater.pubkey` (safe
 `npm install` and `npm ci` automatically configure the repository-owned hooks in `.githooks/`
 (without a Husky dependency):
 
-- **pre-commit** runs version alignment, lint and typecheck, providing fast feedback;
+- **pre-commit** runs version alignment, the dependency-notice/SBOM freshness check, lint and typecheck, providing fast feedback;
 - **pre-push** runs the full `npm run check` gate;
 - when the push contains a `v*` tag, pre-push runs `npm run check:release`: first a clean `npm ci`,
-  then the complete web gate and `cargo check --locked`.
+  then the complete web gate (including the legal-artifact check) and `cargo check --locked`.
 
 The clean install on release tags is deliberate: it catches undeclared or accidentally local-only
 dependencies that can pass with an old `node_modules` but fail on a fresh GitHub runner. Hooks are a
@@ -92,18 +92,27 @@ npm run check          # full web/CI gate
 npm run check:release  # clean install + web gate + Rust lockfile check
 ```
 
-The app version lives in **four files that don't read from each other**, and all must match the release tag:
+`public/THIRD_PARTY_NOTICES.txt` and `public/third-party-sbom.spdx.json` are generated from both
+lockfiles and copied by Vite into every web/native frontend build. `npm run legal:check` compares
+their lockfile fingerprint and Package URL inventory without network access. Whenever
+`package-lock.json` or `src-tauri/Cargo.lock` changes, run `npm run legal:generate`, inspect the new
+components/licences and commit both generated files. The full build and release gates reject stale
+artifacts. The readable notice preserves upstream licence/notice texts; the SPDX file is the
+machine-readable software bill of materials.
+
+The app version lives in **five files that don't read from each other**, and all must match the release tag:
 
 | File | Why it has a version |
 | --- | --- |
 | `package.json` | baked into the web bundle at build time (`vite.config.ts` `define: __APP_VERSION__`) and shown in the welcome-screen footer |
+| `package-lock.json` | records the root npm package version alongside the exact JavaScript dependency graph |
 | `src-tauri/tauri.conf.json` | the version stamped into the installed desktop/Android app (the "About" / package version) |
 | `src-tauri/Cargo.toml` | the Rust crate version (metadata) |
 | `src-tauri/Cargo.lock` | must match `Cargo.toml`, or `tauri-check.yml`'s `cargo check --locked` fails |
 
 Keep them in lockstep:
 
-1. **Run `scripts/set-version.sh <x.y.z>`** (no `v` prefix, e.g. `1.4.0`) — it sets all four at once, **including `Cargo.lock`** (skip that and `cargo check --locked` fails CI). Follow SemVer: patch for fixes, minor for features, major for breaking changes. Commit the result (typically as part of, or just before, the release PR). *(Doing it by hand instead? Edit all four — forgetting `tauri.conf.json` ships installers labelled with the wrong version, and forgetting `Cargo.lock` breaks CI.)*
+1. **Run `scripts/set-version.sh <x.y.z>`** (no `v` prefix, e.g. `1.4.0`) — it sets all five at once, **including both lockfiles** (skip `Cargo.lock` and `cargo check --locked` fails CI). Then run **`npm run legal:generate`**, because the lockfile fingerprint changed even when only JUGALE's own version changed. Follow SemVer: patch for fixes, minor for features, major for breaking changes. Commit the version and generated legal artifacts together. *(Doing it by hand instead? Edit all five — forgetting `tauri.conf.json` ships installers labelled with the wrong version, stale lockfile metadata weakens release provenance, forgetting `Cargo.lock` breaks CI, and forgetting the legal regeneration makes the release gate reject the tag.)*
 2. After merging to `main`, create and push the matching tag **`v<version>`** (e.g. `v1.3.0`). The tag is what triggers `pages.yml` (web deploy) and `release.yml` (native draft).
 3. Publish the drafted GitHub Release once the native assets are attached.
 
@@ -132,7 +141,8 @@ each is a legitimate writer of the same canonical `character.json`.
    tag commit to equal `origin/develop` HEAD—not merely be somewhere in its history.
 2. Choose the target stable version and the next monotonically increasing build counter, e.g.
    `1.13.0-dev.1`, then `1.13.0-dev.2`. Never reuse a pushed tag for a different artifact.
-3. Set all version files: `scripts/set-version.sh 1.13.0-dev.1`.
+3. Set all version files with `scripts/set-version.sh 1.13.0-dev.1`, then refresh the changed Cargo
+   lockfile fingerprint with `npm run legal:generate`.
 4. Run the normal gate (`npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, plus
    `cargo check --locked` under `src-tauri/`), commit, then push `develop`.
 5. Tag the exact pushed commit and push the tag:
@@ -161,7 +171,8 @@ create stable desktop/native assets.
 
 1. Merge the tested `develop` work into `main` through the normal reviewed/green path.
 2. On the final release commit, remove the prerelease suffix with
-   `scripts/set-version.sh 1.13.0`, run the full gate, commit and push `main`.
+   `scripts/set-version.sh 1.13.0`, run `npm run legal:generate`, run the full gate, commit and push
+   `main`.
 3. Create and push `v1.13.0`. The existing stable workflow builds desktop plus Android into one
    draft Release, while Pages deploys the web build.
 4. Complete `docs/RELEASE-TESTING.md` against the stable draft, then publish it manually.

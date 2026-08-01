@@ -4,14 +4,23 @@
 
 A character-sheet platform for tabletop RPGs (D&D 5e in practice) where **the JSON is the character** and the app is a beautiful, stateless lens over it. Build and edit characters with any chatbot (or by hand), then view and *play* them — track HP, resources, spell slots, currencies — with the app kept in sync with a plain, open `character.json`.
 
+| Play at the table | Know every attribute |
+| --- | --- |
+| [![JUGALE Play tab with the example Warlock and two rolled dice](docs/assets/jugale-play.jpg)](docs/assets/jugale-play.jpg) | [![JUGALE Attributes tab with abilities, skills, defenses and features](docs/assets/jugale-attributes.jpg)](docs/assets/jugale-attributes.jpg) |
+
 ## Use it
 
 No install, no account, no subscription:
 
 - **Web** — open the live app: **[saverioazzato.github.io/jugale](https://saverioazzato.github.io/jugale/)**. Works in any modern browser; Chromium browsers also save your changes live.
-- **Desktop & mobile** — download an installer (Mac / Windows / Linux) or the Android APK from **[Releases](https://github.com/SaverioAzzato/jugale/releases)**.
+- **Desktop** — download the **macOS**, **Windows**, or **Linux** installer from **[Releases](https://github.com/SaverioAzzato/jugale/releases)**.
+- **Android** — download the release-signed APK from the same Releases page and sideload it. JUGALE is not currently built or distributed for iOS.
 
-> **First launch on macOS:** the app isn't notarized yet (that needs a paid Apple account), so Gatekeeper blocks it once with *"Apple could not verify JUGALE.app is free of malware."* On **macOS 15 (Sequoia)** the old right-click → Open trick no longer bypasses this — instead: try to open it, then go to **System Settings → Privacy & Security → scroll down → "Open Anyway"** (one time, then it's remembered). Or, from Terminal: `xattr -dr com.apple.quarantine /Applications/JUGALE.app` (adjust the path if it's elsewhere). On older macOS, right-click → Open → Open still works. On **Android**, allow "install unknown apps" for your browser/file manager to sideload the APK.
+> **Why your OS may not recognise the publisher:** JUGALE is not distributed through an app store. The macOS build is only ad-hoc signed, without an Apple Developer ID or notarisation; the Windows build is not Authenticode-signed; and Android treats an APK downloaded from GitHub as an app from an external or “unknown” source. The Android APK is release-signed so genuine JUGALE updates can be matched to the same signing key, but that is not the same as Google verifying the developer's identity. Depending on the OS version, settings, reputation and region, you may therefore see messages such as **unidentified/unverified developer**, **unknown publisher**, a SmartScreen warning, or **Install unknown apps**.
+>
+> These messages concern distribution provenance, publisher identity or reputation; they are not, by themselves, a finding that the app contains malware — nor are they proof that any download is safe. Download only from JUGALE's official GitHub Releases page and check that the repository and release are the ones you expect. On **macOS**, first try to open the app, then use **System Settings → Privacy & Security → Open Anyway** if you trust the download. On **Windows**, inspect the source before using any option SmartScreen offers. On **Android**, allow **Install unknown apps** only for the browser or file manager you used to download the APK, and turn that permission off again afterwards. Linux behaviour varies by package and desktop environment.
+>
+> JUGALE is a free, open-source personal project. At its current scale, paid signing certificates or developer programmes — plus store-specific release and review overhead — are not justified. The source and automated builds remain public on GitHub; if that trade-off changes, store distribution and fully recognised platform signing can change with it.
 
 Then, on the welcome screen:
 
@@ -113,15 +122,15 @@ Four copy-ready prompts — **base / create / level-up / validate** — let any 
 
 ## Content & licensing
 
-By default, characters ship with `meta.ruleset: ["SRD"]` — the freely licensed D&D 5e System Reference Document. Nothing in the schema, prompts, or `.github/agents/` seed material selects a commercial sourcebook by default. A character may contain links to third-party pages chosen by its author; HTTPS is recommended. JUGALE only displays those URLs and opens them in the system browser. It does not fetch, scrape, cache, preview, proxy, index, or reproduce the linked pages, and a link does not imply affiliation, endorsement, or any guarantee about the destination or its availability.
+By default, characters ship with `meta.ruleset: ["SRD 5.1"]`: the CC-BY-4.0-licensed, 2014 fifth-edition rules. **SRD 5.2.1 is the revised 2024/5.5e rules and is not interchangeable with SRD 5.1.** A character that uses it should say `"SRD 5.2.1"` explicitly; avoid the ambiguous bare label `"SRD"`. Nothing in the schema, prompts, or `.github/agents/` seed material selects a commercial sourcebook by default. A character may contain links to third-party pages chosen by its author; HTTPS is recommended. JUGALE only displays those URLs and opens them in the system browser. It does not fetch, scrape, cache, preview, proxy, index, or reproduce the linked pages, and a link does not imply affiliation, endorsement, or any guarantee about the destination or its availability.
 
 You may manually consult any material you can lawfully access. Automated retrieval or AI access is different: owning a book, subscription, or account does **not** by itself grant permission to scrape or submit its contents to an AI service. Only use automated retrieval where the source's licence and terms explicitly permit it; never bypass a login, paywall, access control, or other technical restriction. Character authors are responsible for their chosen content and links and for complying with applicable licences, terms, and law.
 
-The bundled sample character data uses SRD material and links only to the official D&D Beyond domain. It may contain translated, shortened, or otherwise adapted material from the **System Reference Document 5.1 and/or 5.2.1**, provided by Wizards of the Coast LLC at [dndbeyond.com/srd](https://www.dndbeyond.com/srd) under the [Creative Commons Attribution 4.0 International licence](https://creativecommons.org/licenses/by/4.0/). Changes include selection, adaptation, translation, and structured encoding for JUGALE. Dungeons & Dragons and Wizards of the Coast are trademarks of their respective owner; JUGALE is an independent project and is not affiliated with, endorsed, sponsored, or approved by Wizards of the Coast.
+The bundled examples use **SRD 5.1** material. The required attribution, modification notice, independent-project disclaimer, Fan Content Policy analysis, asset terms, and dependency notices are collected in **[Legal & content notices](docs/LEGAL.md)**. JUGALE is an independent project and is not affiliated with, endorsed, sponsored, or approved by Wizards of the Coast. It does not use Wizards logos or artwork and does not claim permission under the Fan Content Policy for the SRD material: that material is used under CC BY 4.0.
 
 ## Distribution
 
-Free and open: the **web app is the GitHub Pages site** ([live](https://saverioazzato.github.io/jugale/)); desktop and Android binaries are attached to **GitHub Releases**. Both are built and shipped by GitHub Actions, and both happen on the same trigger: **pushing a version tag** (`v*`) — [`pages.yml`](.github/workflows/pages.yml) redeploys the web app, [`release.yml`](.github/workflows/release.yml) builds Mac/Win/Linux installers plus an Android APK and attaches them to a draft GitHub Release. Desktop uses signed Tauri updater artifacts; Android checks the same releases in-app and installs a release-signed APK through its native updater. Merging to `main` alone does not ship a release. Before tagging, run [`scripts/set-version.sh`](scripts/set-version.sh) to keep `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, and `src-tauri/Cargo.lock` aligned with the tag; see [Cutting a release](docs/AUTOMATION.md#cutting-a-release). No app stores, no hosting bills.
+Free and open: the **web app is the GitHub Pages site** ([live](https://saverioazzato.github.io/jugale/)); desktop and Android binaries are attached to **GitHub Releases**. Both are built and shipped by GitHub Actions, and both happen on the same trigger: **pushing a version tag** (`v*`) — [`pages.yml`](.github/workflows/pages.yml) redeploys the web app, [`release.yml`](.github/workflows/release.yml) builds Mac/Win/Linux installers plus an Android APK and attaches them to a draft GitHub Release. Desktop updater artifacts are cryptographically signed so the app can authenticate updates; this is separate from the operating-system publisher signing described above. Android checks the same releases in-app and installs a release-signed APK through its native updater. Merging to `main` alone does not ship a release. Before tagging, run [`scripts/set-version.sh`](scripts/set-version.sh) to keep the five version files aligned, regenerate the legal artifacts with `npm run legal:generate`, and follow [Cutting a release](docs/AUTOMATION.md#cutting-a-release). No app stores, no hosting bills.
 
 ## Contributing & automation
 
@@ -132,12 +141,12 @@ See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the project's ground rules before
 
 ## Docs
 
-- [Architecture](docs/ARCHITECTURE.md) · [Schema](docs/SCHEMA.md) · [UI](docs/UI.md) · [Prompts](docs/PROMPTS.md) · [Roadmap](docs/ROADMAP.md) · [Automation](docs/AUTOMATION.md)
+- [Architecture](docs/ARCHITECTURE.md) · [Schema](docs/SCHEMA.md) · [UI](docs/UI.md) · [Prompts](docs/PROMPTS.md) · [Legal](docs/LEGAL.md) · [Roadmap](docs/ROADMAP.md) · [Automation](docs/AUTOMATION.md)
 
 ## Assets & Credits
 
-The example character images in [`characters/example-warlock/images/`](characters/example-warlock/images/) were generated with **ChatGPT (OpenAI)** and are included for demonstration purposes only. These generated assets are example content and are **not part of the software license** — they're separate from the code.
+The example character images in [`characters/example-warlock/images/`](characters/example-warlock/images/) were generated with **ChatGPT (OpenAI)** and are included for demonstration purposes. They and the documentation/help screenshots are separate from the code and licensed, to the extent the project author owns rights in them, under **[CC BY 4.0](ASSETS-LICENSE.md)**.
 
 ## License
 
-The **code** is released under the [MIT License](LICENSE). This covers the application only — D&D rules content is a separate matter (see [Content & licensing](#content--licensing) above), and the example images are credited under [Assets & Credits](#assets--credits).
+The **code** is released under the [MIT License](LICENSE). This covers the application code only — D&D rules content and project images have their own terms above, while dependencies retain their upstream licences. Every build includes the readable [`THIRD_PARTY_NOTICES.txt`](public/THIRD_PARTY_NOTICES.txt) and machine-readable [SPDX SBOM](public/third-party-sbom.spdx.json) generated from the JavaScript and Rust lockfiles.

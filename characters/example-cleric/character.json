@@ -3,6 +3,9 @@
   "meta": {
     "name": "Example Cleric",
     "summary": "Hill Dwarf Cleric (Life Domain) — prepared caster, multiple slot levels, Channel Divinity.",
+    "ruleset": [
+      "SRD 5.1"
+    ],
     "tags": [
       "cleric",
       "example",
