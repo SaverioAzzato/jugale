@@ -173,7 +173,7 @@ export const helpEn: HelpCatalog = assertHelpCatalog({
         },
         {
           title: "On web or desktop",
-          steps: ["Open Prompts and choose the task.", "Copy the prompt and download the files offered by JUGALE.", "Attach them in your chatbot conversation.", "Save the final answer as character.json, then open that file or place it back in the character folder."],
+          steps: ["Open Prompts and choose the task.", "Select Download beside that prompt. JUGALE saves one text file with the prompt, schema and the open character, when there is one.", "Attach that text file in your chatbot conversation.", "Save the final answer as character.json, then open that file or place it back in the character folder."],
         },
       ],
     },
@@ -223,8 +223,11 @@ export const helpEn: HelpCatalog = assertHelpCatalog({
             alt: "Raw JSON editor showing a valid character file",
             caption: "The editor reports whether the JSON is valid before you return to the sheet.",
           },
-          steps: ["Open Raw JSON from the top bar.", "Make your change without removing unrelated sections.", "Fix any syntax error shown by the editor, then close it to return to the sheet."],
-          details: [{ title: "Smallest valid example", paragraphs: ["{ \"meta\": { \"name\": \"My character\" } }"] }],
+          steps: ["Open Raw JSON from the top bar.", "Make your change without removing unrelated sections.", "Fix every syntax or validation error shown by the editor, then close it to return to the sheet."],
+          details: [
+            { title: "Why the status says Not saved", paragraphs: ["JUGALE keeps an invalid draft so you can correct it, but does not replace character.json until the draft validates. A file created by a newer JUGALE version is protected from changes and can be exported unchanged."] },
+            { title: "Smallest valid example", paragraphs: ["{ \"meta\": { \"name\": \"My character\" } }"] },
+          ],
         },
         {
           title: "Use the JSON Schema",

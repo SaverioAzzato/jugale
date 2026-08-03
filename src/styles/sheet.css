@@ -1,0 +1,843 @@
+/* ---- sheet ---- */
+.sheet {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+.sheet-header {
+  margin-bottom: 18px;
+}
+.sheet-headline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sheet-header h1 {
+  margin: 0;
+  font-size: 26px;
+  font-family: var(--font-display);
+  letter-spacing: 0.5px;
+}
+.pb-chip {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 11px;
+  white-space: nowrap;
+}
+.subtitle {
+  margin: 6px 0 0;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 14px;
+}
+.subtitle-2 {
+  margin-top: 2px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.header-stats {
+  display: flex;
+  gap: 12px;
+}
+.header-stat {
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  min-width: 84px;
+  background: var(--surface);
+}
+.header-stat-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+.header-stat-value {
+  font-size: 22px;
+}
+
+/* Two stable columns: a panel never moves between columns when its height changes
+   (e.g. expanding a row), so the layout doesn't reshuffle. Collapses to one
+   centered column when a side is empty or the viewport is narrow. */
+.tab-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.tab-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+/* Measurement wrapper for the balanced-columns layout; transparent to styling. */
+.bcol-item {
+  min-width: 0;
+}
+.tab-col-solo {
+  max-width: 620px;
+  margin: 0 auto;
+}
+@media (max-width: 760px) {
+  .tab-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+}
+/* Transparent variant: no visible card, but the same box (padding + transparent border)
+   so it groups and aligns exactly like one — used to make the primary section stand out. */
+.panel-plain {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.panel-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  font-family: var(--font-display);
+}
+.panel h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin: 12px 0 4px;
+}
+
+.wikilink {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--accent);
+}
+.wikilink:hover {
+  border-bottom-style: solid;
+}
+
+/* abilities */
+.ability-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.ability-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 8px 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.ability-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+.ability-score {
+  font-size: 20px;
+}
+.ability-mod {
+  font-size: 15px;
+  color: var(--gold);
+}
+.ability-save {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* skills */
+.skill-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 2;
+  column-gap: 18px;
+}
+.skill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  font-size: 13px;
+  break-inside: avoid;
+}
+.skill-dot {
+  color: var(--dim);
+}
+.skill.is-proficient .skill-dot {
+  color: var(--accent);
+}
+.skill-name {
+  flex: 1;
+}
+.skill-bonus {
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+}
+.passive-perception {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* stats row (combat) */
+.stat-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.stat {
+  flex: 1 1 0;
+  min-width: 96px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  background: var(--surface-2);
+}
+.stat-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.stat-value {
+  font-size: 18px;
+}
+.stat-note {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ---- Gioco: status (conditions / inspiration / death saves) ---- */
+.conditions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.condition-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 6px 3px 10px;
+  font-size: 12px;
+}
+.condition-chip button {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+}
+.condition-chip button:hover {
+  color: var(--error);
+}
+.condition-add {
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.condition-add:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.condition-input {
+  background: var(--surface-2);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--text);
+  padding: 3px 10px;
+  font: inherit;
+  font-size: 12px;
+  width: 130px;
+}
+.inspiration {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  padding: 4px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.inspiration.is-on {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: var(--accent-weak);
+}
+.death-saves {
+  margin-top: 12px;
+}
+.status-sub {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+.death-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+.death-label {
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 84px;
+}
+.death-pips {
+  display: flex;
+  gap: 5px;
+}
+.death-pip {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  cursor: pointer;
+  padding: 0;
+}
+.death-pip.is-on.is-ok {
+  background: var(--ok);
+  border-color: var(--ok);
+}
+.death-pip.is-on.is-bad {
+  background: var(--error);
+  border-color: var(--error);
+}
+
+/* ---- Gioco: attacks & spells (expandable rows) ---- */
+.attack-list,
+.spell-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+.attack,
+.spell {
+  border-bottom: 1px solid var(--border);
+}
+.attack.is-dimmed {
+  opacity: 0.45;
+}
+.attack-head,
+.spell-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 9px 2px;
+  font: inherit;
+}
+.caret {
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: transform var(--speed), color var(--speed);
+}
+.caret.is-open {
+  transform: rotate(90deg);
+}
+.attack-head:hover .caret,
+.spell-head:hover .caret {
+  color: var(--accent);
+}
+.attack-main {
+  min-width: 0;
+  flex: 1;
+}
+.attack-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.attack-tag {
+  font-size: 10px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 7px;
+}
+.attack-summary {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.attack-body {
+  padding: 4px 2px 12px 22px;
+}
+.attack-link {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+}
+.attack-profile {
+  margin: 0 0 8px;
+}
+.attack-profile-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+/* key/value detail rows: a real two-column grid so the label can't squish
+   against the value, and long values wrap cleanly under their own column. */
+.detail-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 34%) 1fr;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.detail-row dt {
+  color: var(--muted);
+}
+.detail-row dd {
+  margin: 0;
+}
+.spell-desc {
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+}
+.spell-section {
+  margin-top: 8px;
+}
+.spell-section-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  margin: 12px 0 2px;
+}
+
+/* material components list inside an expanded spell */
+.spell-materials {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.spell-material {
+  font-size: 12.5px;
+}
+.spell-material-cost {
+  color: var(--gold);
+}
+.spell-material-tag {
+  font-size: 10px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 6px;
+  margin-left: 6px;
+}
+.spell-material.is-consumable .spell-material-tag {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Materials editor spans the whole spell card (not one narrow grid cell), and each
+   material row stacks its text over the cost/consumable controls. */
+.edit-materials {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.edit-materials .edit-entry-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* casting-time quick-pick (Edit mode) */
+.ct-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.ct-opt {
+  font-size: 12px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: pointer;
+}
+.ct-opt.is-active {
+  color: var(--gold);
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+
+/* ---- Gioco: consumables ---- */
+.consumable-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.consumable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 2px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+/* ---- Inventario ---- */
+.inv-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.inv-meta > * {
+  margin-bottom: 0;
+}
+.inv-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.inv-summary-stat {
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.inv-encumbrance {
+  margin-bottom: 12px;
+}
+.inv-encumbrance-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.inv-encumbrance-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.inv-encumbrance-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+.inv-encumbrance.is-over .inv-encumbrance-label {
+  color: var(--error);
+}
+.inv-encumbrance.is-over .inv-encumbrance-fill {
+  background: var(--error);
+}
+
+/* ---- portrait & gallery (Story tab) ---- */
+.portrait {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.portrait-main {
+  display: block;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface-2);
+  cursor: zoom-in;
+  transition: border-color var(--speed);
+}
+.portrait-main:hover {
+  border-color: var(--border-strong);
+}
+.portrait-main img {
+  display: block;
+  width: 100%;
+  max-height: 460px;
+  object-fit: contain;
+  background: var(--surface-2);
+}
+.portrait-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.portrait-thumb {
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color var(--speed), transform var(--speed);
+}
+.portrait-thumb:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-strong);
+}
+.portrait-thumb.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-weak);
+}
+.portrait-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ---- lightbox ---- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(0, 0, 0, 0.82);
+  cursor: zoom-out;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+.lightbox-img {
+  max-width: min(calc(92vw / var(--ui-scale)), 1100px);
+  max-height: calc(90vh / var(--ui-scale));
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  transform-origin: center;
+  transition: transform 120ms ease-out;
+  will-change: transform;
+}
+.lightbox-img.is-zoomed {
+  cursor: grab;
+  transition: none;
+}
+.lightbox-close,
+.lightbox-nav {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
+  line-height: 1;
+  transition: background var(--speed);
+}
+.lightbox-close:hover,
+.lightbox-nav:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+.lightbox-close {
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  font-size: 1.5rem;
+}
+.lightbox-nav {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  font-size: 2rem;
+}
+.lightbox-prev {
+  left: 20px;
+}
+.lightbox-next {
+  right: 20px;
+}
+.story-summary {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.inv-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+.inv-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 2px;
+  border-bottom: 1px solid var(--border);
+}
+.inv-item-main {
+  flex: 1;
+  min-width: 0;
+}
+.inv-item-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.inv-item-meta {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+.inv-tag {
+  font-size: 10px;
+  color: var(--gold);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 7px;
+}
+.inv-equip {
+  padding: 3px 10px;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.inv-equip.is-on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-weak);
+}
+
+/* tables */
+.table-wrap {
+  overflow-x: auto;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.data-table caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 700;
+  padding: 10px 0 6px;
+  color: var(--gold);
+}
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.data-table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+}
+.caster-summary {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* resources */
+.resource-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.resource-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+.resource-count {
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+.pips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 5px 0;
+}
+.pip {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+.pip.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.resource-meta {
+  font-size: 11px;
+  color: var(--muted);
+}

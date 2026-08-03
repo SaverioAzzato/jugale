@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { VersionsPage } from "./VersionsPage";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useI18n } from "../i18n/useI18n";
 import type { StorageProvider } from "../storage/provider";
 import type { CharacterVersion } from "../storage/versions";
@@ -55,7 +55,9 @@ describe("VersionsPage", () => {
       expect.objectContaining({ meta: expect.objectContaining({ name: multiclass.meta.name }) }),
       "before-restore",
     );
-    expect(write).toHaveBeenCalledWith(expect.objectContaining({ meta: expect.objectContaining({ name: "Old Hero" }) }));
+    expect(write).toHaveBeenCalledWith(expect.objectContaining({
+      document: expect.objectContaining({ meta: expect.objectContaining({ name: "Old Hero" }) }),
+    }));
   });
 
   it("can restore without saving the current version", async () => {

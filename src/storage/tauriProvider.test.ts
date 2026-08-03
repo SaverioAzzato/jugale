@@ -1,11 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { writes, mkdirMock, removeMock, historyFiles } = vi.hoisted(() => {
+const { writes, mkdirMock, removeMock, renameMock, historyFiles } = vi.hoisted(() => {
   const historyFiles = new Map<string, string>();
   return {
     writes: vi.fn(async (_path: string, _value: string) => {}),
     mkdirMock: vi.fn(async () => {}),
     removeMock: vi.fn(async (path: string) => { historyFiles.delete(path.split("/").pop() || ""); }),
+    renameMock: vi.fn(async (from: string, to: string) => {
+      const fromName = from.split("/").pop() || "";
+      const toName = to.split("/").pop() || "";
+      const contents = historyFiles.get(fromName);
+      if (contents !== undefined) historyFiles.set(toName, contents);
+      historyFiles.delete(fromName);
+    }),
     historyFiles,
   };
 });
@@ -43,14 +50,17 @@ vi.mock("@tauri-apps/plugin-fs", () => ({
     if (path.startsWith("/hero/history/")) historyFiles.set(path.split("/").pop()!, value);
   }),
   remove: removeMock,
+  rename: renameMock,
 }));
 
 import { openCharacterFileTauri, openCharacterFolderTauri } from "./tauriProvider";
+import { expectVersionStoreContract } from "../test/versionStoreContract";
 
 beforeEach(() => {
   writes.mockClear();
   mkdirMock.mockClear();
   removeMock.mockClear();
+  renameMock.mockClear();
   historyFiles.clear();
   historyFiles.set(
     "character-20260727-153012-184-checkpoint.json",
@@ -73,8 +83,12 @@ describe("Tauri folder version store", () => {
     expect(created.title).toBe("Before dragon");
     expect(mkdirMock).toHaveBeenCalledWith("/hero/history", { recursive: true });
     expect(writes).toHaveBeenCalledWith(
-      `/hero/history/${created.filename}`,
+      expect.stringMatching(new RegExp(`/hero/history/${created.filename}\\.jugale-.*\\.tmp$`)),
       JSON.stringify({ meta: { name: "Hero" } }, null, 2),
+    );
+    expect(renameMock).toHaveBeenCalledWith(
+      expect.stringContaining(`/hero/history/${created.filename}.jugale-`),
+      `/hero/history/${created.filename}`,
     );
     const listed = await store.list();
     expect(listed.map((version) => version.filename)).toEqual([
@@ -86,6 +100,7 @@ describe("Tauri folder version store", () => {
     expect((await store.list()).map((version) => version.filename)).toEqual([
       "character-20260727-153012-184-checkpoint.json",
     ]);
+    await expectVersionStoreContract(store, 102);
 
     const file = await openCharacterFileTauri();
     expect(file!.provider.versions).toBeUndefined();

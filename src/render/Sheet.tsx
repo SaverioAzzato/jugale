@@ -1,8 +1,8 @@
 import type { Character } from "../schema";
 import { proficiencyBonus } from "../schema";
-import { fmtMod } from "./primitives";
+import { fmtMod } from "./format";
 import { TabContent } from "./tabs";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT } from "../i18n/useI18n";
 
 /**
@@ -14,7 +14,7 @@ import { useT } from "../i18n/useI18n";
 export function Sheet({ c, tab }: { c: Character; tab: string }) {
   const t = useT();
   const editMode = useCharacter((s) => s.editMode);
-  const editField = useCharacter((s) => s.editField);
+  const editCoreField = useCharacter((s) => s.editCoreField);
   const classLine = c.classes
     .map((cl) => `${cl.name}${cl.subclass ? ` (${cl.subclass})` : ""} ${cl.level}`)
     .join(" / ");
@@ -30,7 +30,7 @@ export function Sheet({ c, tab }: { c: Character; tab: string }) {
                 className="edit-input edit-name"
                 value={c.meta.name}
                 aria-label={t("edit.name")}
-                onChange={(e) => editField(["meta", "name"], e.target.value)}
+                onChange={(event) => editCoreField({ field: "meta.name", value: event.target.value })}
               />
             ) : (
               c.meta.name

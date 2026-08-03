@@ -3,7 +3,7 @@ import { Panel, WikiLink } from "./primitives";
 import { Stepper } from "./controls";
 import { Field, TextInput, NumberInput, Select, OptionalNumber, EntryList, EntryRow } from "./editControls";
 import { newResource } from "../model/factories";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT, type StringKey } from "../i18n/useI18n";
 
 const RESET_KEY: Record<string, StringKey> = {

@@ -16,6 +16,7 @@ const MESSAGE_KEY: Partial<
     | "issues.spellMaterialMissing"
     | "issues.spellRitualNoDuration"
     | "issues.multipleBodyArmor"
+    | "issues.futureSchema"
   >
 > = {
   levelExceeds20: "issues.levelExceeds20",
@@ -25,6 +26,7 @@ const MESSAGE_KEY: Partial<
   spellMaterialMissing: "issues.spellMaterialMissing",
   spellRitualNoDuration: "issues.spellRitualNoDuration",
   multipleBodyArmor: "issues.multipleBodyArmor",
+  futureSchema: "issues.futureSchema",
 };
 
 /** Localized issue text. Known codes interpolate a translated template; raw schema errors

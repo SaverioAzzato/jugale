@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { importCharacterFolder, NO_CHARACTER_JSON, openCharacterFile, openCharacterFolder } from "./provider";
+import { expectVersionStoreContract } from "../test/versionStoreContract";
 
 beforeAll(() => {
   // jsdom has no object-URL support; stub it so the loaders can mint blob URLs.
@@ -116,6 +117,7 @@ describe("web folder version store", () => {
     ).rejects.toThrow("Invalid character version filename");
     await loaded!.provider.versions!.delete(version);
     expect(await loaded!.provider.versions!.list()).toEqual([]);
+    await expectVersionStoreContract(loaded!.provider.versions!, 101);
   });
 
   it("does not expose versions when only character.json is opened", async () => {

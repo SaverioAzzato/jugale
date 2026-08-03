@@ -9,7 +9,7 @@ Preserved texts below are copied verbatim from dependency packages and deduplica
 A component without a packaged text is still listed with its declared SPDX expression and source.
 
 Generated from: package-lock.json and src-tauri/Cargo.lock
-Dependency fingerprint: sha256:580d67905e41a21298552c2f10ae0919a0454394067a2fb3020cc8444d41af46
+Dependency fingerprint: sha256:a8cd3e1185109a4db3f082fabb28bfe30fa29512cfc71c244a720a3b5b71d868
 Components: 608 (39 npm, 569 Cargo)
 
 COMPONENT INVENTORY

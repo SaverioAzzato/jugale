@@ -1,9 +1,11 @@
 import { create } from "zustand";
+import type { UnitSystem } from "../model/unitSystem";
+
+export type { UnitSystem } from "../model/unitSystem";
 
 /** Small persisted app-preferences store (things that aren't theme or locale). */
 const KEY = "dndm.settings";
 
-export type UnitSystem = "imperial" | "metric";
 export type DiceButtonPosition = "toolbar" | "floating-right" | "floating-left";
 export const UI_SCALES = [80, 90, 100, 110, 120] as const;
 export type UiScale = (typeof UI_SCALES)[number];

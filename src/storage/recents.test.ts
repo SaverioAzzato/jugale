@@ -1,11 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { mergeRecent, refKey, type RecentEntry } from "./recents";
+import { mergeRecent, parseRecentEntries, parseRecentEntry, refKey, type RecentEntry } from "./recents";
 
-const entry = (over: Partial<RecentEntry>): RecentEntry => ({
-  platform: "web",
+type SnapshotEntry = Extract<RecentEntry, { platform: "snapshot" }>;
+const entry = (over: Partial<SnapshotEntry>): SnapshotEntry => ({
+  platform: "snapshot",
   kind: "folder",
   name: "alpha",
-  key: "web:folder:alpha",
+  raw: { meta: { name: "Alpha" } },
+  images: [],
+  key: "snapshot:folder:alpha",
   lastOpenedAt: 1,
   ...over,
 });
@@ -13,11 +16,40 @@ const entry = (over: Partial<RecentEntry>): RecentEntry => ({
 describe("refKey", () => {
   it("keys native refs by path and web refs by name", () => {
     expect(refKey({ platform: "tauri", kind: "folder", name: "alpha", path: "/p/alpha" })).toBe("tauri:folder:/p/alpha");
-    expect(refKey({ platform: "web", kind: "file", name: "character.json" })).toBe("web:file:character.json");
+    expect(refKey({
+      platform: "web",
+      kind: "file",
+      name: "character.json",
+      handle: { kind: "file", name: "character.json" } as FileSystemFileHandle,
+    })).toBe("web:file:character.json");
   });
 
   it("keys snapshot refs by name (distinct from live refs)", () => {
-    expect(refKey({ platform: "snapshot", kind: "folder", name: "alpha" })).toBe("snapshot:folder:alpha");
+    expect(refKey({
+      platform: "snapshot",
+      kind: "folder",
+      name: "alpha",
+      raw: {},
+      images: [],
+    })).toBe("snapshot:folder:alpha");
+  });
+});
+
+describe("parseRecentEntry", () => {
+  it("accepts a complete discriminated entry", () => {
+    const valid = entry({});
+    expect(parseRecentEntry(valid)).toEqual(valid);
+  });
+
+  it("rejects missing platform fields and mismatched keys", () => {
+    expect(parseRecentEntry({ platform: "tauri", kind: "file", name: "hero", key: "x", lastOpenedAt: 1 })).toBeNull();
+    expect(parseRecentEntry({ ...entry({}), key: "tampered" })).toBeNull();
+  });
+
+  it("rejects a corrupt snapshot image without dropping valid siblings at the list boundary", () => {
+    const valid = entry({});
+    const corrupt = { ...entry({ name: "Broken", key: "snapshot:folder:Broken" }), images: [{ name: "portrait.png", blob: "not-a-blob" }] };
+    expect(parseRecentEntries([corrupt, valid, null])).toEqual([valid]);
   });
 });
 

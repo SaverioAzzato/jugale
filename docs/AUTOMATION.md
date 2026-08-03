@@ -1,15 +1,18 @@
 # Automation — CI/CD & "ticket → PR"
 
+This document owns executable gates, workflows and release procedures. Code-quality policy and the
+Definition of Done are in [ENGINEERING.md](ENGINEERING.md).
+
 ## Workflows in this repo
 
 | File | Trigger | What it does |
 |---|---|---|
-| `.github/workflows/ci.yml` | every PR + push to `main` or `develop` | version alignment → lint → typecheck → unit tests → web build. The required gate before merge or tagging. |
+| `.github/workflows/ci.yml` | every PR + push to `main` or `develop` | version/document drift → zero-warning lint → typecheck → thresholded Vitest coverage → web build/bundle budget → Playwright desktop/mobile Chromium E2E. Failed E2E runs retain their report. |
 | `release.yml` *(added in M4)* | stable tag `vX.Y.Z` | builds desktop + a release-signed Android APK into a **draft** Release; skips `-dev` tags. |
 | `android-dev-release.yml` | tag `vX.Y.Z-dev.N` at `develop` HEAD | builds the separately-installable **JUGALE Dev** APK and attaches it to a private draft/prerelease. |
 | `pages.yml` *(added in M4)* | stable tag `vX.Y.Z` | deploys the web build to GitHub Pages; skips `-dev` tags. |
 | `tauri-check.yml` | PR touching `src-tauri/` | fast Rust `cargo check` (no bundling). |
-| `android-check.yml` | PR touching the native updater/update wiring | builds a debug APK, including Kotlin and the merged Android manifest. |
+| `android-check.yml` | PR touching native updater/share wiring | builds a debug APK, verifies the merged manifest, then runs the pure Kotlin JVM tests. |
 
 There is intentionally **no `claude.yml`** — see "ticket → PR" below for why.
 
@@ -74,7 +77,7 @@ The **public** key lives in `tauri.conf.json` → `plugins.updater.pubkey` (safe
 `npm install` and `npm ci` automatically configure the repository-owned hooks in `.githooks/`
 (without a Husky dependency):
 
-- **pre-commit** runs version alignment, the dependency-notice/SBOM freshness check, lint and typecheck, providing fast feedback;
+- **pre-commit** runs version/document alignment, the dependency-notice/SBOM freshness check, lint and typecheck, providing fast feedback;
 - **pre-push** runs the full `npm run check` gate;
 - when the push contains a `v*` tag, pre-push runs `npm run check:release`: first a clean `npm ci`,
   then the complete web gate (including the legal-artifact check) and `cargo check --locked`.
@@ -88,9 +91,22 @@ The same checks can be run explicitly:
 
 ```bash
 npm run check:commit   # fast feedback
-npm run check          # full web/CI gate
+npm run check          # local web gate, including thresholded unit coverage
+npm run check:docs     # schema markers, documented commands and local Markdown links
+npm run check:bundle   # verify the already-built initial JS against minified/gzip budgets
+npm run test:e2e       # Playwright desktop/mobile Chromium (browser install required once)
+npm run check:ci       # local web gate + Playwright; the CI workflow's project gate
 npm run check:release  # clean install + web gate + Rust lockfile check
 ```
+
+`npm run build` runs the bundle check automatically after Vite emits `dist/`; CI therefore blocks
+an entry script above 500 KiB minified or 150 KiB gzip. Lazy secondary pages, CodeMirror and the
+Three.js dice scene are intentionally outside that startup budget.
+
+`npm run check:docs` derives the schema version from `src/schema/character.ts`, verifies the
+canonical document map, rejects missing documented npm commands and broken local Markdown targets,
+checks the end-user agent prompts for stale schema/image rules, and confirms that CI invokes the
+declared project gate. It runs in both `check:commit` and `check`.
 
 `public/THIRD_PARTY_NOTICES.txt` and `public/third-party-sbom.spdx.json` are generated from both
 lockfiles and copied by Vite into every web/native frontend build. `npm run legal:check` compares
@@ -170,8 +186,8 @@ each is a legitimate writer of the same canonical `character.json`.
    `1.13.0-dev.1`, then `1.13.0-dev.2`. Never reuse a pushed tag for a different artifact.
 3. Set all version files with `scripts/set-version.sh 1.13.0-dev.1`, then refresh the changed Cargo
    lockfile fingerprint with `npm run legal:generate`.
-4. Run the normal gate (`npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, plus
-   `cargo check --locked` under `src-tauri/`), commit, then push `develop`.
+4. Run `npm run check:ci` plus `cargo check --locked --manifest-path src-tauri/Cargo.toml`, commit,
+   then push `develop`.
 5. Tag the exact pushed commit and push the tag:
 
    ```bash
@@ -229,5 +245,6 @@ Give the ticket in a Claude Code terminal session here. It implements on a branc
 
 ## Branch & PR conventions
 - Branches: `feat/…`, `fix/…`, `docs/…`, `chore/…`.
-- PRs must pass `ci.yml` (typecheck + tests + build) before merge.
+- PRs must pass `ci.yml` (documentation drift, lint, typecheck, coverage, build/budget and E2E)
+  before merge.
 - Conventional-commit style messages keep history readable and enable future automated changelogs.

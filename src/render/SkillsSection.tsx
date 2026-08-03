@@ -1,9 +1,10 @@
 import type { Character } from "../schema";
 import { SKILLS, skillState, type SkillDef } from "../model/skills";
-import { Panel, fmtMod } from "./primitives";
+import { Panel } from "./primitives";
+import { fmtMod } from "./format";
 import { Toggle } from "./editControls";
 import { newSkill } from "../model/factories";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT, type StringKey } from "../i18n/useI18n";
 
 const norm = (id: string): string => id.toLowerCase().replace(/[^a-z0-9]/g, "");

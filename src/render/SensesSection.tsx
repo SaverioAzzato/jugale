@@ -1,7 +1,7 @@
 import type { Character } from "../schema";
 import { Panel } from "./primitives";
 import { Field, TagListEditor } from "./editControls";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT, type StringKey } from "../i18n/useI18n";
 
 /** The four damage/condition defense lists, in display order. */

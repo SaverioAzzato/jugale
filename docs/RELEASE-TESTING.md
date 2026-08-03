@@ -89,6 +89,9 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
   or the bottom live-sync/status bar when it is visible. Repeat with the trigger floating on each
   side: dice must spawn and drag around it, while the dice-selection menu remains visually above
   resting dice. Repeat at 80%, 100%, 120% and with browser zoom.
+- ☐ **Prompt bundle download**: every prompt saves one `.txt` containing prompt and JSON Schema.
+  With a character open it also contains the complete `character.json`; without one it remains
+  available and omits that section. Migrate additionally contains the schema changelog.
 - ☐ **Prompt sharing**: on the Prompts page, Base/Create/Custom can open Android's generic
   sharesheet without a character; Level up/Validate/Migrate are disabled and explain why. With a
   character open, share Level up and verify the chooser opens immediately. ChatGPT should receive

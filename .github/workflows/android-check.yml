@@ -1,7 +1,7 @@
 name: Android Update Check
 
-# Desktop cargo check cannot compile Kotlin or merge the Android manifest. Build a debug APK when
-# updater wiring changes, so failures are caught on PRs and direct main pushes before a tag.
+# Desktop cargo check cannot compile Kotlin or merge the Android manifest. Build a debug APK and
+# run JVM tests when updater/share wiring changes, so failures are caught before a tag.
 on:
   push:
     branches:
@@ -74,3 +74,7 @@ jobs:
         run: npx tauri android build --apk --debug --ci --config '{"bundle":{"android":{"debugApplicationIdSuffix":null}}}'
         env:
           NDK_HOME: ${{ env.ANDROID_HOME }}/ndk/${{ env.NDK_VERSION }}
+
+      - name: Test pure Kotlin plugin rules
+        working-directory: src-tauri/gen/android
+        run: ./gradlew testDebugUnitTest --no-daemon

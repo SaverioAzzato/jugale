@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   allocateVersion,
+  createVersionStore,
   normalizeVersionTitle,
   parseVersionFilename,
   sortVersionsNewestFirst,
@@ -44,5 +45,70 @@ describe("character version filenames", () => {
     expect(normalizeVersionTitle("  Before dragon  ")).toBe("Before dragon");
     expect(normalizeVersionTitle("   ")).toBeUndefined();
     expect(normalizeVersionTitle("x".repeat(140))).toHaveLength(120);
+  });
+});
+
+describe("shared version-store policy", () => {
+  const memoryStorage = () => {
+    const files = new Map<string, string>();
+    return {
+      files,
+      storage: {
+        listNames: vi.fn(async () => [...files.keys()]),
+        readText: vi.fn(async (filename: string) => {
+          const value = files.get(filename);
+          if (value === undefined) throw new Error("missing");
+          return value;
+        }),
+        writeText: vi.fn(async (filename: string, contents: string) => { files.set(filename, contents); }),
+        remove: vi.fn(async (filename: string) => {
+          if (!files.delete(filename)) throw new Error("missing");
+        }),
+      },
+    };
+  };
+
+  it("creates, lists, reads and deletes through host primitives", async () => {
+    const { files, storage } = memoryStorage();
+    const store = createVersionStore(storage);
+    const version = await store.create(
+      { meta: { name: "Hero" } },
+      "checkpoint",
+      " Before dragon ",
+      new Date(2026, 6, 27, 15, 30, 12, 184),
+    );
+
+    expect(await store.list()).toEqual([version]);
+    expect(await store.read(version)).toEqual({ meta: { name: "Hero" } });
+    await store.delete(version);
+    expect(files.size).toBe(0);
+  });
+
+  it("keeps a successful snapshot when its optional title sidecar fails", async () => {
+    const { files, storage } = memoryStorage();
+    storage.writeText.mockImplementation(async (filename, contents) => {
+      if (filename.endsWith(".meta.json")) throw new Error("sidecar denied");
+      files.set(filename, contents);
+    });
+    const store = createVersionStore(storage);
+
+    const version = await store.create({}, "checkpoint", "Optional title", new Date(2026, 0, 1));
+
+    expect(version.title).toBeUndefined();
+    expect(files.has(version.filename)).toBe(true);
+    expect(await store.read(version)).toEqual({});
+  });
+
+  it("does not report snapshot deletion as failed when only sidecar cleanup fails", async () => {
+    const { files, storage } = memoryStorage();
+    const store = createVersionStore(storage);
+    const version = await store.create({}, "checkpoint", "Title", new Date(2026, 0, 1));
+    storage.remove.mockImplementation(async (filename) => {
+      if (filename.endsWith(".meta.json")) throw new Error("sidecar locked");
+      files.delete(filename);
+    });
+
+    await expect(store.delete(version)).resolves.toBeUndefined();
+    expect(files.has(version.filename)).toBe(false);
   });
 });

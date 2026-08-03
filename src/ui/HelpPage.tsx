@@ -6,22 +6,6 @@ import { useI18n, useT } from "../i18n/useI18n";
 import { useUiBackHandler } from "./uiBack";
 import { BookIcon, PencilIcon } from "./AppIcons";
 
-export function HelpButton({ onClick, label }: { onClick: () => void; label?: string }) {
-  const t = useT();
-  return (
-    <button
-      type="button"
-      className="btn btn-icon help-button"
-      title={label ?? t("help.title")}
-      aria-label={label ?? t("help.title")}
-      data-overlay-trigger="help"
-      onClick={onClick}
-    >
-      ?
-    </button>
-  );
-}
-
 const CATALOGS = { en: helpEn, it: helpIt } satisfies Record<string, HelpCatalog>;
 
 function topicFromHash(): HelpTopicId | null {

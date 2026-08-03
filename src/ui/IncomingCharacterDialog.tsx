@@ -46,7 +46,7 @@ export function IncomingCharacterDialog({
       {nameMismatch && <p>{t("incoming.nameMismatch")}</p>}
       <div className="version-dialog-actions">
         {targetName && (
-          <button type="button" autoFocus className="btn btn-primary" disabled={busy} onClick={onApply}>
+          <button type="button" autoFocus className="btn btn-primary" disabled={busy || errors > 0} onClick={onApply}>
             {interpolate(t("incoming.applyTo"), { name: targetName })}
           </button>
         )}

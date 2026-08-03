@@ -19,17 +19,25 @@ if (!path) {
 const raw = JSON.parse(readFileSync(path, "utf8"));
 const before = raw.schemaVersion;
 const result = loadCharacter(raw);
+const log = (s: string) => process.stdout.write(s + "\n");
 
 const backup = path.replace(/\.json$/, ".v1.backup.json");
 copyFileSync(path, backup);
-writeFileSync(path, JSON.stringify(result.character, null, 2) + "\n");
 
-const log = (s: string) => process.stdout.write(s + "\n");
-log(`Migrated ${path}`);
-log(`  schemaVersion: ${before} -> ${result.character.schemaVersion}  (migrated: ${result.migrated})`);
-log(`  backup written: ${backup}`);
-log(`  validation: ${result.ok ? "ok" : "ERRORS"} · ${result.issues.length} issue(s)`);
-for (const i of result.issues) log(`    [${i.severity}] ${i.path || "(root)"}: ${i.message}`);
-log(`  classes: ${result.character.classes.map((c) => `${c.name} ${c.level}`).join(", ") || "—"}`);
-log(`  resources: ${result.character.resources.map((r) => `${r.label} ${r.current}/${r.max}`).join(" | ") || "—"}`);
-log(`  preserved sections: ${result.character.customSections.map((s) => s.title).join(", ") || "—"}`);
+if (result.validation.kind !== "valid") {
+  log(`Migration aborted: ${path} was not overwritten`);
+  log(`  recovery backup written: ${backup}`);
+  log(`  validation: ERRORS · ${result.issues.length} issue(s)`);
+  for (const i of result.issues) log(`    [${i.severity}] ${i.path || "(root)"}: ${i.message}`);
+  process.exitCode = 1;
+} else {
+  writeFileSync(path, JSON.stringify(result.validation.persistable.document, null, 2) + "\n");
+  log(`Migrated ${path}`);
+  log(`  schemaVersion: ${before} -> ${result.character.schemaVersion}  (migrated: ${result.migrated})`);
+  log(`  backup written: ${backup}`);
+  log(`  validation: ${result.ok ? "ok" : "ERRORS"} · ${result.issues.length} issue(s)`);
+  for (const i of result.issues) log(`    [${i.severity}] ${i.path || "(root)"}: ${i.message}`);
+  log(`  classes: ${result.character.classes.map((c) => `${c.name} ${c.level}`).join(", ") || "—"}`);
+  log(`  resources: ${result.character.resources.map((r) => `${r.label} ${r.current}/${r.max}`).join(" | ") || "—"}`);
+  log(`  preserved sections: ${result.character.customSections.map((s) => s.title).join(", ") || "—"}`);
+}

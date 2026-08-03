@@ -1,4 +1,4 @@
-import type { UnitSystem } from "../ui/useSettings";
+import type { UnitSystem } from "./unitSystem";
 
 /** Community-standard 5e conversion: 1 ft ≈ 0.3 m (matches the common 5ft-square -> 1.5m-square table). */
 const FT_TO_M = 0.3;

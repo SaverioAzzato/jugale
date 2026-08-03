@@ -9,8 +9,7 @@ import fighter from "../../characters/example-fighter/character.json";
 import cleric from "../../characters/example-cleric/character.json";
 import sorcerer from "../../characters/example-sorcerer/character.json";
 import multiclass from "../../characters/example-multiclass/character.json";
-import { HelpButton } from "./HelpPage";
-import { PromptsButton } from "./PromptsPage";
+import { HelpButton, PromptsButton } from "./OverlayButtons";
 
 // Sample images bundled at build time so the example portraits/gallery work with no real folder.
 const imageModules = import.meta.glob("../../characters/*/images/*", {
@@ -132,7 +131,7 @@ export function EmptyState({
                     type="button"
                     className="recent-item"
                     onClick={() => onReopenRecent(e)}
-                    title={e.path ?? e.name}
+                    title={e.platform === "tauri" ? e.path : e.name}
                   >
                     <span className="recent-icon" aria-hidden>
                       {e.kind === "folder" ? "🗂" : "📄"}

@@ -433,6 +433,8 @@ function typeHint(node: SchemaNode): string {
       return "null";
     case "nullable":
       return node.inner.type === "string" && node.inner.enum ? "enum?" : `${typeHint(node.inner)}?`;
+    case "union":
+      return node.options.map(typeHint).join(" | ");
     case "string":
       return node.enum ? "enum" : "string";
   }

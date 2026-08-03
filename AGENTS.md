@@ -8,17 +8,22 @@ A general-purpose character sheet platform for tabletop characters (D&D 5e in pr
 
 The generalized React + Vite + TypeScript app is the current product and ships on web, desktop, and Android. The milestone rewrite is complete; `docs/ROADMAP.md` is now primarily a delivery record plus the remaining polish backlog. The retired vanilla-JS/Electron prototype can be recovered from the `prototype-v1` tag if historical reference is genuinely needed. Don't resurrect it for new features.
 
-Read the spec-first docs before non-trivial work: `docs/ARCHITECTURE.md`, `docs/SCHEMA.md`, `docs/ROADMAP.md`, `docs/AUTOMATION.md`.
+Read `docs/ENGINEERING.md` and the spec-first docs before non-trivial work:
+`docs/ARCHITECTURE.md`, `docs/SCHEMA.md`, `docs/ROADMAP.md`, `docs/AUTOMATION.md`.
 
 ## Commands
 
 - `npm run dev` — Vite dev server
 - `npm test` — Vitest unit tests (`npm run test:watch` for watch mode)
+- `npm run test:coverage` — Vitest with the blocking global and critical-area coverage thresholds
+- `npm run test:e2e` — Playwright critical flows in desktop/mobile Chromium
 - `npm run typecheck` — `tsc --noEmit`
 - `npm run lint` — ESLint
 - `npm run build` — typecheck + production web build (`vite build`)
+- `npm run check:docs` / `npm run check:bundle` — documentation anti-drift and built-entry budgets
 - `npm run legal:generate` / `npm run legal:check` — regenerate or verify the lockfile-derived third-party notice and SPDX SBOM
-- `npm run check` — the complete web/CI gate (versions + lint + typecheck + tests + build)
+- `npm run check` — the local web gate (versions + lint + typecheck + thresholded coverage + build)
+- `npm run check:ci` — the web gate plus Playwright; requires an installed Chromium browser
 - `npm run check:release` — clean install + complete gate + locked Rust check; mandatory before a release tag
 - `npm run tauri dev` / `npm run tauri build` — desktop development/bundle
 - `npm run tauri android dev` / `npm run tauri android build` — Android development/bundle (requires the Android SDK/NDK)
@@ -35,12 +40,17 @@ The typed core; everything else builds on it. It stores **inputs, not outputs** 
 - `character.ts` — the Zod schema for the current `character.json` contract (**v2.2.0**). `.passthrough()` everywhere preserves unknown keys; sensible defaults let a minimal `{ meta: { name } }` validate. Exports the `Character` type and `SCHEMA_VERSION`.
 - `derive.ts` — derived 5e values: ability modifiers, proficiency bonus, saving throws, spell save DC / attack, multiclass total level.
 - `migrate.ts` — the in-memory `1.0.0 → 2.0.0 → 2.1.0 → 2.2.0` upgrade chain (persisted only on a real save); lossless where legacy fields have no direct equivalent.
-- `validate.ts` — `loadCharacter(raw)`: migrate → validate → derive. **Never throws and always returns a renderable character**; schema failures become `error` issues, 5e inconsistencies become `warning` issues (a half-edited file is never locked out).
+- `validate.ts` — `loadCharacter(raw)` keeps source/draft separate from the render projection and
+  returns a discriminated validation result. It never throws and always provides a renderable
+  projection; only a valid current-schema draft receives the persistable capability.
 - `jsonSchema.ts` — exports a JSON Schema (for external tools / GPTs).
 - Tests live next to source as `*.test.ts` (Vitest).
 
 ### Data flow
-`load file → migrate(schemaVersion) → validate (Zod) → state → render`. Session edits (the live fields) → debounced save via `StorageProvider`, only when live-sync is on.
+`load → lossless source/draft → validate → render projection`. Only a valid, supported draft can
+become `PersistableCharacterDocument` and enter the debounced `StorageProvider` write queue. A
+schema-invalid or future-schema projection is render/export recovery data, never a canonical write
+source. See `docs/ENGINEERING.md` and ADR 0001.
 
 ## Character JSON contract (v2.2.0)
 
@@ -51,7 +61,15 @@ Top-level sections include `schemaVersion`, `meta`, `identity`, `classes` (multi
 Rules that matter when editing character data (also encoded in `.github/agents/*.agent.md`):
 
 - **`character.json` is the single source of truth; the app is a stateless, data-driven renderer.** Never hardcode character- or class-specific content into the UI — it must come from the JSON.
-- **Structural vs. live state.** Almost everything is structural (changes only on an explicit level-up/edit). Only these fields are **live** play-state the UI mutates continuously: `combat.hp.current` / `combat.hp.temp`, `resources[].current`, `inventory.items[].quantity`, `inventory.currencies.*`, and `session.*`. Nothing else should change silently from a render.
+- **Structural vs. live state.** Almost everything is structural (changes only on an explicit
+  level-up/edit). Live play-state is limited to `combat.hp.current`, `combat.hp.temp`,
+  `combat.hp.hitDiceRemaining`, `resources[].current`, `inventory.items[].quantity`,
+  `inventory.items[].equipped`, `inventory.currencies.*`, and `session.*`. Nothing else should
+  change silently from a render.
+- **Lossless persistence invariant.** Preserve the parsed source and working draft independently
+  from Zod/default-filled render projections. Validate external `unknown`; never persist a fallback,
+  a schema-invalid draft or a future-schema document to its bound canonical file. Unknown keys must
+  survive load, edit, save and reload.
 - **Generic resources, not hardcoded slots.** `resources[]` is the single model for anything spent/recovered (spell slots of any name, pact magic, ki, rage, sorcery points, arrows…). Don't reintroduce per-class hardcoded fields.
 - Preserve all existing JSON fields when editing — don't drop fields outside the requested change. Unknown keys are intentionally preserved.
 - Preserve clickable `link` properties on spells, feats, weapons, background, class features, etc.
@@ -60,7 +78,7 @@ Rules that matter when editing character data (also encoded in `.github/agents/*
 
 ## Testing & CI
 
-Tests are first-class — the schema/model layer is exhaustively unit-tested. CI (`.github/workflows/ci.yml`) runs typecheck + tests + build on every PR; keep it green. Add/adjust tests with any schema, derivation, or migration change.
+Tests are first-class — the schema/model layer is exhaustively unit-tested. CI (`.github/workflows/ci.yml`) runs lint, typecheck, thresholded coverage, build and desktop/mobile Chromium E2E on every PR; the Android native check builds a debug APK and runs the plugins' pure Kotlin JVM tests. Keep both green. Add/adjust tests with any schema, derivation, migration or persistence change.
 
 ## Android prompt-share compatibility
 

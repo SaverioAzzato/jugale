@@ -10,7 +10,7 @@ import {
   EntryRow,
 } from "./editControls";
 import { newRaceTrait } from "../model/factories";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT, type StringKey } from "../i18n/useI18n";
 
 /** The character's free-text summary/description — lives in the Story tab. */

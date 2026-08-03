@@ -1,14 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { useCharacter } from "./store";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { useCharacter } from "../characterStore";
 import { useToast } from "../ui/useToast";
 import type { StorageProvider } from "../storage/provider";
 import { newResource, newSpellSection, newSpell } from "../model/factories";
 import multiclass from "../../characters/example-multiclass/character.json";
+import warlock from "../../characters/example-warlock/character.json";
 import { useSettings } from "../ui/useSettings";
 import type { CharacterVersion, VersionStore } from "../storage/versions";
 
 const c = () => useCharacter.getState().character!;
 const res = (id: string) => c().resources.find((r) => r.id === id)!;
+
+afterEach(() => vi.useRealTimers());
 
 describe("store — live play mutations", () => {
   beforeEach(() => useCharacter.getState().loadRaw(multiclass, "test"));
@@ -111,6 +114,7 @@ describe("store — live sync failure falls back to read-only", () => {
   beforeEach(() => useCharacter.getState().loadRaw(multiclass, "test"));
 
   it("drops liveSync, flags readOnly, and toasts when a write fails", async () => {
+    vi.useFakeTimers();
     const failingProvider: StorageProvider = {
       kind: "file",
       read: async () => multiclass,
@@ -123,7 +127,7 @@ describe("store — live sync failure falls back to read-only", () => {
     expect(useCharacter.getState().readOnly).toBe(false);
 
     useCharacter.getState().heal(1); // any mutation schedules the debounced save
-    await new Promise((r) => setTimeout(r, 300)); // past the 250ms debounce
+    await vi.advanceTimersByTimeAsync(250);
 
     expect(useCharacter.getState().liveSync).toBe(false);
     expect(useCharacter.getState().readOnly).toBe(true);
@@ -150,6 +154,18 @@ describe("store — edit mode structural edits", () => {
     expect(useCharacter.getState().editMode).toBe(false);
   });
 
+  it("drops material rows left empty when edit mode closes", () => {
+    useCharacter.getState().toggleEditMode();
+    const materialsPath = ["spellSections", 0, "entries", 0, "materials"] as const;
+    const before = c().spellSections[0].entries[0].materials?.length ?? 0;
+    useCharacter.getState().addItem([...materialsPath], { text: "", cost: null, consumable: false });
+
+    useCharacter.getState().toggleEditMode();
+
+    expect(c().spellSections[0].entries[0].materials).toHaveLength(before);
+    expect(useCharacter.getState().editMode).toBe(false);
+  });
+
   it("editField sets any nested value and marks the character dirty", () => {
     useCharacter.getState().editField(["meta", "name"], "Renamed Hero");
     expect(useCharacter.getState().character!.meta.name).toBe("Renamed Hero");
@@ -159,6 +175,13 @@ describe("store — edit mode structural edits", () => {
   it("editField writes into an array entry by index", () => {
     useCharacter.getState().editField(["classes", 0, "level"], 7);
     expect(useCharacter.getState().character!.classes[0].level).toBe(7);
+  });
+
+  it("applies typed core-field commands", () => {
+    useCharacter.getState().editCoreField({ field: "ability.score", ability: "wis", value: 18 });
+    useCharacter.getState().editCoreField({ field: "combat.hp.max", value: 55 });
+    expect(c().abilities.wis.score).toBe(18);
+    expect(c().combat.hp.max).toBe(55);
   });
 
   it("addItem and removeItem grow and shrink an array", () => {
@@ -177,12 +200,11 @@ describe("store — edit mode structural edits", () => {
     expect(useCharacter.getState().character!.spellSections[0].entries[0].name).toBe("Eldritch Blast");
   });
 
-  it("revalidates issues live after an edit that breaks a rule", async () => {
+  it("revalidates issues live after an edit that breaks a rule", () => {
     // Spend more than the max on the first resource → an overspent warning should surface.
     const id = useCharacter.getState().character!.resources[0].id;
     useCharacter.getState().editField(["resources", 0, "max"], 0);
     useCharacter.getState().editField(["resources", 0, "current"], 5);
-    await new Promise((r) => setTimeout(r, 350)); // past the 300ms revalidate debounce
     expect(
       useCharacter.getState().issues.some((iss) => iss.code === "resourceOverspent" && iss.path.includes(id)),
     ).toBe(true);
@@ -212,6 +234,47 @@ describe("store — setRawJson (raw JSON editor)", () => {
     expect(useCharacter.getState().liveSync).toBe(true);
     expect(useCharacter.getState().provider).toBe(provider);
     expect(c().meta.name).toBe("Z");
+  });
+});
+
+describe("store — formula actions", () => {
+  it("applies a matching action and ignores an unknown id", () => {
+    useCharacter.getState().loadRaw(warlock, "warlock");
+    const before = c().combat.hp.temp;
+
+    useCharacter.getState().runAction("missing-action");
+    expect(c().combat.hp.temp).toBe(before);
+
+    useCharacter.getState().runAction("dark-blessing-temp");
+    expect(c().combat.hp.temp).toBeGreaterThan(before);
+  });
+
+  it("reports invalid formulas and presents rolled dice", () => {
+    useCharacter.getState().loadRaw({
+      ...warlock,
+      actions: [
+        ...warlock.actions,
+        { id: "broken", label: "Broken", kind: "custom", formulas: ["not a formula"] },
+      ],
+    }, "warlock");
+
+    useCharacter.getState().runAction("broken");
+    expect(useToast.getState().toasts.some((toast) => toast.kind === "error")).toBe(true);
+
+    useCharacter.getState().runAction("spend-hit-die");
+    expect(c().combat.hp.hitDiceRemaining).toBe(warlock.combat.hp.hitDiceRemaining - 1);
+  });
+
+  it("runs formulas registered for a rest", () => {
+    useCharacter.getState().loadRaw({
+      ...warlock,
+      actions: warlock.actions.map((action) =>
+        action.id === "dark-blessing-temp" ? { ...action, kind: "shortRest" as const } : action),
+    }, "warlock");
+
+    useCharacter.getState().shortRest();
+
+    expect(c().combat.hp.temp).toBeGreaterThan(0);
   });
 });
 
@@ -256,9 +319,9 @@ describe("store — character versions and safe replacement", () => {
 
     expect(result).toEqual(checkpoint);
     expect(provider.write).toHaveBeenCalledTimes(1);
-    const persisted = vi.mocked(provider.write).mock.calls[0][0] as typeof multiclass;
+    const persisted = vi.mocked(provider.write).mock.calls[0][0].document as typeof multiclass;
     expect(persisted.combat.hp.current).toBe(multiclass.combat.hp.current - 1);
-    expect(versions.create).toHaveBeenCalledWith(useCharacter.getState().character, "checkpoint", undefined);
+    expect(versions.create).toHaveBeenCalledWith(useCharacter.getState().lastPersisted, "checkpoint", undefined);
     expect(useToast.getState().toasts.at(-1)).toMatchObject({
       kind: "success",
       message: `Version saved: ${checkpoint.filename}`,
@@ -266,11 +329,12 @@ describe("store — character versions and safe replacement", () => {
   });
 
   it("does not create history from the toggle, live mutations or ordinary live sync", async () => {
+    vi.useFakeTimers();
     const { provider, versions } = versionedProvider();
     useCharacter.getState().connect(provider, multiclass, "folder");
     useSettings.getState().setVersionHistory(true);
     useCharacter.getState().damage(1);
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await vi.advanceTimersByTimeAsync(250);
 
     expect(provider.write).toHaveBeenCalledTimes(1);
     expect(versions.create).not.toHaveBeenCalled();
@@ -351,7 +415,9 @@ describe("store — character versions and safe replacement", () => {
       "before-import",
     );
     expect(provider.write).toHaveBeenCalledWith(
-      expect.objectContaining({ meta: expect.objectContaining({ name: incoming.meta.name }) }),
+      expect.objectContaining({
+        document: expect.objectContaining({ meta: expect.objectContaining({ name: incoming.meta.name }) }),
+      }),
     );
     expect(c().meta.name).toBe("Incoming");
     expect(useCharacter.getState()).toMatchObject({ provider, images, dirty: false, liveSync: true });

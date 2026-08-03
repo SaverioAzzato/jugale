@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { safeHref, WikiLink } from "./primitives";
+import { WikiLink } from "./primitives";
+import { safeHref } from "./format";
 
 describe("safeHref", () => {
   it("allows http(s) and mailto links from the JSON", () => {

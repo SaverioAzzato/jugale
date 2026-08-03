@@ -5,20 +5,12 @@
  * fs plugin's scope to whatever the user picks, for the running session.
  */
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
-import { exists, mkdir, readDir, readFile, readTextFile, remove, writeTextFile } from "@tauri-apps/plugin-fs";
+import { exists, mkdir, readDir, readFile, readTextFile, remove, rename, writeTextFile } from "@tauri-apps/plugin-fs";
 import { join, basename } from "@tauri-apps/api/path";
-import type { StorageProvider, GalleryImage, RecentRef, LoadedCharacter } from "./provider";
-import { NO_CHARACTER_JSON } from "./provider";
-import {
-  allocateVersion,
-  normalizeVersionTitle,
-  parseVersionFilename,
-  readVersionTitle,
-  requireVersionFilename,
-  sortVersionsNewestFirst,
-  versionMetadataFilename,
-  type VersionStore,
-} from "./versions";
+import type { StorageProvider, GalleryImage, TauriRecentRef, LoadedCharacter } from "./provider";
+import type { PersistableCharacterDocument } from "../schema/validate";
+import { normalizeStorageError, storageError } from "./errors";
+import { createVersionStore, type VersionStore } from "./versions";
 
 const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
 const MIME: Record<string, string> = {
@@ -32,6 +24,24 @@ const MIME: Record<string, string> = {
   svg: "image/svg+xml",
 };
 
+let atomicWriteSequence = 0;
+
+/** Same-directory temp + rename: canonical desktop writes never expose a partial JSON file. */
+async function atomicWriteText(path: string, contents: string): Promise<void> {
+  const temporaryPath = `${path}.jugale-${Date.now()}-${++atomicWriteSequence}.tmp`;
+  try {
+    await writeTextFile(temporaryPath, contents);
+    await rename(temporaryPath, path);
+  } catch (error) {
+    try {
+      if (await exists(temporaryPath)) await remove(temporaryPath);
+    } catch {
+      // Preserve the original write/rename error; stale temp cleanup is secondary.
+    }
+    throw error;
+  }
+}
+
 /** True when running inside the Tauri shell (desktop/mobile), false on the plain web build. */
 export function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -39,14 +49,26 @@ export function isTauri(): boolean {
 
 class TauriFileProvider implements StorageProvider {
   readonly kind = "file";
-  constructor(private path: string) {}
+  constructor(private path: string, private atomic = false) {}
 
   async read(): Promise<unknown> {
-    return JSON.parse(await readTextFile(this.path));
+    let text: string;
+    try {
+      text = await readTextFile(this.path);
+    } catch (error) {
+      throw normalizeStorageError(error);
+    }
+    return JSON.parse(text);
   }
 
-  async write(data: unknown): Promise<void> {
-    await writeTextFile(this.path, JSON.stringify(data, null, 2));
+  async write(data: PersistableCharacterDocument): Promise<void> {
+    try {
+      const contents = JSON.stringify(data.document, null, 2);
+      if (this.atomic) await atomicWriteText(this.path, contents);
+      else await writeTextFile(this.path, contents);
+    } catch (error) {
+      throw normalizeStorageError(error);
+    }
   }
 }
 
@@ -54,53 +76,26 @@ class TauriFolderProvider extends TauriFileProvider {
   readonly versions: VersionStore;
 
   constructor(characterPath: string, directoryPath: string) {
-    super(characterPath);
-    this.versions = {
-      create: async (data, reason, title, now = new Date()) => {
-        const historyPath = await join(directoryPath, "history");
-        await mkdir(historyPath, { recursive: true });
-        const existing = new Set((await readDir(historyPath)).filter((entry) => entry.isFile).map((entry) => entry.name));
-        const version = allocateVersion(now, reason, existing);
-        await writeTextFile(await join(historyPath, version.filename), JSON.stringify(data, null, 2));
-        const normalizedTitle = normalizeVersionTitle(title);
-        if (normalizedTitle) {
-          await writeTextFile(
-            await join(historyPath, versionMetadataFilename(version.filename)),
-            JSON.stringify({ title: normalizedTitle }, null, 2),
-          );
-        }
-        return { ...version, title: normalizedTitle };
+    super(characterPath, true);
+    const historyPath = async () => join(directoryPath, "history");
+    this.versions = createVersionStore({
+      listNames: async () => {
+        const path = await historyPath();
+        if (!(await exists(path))) return [];
+        return (await readDir(path)).filter((entry) => entry.isFile).map((entry) => entry.name);
       },
-      list: async () => {
-        const historyPath = await join(directoryPath, "history");
-        if (!(await exists(historyPath))) return [];
-        const versions = (await readDir(historyPath))
-          .filter((entry) => entry.isFile)
-          .map((entry) => parseVersionFilename(entry.name))
-          .filter((version) => version !== null);
-        const titled = await Promise.all(versions.map(async (version) => {
-          const metadataPath = await join(historyPath, versionMetadataFilename(version.filename));
-          if (!(await exists(metadataPath))) return version;
-          try {
-            return { ...version, title: readVersionTitle(JSON.parse(await readTextFile(metadataPath))) };
-          } catch {
-            return version;
-          }
-        }));
-        return sortVersionsNewestFirst(titled);
+      writeText: async (filename, contents) => {
+        const path = await historyPath();
+        await mkdir(path, { recursive: true });
+        await atomicWriteText(await join(path, filename), contents);
       },
-      read: async (version) => {
-        requireVersionFilename(version.filename);
-        return JSON.parse(await readTextFile(await join(directoryPath, "history", version.filename)));
+      readText: async (filename) => readTextFile(await join(await historyPath(), filename)),
+      remove: async (filename) => {
+        const path = await join(await historyPath(), filename);
+        if (!(await exists(path))) throw storageError("not-found", undefined, `Missing history/${filename}`);
+        await remove(path);
       },
-      delete: async (version) => {
-        requireVersionFilename(version.filename);
-        const historyPath = await join(directoryPath, "history");
-        await remove(await join(historyPath, version.filename));
-        const metadataPath = await join(historyPath, versionMetadataFilename(version.filename));
-        if (await exists(metadataPath)) await remove(metadataPath);
-      },
-    };
+    });
   }
 }
 
@@ -127,7 +122,7 @@ async function readImagesDirTauri(dirPath: string): Promise<GalleryImage[]> {
 export async function openCharacterFileTauri(): Promise<{
   provider: StorageProvider;
   raw: unknown;
-  ref: RecentRef;
+  ref: TauriRecentRef;
 } | null> {
   const path = await openDialog({
     multiple: false,
@@ -151,12 +146,12 @@ export async function openCharacterFolderTauri(): Promise<{
   raw: unknown;
   images: GalleryImage[];
   sourceName: string;
-  ref: RecentRef;
+  ref: TauriRecentRef;
 } | null> {
   const dirPath = await openDialog({ directory: true, multiple: false, recursive: true });
   if (!dirPath) return null;
   const jsonPath = await join(dirPath, "character.json");
-  if (!(await exists(jsonPath))) throw new Error(NO_CHARACTER_JSON);
+  if (!(await exists(jsonPath))) throw storageError("no-character-json");
   const provider = new TauriFolderProvider(jsonPath, dirPath);
   return {
     provider,
@@ -185,11 +180,11 @@ export async function saveJsonAsTauri(json: string, defaultName: string): Promis
 
 /** Re-resolve a native RecentRef (stored absolute path) into a live character.
  *  Throws NO_CHARACTER_JSON if the file/folder is gone (moved or deleted). */
-export async function reopenTauriPath(ref: RecentRef): Promise<LoadedCharacter> {
+export async function reopenTauriPath(ref: TauriRecentRef): Promise<LoadedCharacter> {
   if (ref.kind === "folder") {
-    const dirPath = ref.path!;
+    const dirPath = ref.path;
     const jsonPath = await join(dirPath, "character.json");
-    if (!(await exists(jsonPath))) throw new Error(NO_CHARACTER_JSON);
+    if (!(await exists(jsonPath))) throw storageError("not-found", undefined, `Missing ${jsonPath}`);
     const provider = new TauriFolderProvider(jsonPath, dirPath);
     return {
       provider,
@@ -198,8 +193,8 @@ export async function reopenTauriPath(ref: RecentRef): Promise<LoadedCharacter> 
       sourceName: await basename(dirPath),
     };
   }
-  const path = ref.path!;
-  if (!(await exists(path))) throw new Error(NO_CHARACTER_JSON);
+  const path = ref.path;
+  if (!(await exists(path))) throw storageError("not-found", undefined, `Missing ${path}`);
   const provider = new TauriFileProvider(path);
   return { provider, raw: await provider.read(), images: [], sourceName: await basename(path) };
 }

@@ -14,9 +14,10 @@ import {
   StringListEditor,
 } from "./editControls";
 import { newItem, newAttackProfile } from "../model/factories";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT, type StringKey, type TFn } from "../i18n/useI18n";
-import { useSettings, type UnitSystem } from "../ui/useSettings";
+import { useSettings } from "../ui/useSettings";
+import type { UnitSystem } from "../model/unitSystem";
 import { formatWeight } from "../model/units";
 
 const COIN_ORDER = ["pp", "gp", "ep", "sp", "cp"];

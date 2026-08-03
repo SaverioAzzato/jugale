@@ -23,10 +23,10 @@ Help the user build, refine, level, and play Warlock Tome characters with table-
 - The app is a stateless, data-driven renderer. Edit `character.json` directly for persistent changes: level-ups, invocations, rituals, spell packages (`spellSections[]`), inventory structure, multiclass (`classes[]`), and Warlock resources. Never hardcode character data into the UI.
 - Preserve all existing JSON fields, including unknown/custom keys (e.g. homebrew table rules).
 - Keep clickable wiki `link` properties for Warlock/subclass features, Pact of the Tome elements, invocations, rituals, spells, race/species, background, and weapons.
-- Respect the structural-vs-live split. Only these are live play-state: `combat.hp.current` / `combat.hp.temp`, `resources[].current`, `inventory.items[].quantity`, `inventory.currencies.*`, and `session.*`. Everything else changes only on an explicit level-up/edit.
-- Model Warlock resources as generic `resources[]` entries: pact slots as `{ category: "spellSlot", level, resetOn: "shortRest" }`, plus any points/charges/ammo. Keep rituals in the Book of Shadows and invocations as features or `customSections[]`. Never reintroduce per-class hardcoded slot fields.
+- Respect the structural-vs-live split. Only these are live play-state: `combat.hp.current` / `combat.hp.temp` / `combat.hp.hitDiceRemaining`, `resources[].current`, `inventory.items[].quantity` / `inventory.items[].equipped`, `inventory.currencies.*`, and `session.*`. Everything else changes only on an explicit level-up/edit.
+- Model Warlock resources as generic `resources[]` entries: pact slots as `{ category: "spellSlot", level, resetOn: "shortRest" }`, plus any points/charges/ammo. Keep rituals in their spell sections and invocations in `features[]`; reserve `customSections[]` for genuinely freeform content. Never reintroduce per-class hardcoded slot fields.
 - One home per concept: languages → `proficiencies.languages`; special senses (Devil's Sight, a tiefling's darkvision) → `senses[]`; damage resistances/immunities and condition immunities (a tiefling's fire resistance) → `defenses`.
-- Keep images in the character's `images/` folder with alphabetically-sortable filenames; `meta.portrait.src` picks the active portrait. There is no separate image manifest.
+- Keep images in the character's `images/` folder with alphabetically-sortable filenames. The first filename is the portrait; `character.json` contains no image reference or separate manifest.
 
 ## Focus Areas
 

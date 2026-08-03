@@ -6,7 +6,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   // Generated / vendored trees we don't own.
-  { ignores: ["dist", "src-tauri", "node_modules"] },
+  { ignores: ["coverage", "dist", "playwright-report", "src-tauri", "test-results", "node_modules"] },
   {
     files: ["**/*.{ts,tsx}"],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],

@@ -1,6 +1,6 @@
 import { AbilityId, type Character } from "../schema";
 import { Panel } from "./primitives";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT, type StringKey } from "../i18n/useI18n";
 import { Field, TextInput, NumberInput, Select, EntryList, EntryRow } from "./editControls";
 import { newClass } from "../model/factories";
@@ -12,6 +12,7 @@ export function IdentitySection({ c }: { c: Character }) {
   const t = useT();
   const editMode = useCharacter((s) => s.editMode);
   const editField = useCharacter((s) => s.editField);
+  const editCoreField = useCharacter((s) => s.editCoreField);
   const addItem = useCharacter((s) => s.addItem);
   const removeItem = useCharacter((s) => s.removeItem);
   if (!editMode) return null;
@@ -37,7 +38,7 @@ export function IdentitySection({ c }: { c: Character }) {
         <Field label={t("identity.player")}>
           <TextInput
             value={c.meta.player}
-            onChange={(v) => editField(["meta", "player"], v)}
+            onChange={(value) => editCoreField({ field: "meta.player", value })}
             label={t("identity.player")}
           />
         </Field>
@@ -75,7 +76,7 @@ export function IdentitySection({ c }: { c: Character }) {
                 value={cl.level}
                 min={1}
                 max={20}
-                onChange={(v) => editField(["classes", i, "level"], v)}
+                onChange={(value) => editCoreField({ field: "class.level", index: i, value })}
                 label={t("header.level")}
               />
             </Field>

@@ -190,12 +190,6 @@ export function EntryRow({
   );
 }
 
-/** Localized "Add"/"Remove" helpers so call sites stay terse. */
-export function useEditLabels() {
-  const t = useT();
-  return { add: t("edit.add"), remove: t("edit.remove") };
-}
-
 /** Editor for a `string[]` shown as chips: each removable, plus an add input.
  *  Best for short flat values (languages, tools, proficiencies). */
 export function TagListEditor({

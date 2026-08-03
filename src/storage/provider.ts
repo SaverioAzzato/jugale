@@ -5,23 +5,15 @@
  * with the Tauri `fs` implementation landing with the native shells. Everything above
  * this layer talks only to `StorageProvider`.
  */
-import {
-  allocateVersion,
-  normalizeVersionTitle,
-  parseVersionFilename,
-  readVersionTitle,
-  requireVersionFilename,
-  sortVersionsNewestFirst,
-  versionMetadataFilename,
-  type CharacterVersion,
-  type VersionReason,
-  type VersionStore,
-} from "./versions";
+import { createVersionStore, type VersionStore } from "./versions";
+import type { PersistableCharacterDocument } from "../schema/validate";
+import type { AndroidFsUri } from "tauri-plugin-android-fs-api";
+import { normalizeStorageError, storageError } from "./errors";
 
 export interface StorageProvider {
   readonly kind: "file";
   read(): Promise<unknown>;
-  write(data: unknown): Promise<void>;
+  write(data: PersistableCharacterDocument): Promise<void>;
   /** Present only when the source is a writable character folder/workspace. */
   readonly versions?: VersionStore;
 }
@@ -55,16 +47,24 @@ export interface SnapshotImage {
  *   live reference (Firefox/Safari, or any plain JSON/folder import) — reopens read-only.
  * All structured-cloneable, kept in IndexedDB; nothing is ever sent anywhere.
  */
-export interface RecentRef {
-  platform: "web" | "tauri" | "android" | "snapshot";
+interface RecentRefBase {
   kind: "file" | "folder";
   name: string;
-  path?: string; // tauri
-  handle?: unknown; // web: FileSystemFileHandle | directory handle (cast on reopen)
-  uri?: unknown; // android: AndroidFsUri (cast on reopen); tree URI for folders, file URI for files
-  raw?: unknown; // snapshot: the character JSON
-  images?: SnapshotImage[]; // snapshot: gallery blobs
 }
+
+export type WebRecentRef =
+  | (RecentRefBase & { platform: "web"; kind: "file"; handle: WebFileHandle })
+  | (RecentRefBase & { platform: "web"; kind: "folder"; handle: WebDirectoryHandle });
+
+export type TauriRecentRef = RecentRefBase & { platform: "tauri"; path: string };
+export type AndroidRecentRef = RecentRefBase & { platform: "android"; uri: AndroidFsUri };
+export type SnapshotRecentRef = RecentRefBase & {
+  platform: "snapshot";
+  raw: unknown;
+  images: SnapshotImage[];
+};
+
+export type RecentRef = WebRecentRef | TauriRecentRef | AndroidRecentRef | SnapshotRecentRef;
 
 /** A character re-resolved from a RecentRef or a fresh pick: ready to hand to the store. */
 export interface LoadedCharacter {
@@ -80,17 +80,25 @@ export const RECENT_PERMISSION_DENIED = "recent-permission-denied";
 const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
 
 /** Async-iterable directory handle (File System Access API; not yet in every TS lib). */
-interface DirHandle {
+export interface WebDirectoryHandle {
+  readonly kind: "directory";
   name: string;
   getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>;
-  getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<DirHandle>;
+  getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<WebDirectoryHandle>;
   removeEntry(name: string): Promise<void>;
   entries(): AsyncIterable<[string, { kind: "file" | "directory" }]>;
 }
 
+export interface WebFileHandle {
+  readonly kind: "file";
+  readonly name: string;
+  getFile(): Promise<File>;
+  createWritable(): Promise<FileSystemWritableFileStream>;
+}
+
 type PickerWindow = Window & {
   showOpenFilePicker?: (opts?: unknown) => Promise<FileSystemFileHandle[]>;
-  showDirectoryPicker?: (opts?: unknown) => Promise<DirHandle>;
+  showDirectoryPicker?: (opts?: unknown) => Promise<WebDirectoryHandle>;
 };
 
 /** True when the browser can read/write a real file (Chromium today). */
@@ -105,83 +113,63 @@ export function isDirectoryAccessSupported(): boolean {
 
 class FileHandleProvider implements StorageProvider {
   readonly kind = "file";
-  constructor(private handle: FileSystemFileHandle) {}
+  constructor(private handle: WebFileHandle) {}
 
   async read(): Promise<unknown> {
-    const file = await this.handle.getFile();
-    return JSON.parse(await file.text());
+    let text: string;
+    try {
+      const file = await this.handle.getFile();
+      text = await file.text();
+    } catch (error) {
+      throw normalizeStorageError(error);
+    }
+    return JSON.parse(text);
   }
 
-  async write(data: unknown): Promise<void> {
-    const writable = await this.handle.createWritable();
-    await writable.write(JSON.stringify(data, null, 2));
-    await writable.close();
+  async write(data: PersistableCharacterDocument): Promise<void> {
+    try {
+      const writable = await this.handle.createWritable();
+      await writable.write(JSON.stringify(data.document, null, 2));
+      await writable.close();
+    } catch (error) {
+      throw normalizeStorageError(error);
+    }
   }
 }
 
 class WebFolderProvider extends FileHandleProvider {
   readonly versions: VersionStore;
 
-  constructor(handle: FileSystemFileHandle, directory: DirHandle) {
+  constructor(handle: WebFileHandle, directory: WebDirectoryHandle) {
     super(handle);
-    this.versions = {
-      create: async (data: unknown, reason: VersionReason, title, now = new Date()) => {
-        const history = await directory.getDirectoryHandle("history", { create: true });
-        const existing = new Set<string>();
-        for await (const [name, entry] of history.entries()) if (entry.kind === "file") existing.add(name);
-        const version = allocateVersion(now, reason, existing);
-        const file = await history.getFileHandle(version.filename, { create: true });
-        const writable = await file.createWritable();
-        await writable.write(JSON.stringify(data, null, 2));
-        await writable.close();
-        const normalizedTitle = normalizeVersionTitle(title);
-        if (normalizedTitle) {
-          const metadata = await history.getFileHandle(versionMetadataFilename(version.filename), { create: true });
-          const metadataWritable = await metadata.createWritable();
-          await metadataWritable.write(JSON.stringify({ title: normalizedTitle }, null, 2));
-          await metadataWritable.close();
-        }
-        return { ...version, title: normalizedTitle };
-      },
-      list: async () => {
-        let history: DirHandle;
+    const history = async (create = false) => directory.getDirectoryHandle("history", create ? { create: true } : undefined);
+    this.versions = createVersionStore({
+      listNames: async () => {
+        let dir: WebDirectoryHandle;
         try {
-          history = await directory.getDirectoryHandle("history");
+          dir = await history();
         } catch {
           return [];
         }
-        const versions = [];
-        for await (const [name, entry] of history.entries()) {
-          if (entry.kind !== "file") continue;
-          const parsed = parseVersionFilename(name);
-          if (parsed) {
-            try {
-              const metadata = await (await history.getFileHandle(versionMetadataFilename(name))).getFile();
-              versions.push({ ...parsed, title: readVersionTitle(JSON.parse(await metadata.text())) });
-            } catch {
-              versions.push(parsed);
-            }
-          }
-        }
-        return sortVersionsNewestFirst(versions);
+        const names: string[] = [];
+        for await (const [name, entry] of dir.entries()) if (entry.kind === "file") names.push(name);
+        return names;
       },
-      read: async (version: CharacterVersion) => {
-        requireVersionFilename(version.filename);
-        const history = await directory.getDirectoryHandle("history");
-        const file = await (await history.getFileHandle(version.filename)).getFile();
-        return JSON.parse(await file.text());
+      writeText: async (filename, contents) => {
+        const dir = await history(true);
+        const file = await dir.getFileHandle(filename, { create: true });
+        const writable = await file.createWritable();
+        await writable.write(contents);
+        await writable.close();
       },
-      delete: async (version: CharacterVersion) => {
-        requireVersionFilename(version.filename);
-        const history = await directory.getDirectoryHandle("history");
-        await history.removeEntry(version.filename);
-        try {
-          await history.removeEntry(versionMetadataFilename(version.filename));
-        } catch {
-          // Older and untitled versions have no metadata sidecar.
-        }
+      readText: async (filename) => {
+        const file = await (await history()).getFileHandle(filename);
+        return (await file.getFile()).text();
       },
-    };
+      remove: async (filename) => {
+        await (await history()).removeEntry(filename);
+      },
+    });
   }
 }
 
@@ -189,7 +177,7 @@ class WebFolderProvider extends FileHandleProvider {
 export async function openCharacterFile(): Promise<{
   provider: StorageProvider;
   raw: unknown;
-  ref: RecentRef;
+  ref: WebRecentRef;
 } | null> {
   const picker = (window as PickerWindow).showOpenFilePicker;
   if (!picker) return null;
@@ -214,9 +202,9 @@ export async function openCharacterFile(): Promise<{
 export const NO_CHARACTER_JSON = "no-character-json";
 
 /** Read images from a File System Access `images/` subfolder, alphabetical by filename. */
-async function readImagesDir(dir: DirHandle): Promise<GalleryImage[]> {
+async function readImagesDir(dir: WebDirectoryHandle): Promise<GalleryImage[]> {
   const images: GalleryImage[] = [];
-  let imagesDir: DirHandle;
+  let imagesDir: WebDirectoryHandle;
   try {
     imagesDir = await dir.getDirectoryHandle("images");
   } catch {
@@ -243,11 +231,11 @@ export async function openCharacterFolder(): Promise<{
   raw: unknown;
   images: GalleryImage[];
   sourceName: string;
-  ref: RecentRef;
+  ref: WebRecentRef;
 } | null> {
   const picker = (window as PickerWindow).showDirectoryPicker;
   if (!picker) return null;
-  let dir: DirHandle;
+  let dir: WebDirectoryHandle;
   try {
     dir = await picker({ mode: "readwrite" });
   } catch {
@@ -257,7 +245,7 @@ export async function openCharacterFolder(): Promise<{
   try {
     fileHandle = await dir.getFileHandle("character.json");
   } catch {
-    throw new Error(NO_CHARACTER_JSON);
+    throw storageError("no-character-json");
   }
   const provider = new WebFolderProvider(fileHandle, dir);
   return {
@@ -288,7 +276,7 @@ export async function importCharacterFolder(files: FileList | File[]): Promise<{
     .filter((f) => rel(f).split("/").pop() === "character.json")
     .sort((a, b) => rel(a).split("/").length - rel(b).split("/").length);
   const jsonFile = jsonFiles[0];
-  if (!jsonFile) throw new Error(NO_CHARACTER_JSON);
+  if (!jsonFile) throw storageError("no-character-json");
 
   const baseDir = rel(jsonFile).split("/").slice(0, -1).join("/"); // folder holding character.json
   const imagesPrefix = baseDir ? `${baseDir}/images/` : "images/";
@@ -388,25 +376,25 @@ async function ensurePermission(handle: unknown): Promise<void> {
   if (!h.queryPermission) return; // older impl without the permission API: assume usable
   if ((await h.queryPermission(opts)) === "granted") return;
   if ((await h.requestPermission?.(opts)) === "granted") return;
-  throw new Error(RECENT_PERMISSION_DENIED);
+  throw storageError("recent-permission-denied");
 }
 
 /** Re-resolve a web RecentRef (stored FileSystemHandle) into a live, writable character.
  *  Throws RECENT_PERMISSION_DENIED if access is declined, NO_CHARACTER_JSON if the folder's
  *  character.json is gone. */
-export async function reopenWebHandle(ref: RecentRef): Promise<LoadedCharacter> {
+export async function reopenWebHandle(ref: WebRecentRef): Promise<LoadedCharacter> {
   await ensurePermission(ref.handle);
   if (ref.kind === "folder") {
-    const dir = ref.handle as DirHandle;
+    const dir = ref.handle;
     let fileHandle: FileSystemFileHandle;
     try {
       fileHandle = await dir.getFileHandle("character.json");
     } catch {
-      throw new Error(NO_CHARACTER_JSON);
+      throw storageError("no-character-json");
     }
     const provider = new WebFolderProvider(fileHandle, dir);
     return { provider, raw: await provider.read(), images: await readImagesDir(dir), sourceName: dir.name };
   }
-  const provider = new FileHandleProvider(ref.handle as FileSystemFileHandle);
+  const provider = new FileHandleProvider(ref.handle);
   return { provider, raw: await provider.read(), images: [], sourceName: ref.name };
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import { App } from "./App";
-import { useCharacter } from "./state/store";
+import { useCharacter } from "./characterStore";
 import { useSettings } from "./ui/useSettings";
 import multiclass from "../characters/example-multiclass/character.json";
 import type { StorageProvider } from "./storage/provider";
@@ -55,7 +55,7 @@ describe("App — empty state + live editing wiring", () => {
     androidBack.enabled = true;
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Settings" }));
-    expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Settings" })).toBeInTheDocument();
     await waitFor(() => expect(androidBack.handler).not.toBeNull());
 
     act(() => androidBack.handler?.());
@@ -100,6 +100,33 @@ describe("App — empty state + live editing wiring", () => {
     await waitFor(() => expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Astrid"));
   });
 
+  it("shows schema errors for an incoming share and blocks applying its original payload", async () => {
+    androidBack.enabled = true;
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
+    await waitFor(() => expect(incomingShare.handler).not.toBeNull());
+    const invalid = {
+      meta: { name: "Broken Astrid", unknownMeta: { keep: true } },
+      classes: [{ name: "Wizard", level: "five", unknownClass: "keep" }],
+      homebrew: { topLevel: "keep" },
+    };
+
+    act(() => incomingShare.handler?.({
+      status: "character",
+      id: "shared-invalid-astrid",
+      name: "character.json",
+      mime: "application/json",
+      contents: JSON.stringify(invalid),
+    }));
+
+    const dialog = screen.getByRole("dialog", { name: "Received character" });
+    expect(dialog).toHaveTextContent(/1 error/i);
+    const apply = screen.getByRole("button", { name: "Apply to Example Warlock" });
+    expect(apply).toBeDisabled();
+    fireEvent.click(apply);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Example Warlock");
+  });
+
   it("starts on the welcome screen and loads a sample on demand", () => {
     render(<App />);
     expect(screen.getByRole("heading", { name: /Your character, always yours/i })).toBeInTheDocument(); // default locale: en
@@ -136,10 +163,10 @@ describe("App — empty state + live editing wiring", () => {
     expect(screen.getByRole(direct ? "button" : "menuitem", { name: "How to use :JUGALE" })).toBeInTheDocument();
   });
 
-  it("opens the Help page with how-to content and returns to the welcome screen on Back", () => {
+  it("opens the Help page with how-to content and returns to the welcome screen on Back", async () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "How to use :JUGALE" }));
-    expect(screen.getByRole("heading", { name: "How to use :JUGALE" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "How to use :JUGALE" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("heading", { name: /Your character, always yours/i })).toBeInTheDocument();
@@ -288,13 +315,13 @@ describe("App — empty state + live editing wiring", () => {
     expect(screen.getByRole("menuitem", { name: "Settings" })).toBeInTheDocument();
   });
 
-  it("locks page scrolling while the raw JSON editor owns the viewport", () => {
+  it("locks page scrolling while the raw JSON editor owns the viewport", async () => {
     const { container } = render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Warlock" }));
     fireEvent.click(screen.getByRole("button", { name: "Raw JSON editor" }));
 
     expect(container.querySelector(".app")).toHaveClass("app-rawjson");
-    expect(container.querySelector(".rawjson-page")).toBeInTheDocument();
+    await waitFor(() => expect(container.querySelector(".rawjson-page")).toBeInTheDocument());
   });
 
   it("shows a read-only badge with an export shortcut once live sync has failed", () => {

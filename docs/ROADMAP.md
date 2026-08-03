@@ -1,6 +1,9 @@
 # Roadmap — :JUGALE
 
-> Status: **M0–M6 shipped.** This is now a delivery record plus the remaining polish backlog.
+> Status: **M0–M6 and the engineering-quality baseline shipped.** This is now a delivery record plus the remaining polish backlog.
+
+Current engineering practices and the Definition of Done live in [ENGINEERING.md](ENGINEERING.md);
+this file records outcomes and intentionally deferred work rather than duplicating those rules.
 
 Cross-cutting from day one: every milestone ships with tests, runs through CI, and updates docs. The `character.json` stays the single source of truth throughout.
 
@@ -34,7 +37,7 @@ Portrait & gallery moved to M4 (needs a folder-aware `StorageProvider`, see belo
 - **Deliverable:** the sheet looks modern and uncluttered, and is genuinely comfortable to run a session from. ✅
 
 ## M3 — Prompts system ✅ done
-The 4 prompts (base / create / level-up / validate) — shipped in [`src/prompts/prompts.ts`](../src/prompts/prompts.ts), an in-app Prompts page (book icon, with copy buttons and a one-click JSON Schema download), [`docs/PROMPTS.md`](PROMPTS.md), and the README — are written to be **rules-set agnostic and legally cautious by design**:
+The 4 prompts (base / create / level-up / validate) — shipped in [`src/prompts/prompts.ts`](../src/prompts/prompts.ts), an in-app Prompts page (book icon, with copy and single-file text-bundle downloads), [`docs/PROMPTS.md`](PROMPTS.md), and the README — are written to be **rules-set agnostic and legally cautious by design**:
 
 - **Abstracted, not hardcoded.** The base prompt frames the assistant as a D&D expert working from a configurable list of guides driven by `meta.ruleset`; it retrieves content only where automated/AI access is permitted and otherwise preserves the guide as a manual reference. It never hardcodes a specific commercial sourcebook's name into the prompt text, schema, or `.github/agents/` seed material.
 - **SRD 5.1-only by default.** `meta.ruleset` defaults to `["SRD 5.1"]` (the CC-BY-4.0-licensed 2014 fifth-edition rules). SRD 5.2.1 is the revised 2024/5.5e rules and must be named explicitly; the ambiguous bare `"SRD"` is not a shipped default. Adding other guides is an explicit, user-driven choice via that same field — never something we ship as a default.
@@ -63,7 +66,7 @@ The 4 prompts (base / create / level-up / validate) — shipped in [`src/prompts
 ## M5 — Polish
 - **Validation UX ✅ done:** `loadCharacter`'s issues (schema errors + 5e rule-check warnings) now surface in the UI — previously generated but never displayed. Each non-schema issue carries a stable `code` + `params` (`src/schema/validate.ts`) instead of a hardcoded Italian string, localized at render time via the existing EN/IT i18n (`issues.*` keys, `interpolate()` in `src/i18n/useI18n.ts`); raw Zod schema errors keep their (English, technical) message as-is. A footer chip (`src/ui/IssuesChip.tsx`) shows separate error/warning counts and opens a popover listing every issue with its localized message and JSON path — non-blocking, consistent with "a half-edited file is never locked out." Out of scope for this pass: clicking an issue to jump to the relevant field in the sheet (would need every render component to tag itself with its data path — a bigger follow-up).
 - **Accessibility pass ✅ done:** an audit (real WCAG contrast math, not eyeballing; live keyboard testing in the browser, not just code reading) found and fixed: (1) **the press-and-hold steppers — HP, temp HP, hit dice, resources — were entirely unusable from a keyboard**, responding only to `mousedown`/`touchstart`, never `click`; fixed in `src/render/controls.tsx` with a `event.detail === 0` guard (the same pattern `DicePalette` already used to tell a keyboard-triggered click from a real pointer one) that fires exactly one step without double-stepping a real mouse click; (2) hardcoded Italian `aria-label="meno"/"più"` on those same buttons, regardless of locale — now `t("stepper.decrease"/"stepper.increase")`; (3) the Parchment theme's `--warn`/`--gold`/`--ok` (3.7–4.2:1) and the Night/Parchment themes' `--dim` (2.5–2.9:1) were under WCAG AA's 4.5:1 (text) / 3:1 (non-text) minimums — nudged by computing the exact minimal hex shift needed (`src/theme/themes.css`, changes are barely perceptible); (4) the `IssuesChip` dialog was missing `aria-modal="true"`; (5) unlabeled inputs/textareas in `PromptsPage.tsx` (guide name/URL, the editable prompt segments) now have `aria-label`/`aria-labelledby`; (6) the tab content panel now completes the ARIA tabs pattern with `role="tabpanel"` + `aria-labelledby`/`aria-controls` wiring (`Sheet.tsx`/`App.tsx`). Also added: a shared `useFocusTrap` hook (`src/ui/useFocusTrap.ts`) applied to the two floating popovers (`DicePalette`'s dice menu, `IssuesChip`'s panel) — focuses the first control on open, traps Tab/Shift+Tab at its edges, restores focus to the trigger on close; the Settings/Prompts full-page overlays (which don't float over still-interactive content, so don't need a Tab-trap) get simpler open/Escape/restore handling in `App.tsx` — restoring by re-querying `[data-overlay-trigger]` rather than holding a DOM-node ref, since the trigger button itself unmounts while its overlay is open and a stale ref would point nowhere. Verified live in the browser (not just unit tests) for every fix, including a focus-restoration bug the first implementation attempt had. Deliberately not done in this pass: a full heading-hierarchy normalization across every `render/*.tsx` section (cosmetic, touches many files, lower urgency) and `prefers-reduced-motion` for hover transitions (already short/subtle, not loops).
-- Performance, more sample characters, docs completeness, macOS notarization and broader device coverage.
+- Additional sample characters, macOS notarization if distribution justifies it, and broader device coverage remain optional polish. Performance and documentation now have blocking automated baselines (see the engineering-quality section below).
 - **Release compliance ✅ done:** `scripts/generate-legal-artifacts.mjs` inventories the cross-platform dependency union from both `package-lock.json` and `src-tauri/Cargo.lock`, emits a readable third-party notice plus an SPDX 2.3 SBOM into `public/`, preserves packaged licence/notice texts and MPL-2.0 source links, and fingerprints both lockfiles. Vite copies the files into every web/native frontend build; commit, CI, build and release gates reject stale artifacts. Regenerate and review them whenever either lockfile changes.
 
 ## M6 — Edit mode ✅ done (reordering deferred)
@@ -78,39 +81,42 @@ The "Edit (later milestone)" half of the M2 two-modes contract (`docs/UI.md`): a
 ## Explicitly out of scope
 - **No in-app chat/LLM.** Originally floated as an optional "BYOK chat" milestone, dropped on purpose: an in-app assistant that ingests arbitrary user-supplied rules content and proposes JSON edits is exactly the kind of legal exposure (non-permissive-license content, generated-content liability) this project wants to avoid. External chatbots (ChatGPT, Claude, etc.) driven by the M3 prompts + published JSON Schema remain the fully supported integration path, with the source and retrieval boundaries stated explicitly in every build/play prompt.
 
-## Suggested next concrete step
-M0–M6 are done. **Character versions are now in progress:** the optional folder-provider contract,
-sortable `history/` filenames, collision handling, web/desktop/Android adapters, least-privilege
-Android create permissions and the persisted EN/IT setting have landed as the first slice. The
-application coordinator now flushes pending saves, snapshots and replaces atomically, including
-failure/race coverage; the responsive toolbar exposes both the manual **Save version** checkpoint
-and a distinct history action. The EN/IT history overlay now lists compact cards with optional
-sidecar titles, restores with a Yes/No/Cancel safety-copy choice, and can delete snapshots.
-Versioning defaults to active for new installations
-but remains effective only for writable folders. Android outbound prompt sharing is now implemented
-through a scoped local Tauri plugin and the generic sharesheet, with EN/IT UI, attachment rules,
-frontend tests and debug-APK CI coverage. After the first device test exposed poor compatibility of
-multiple JSON/mixed-MIME shares, a single `text/plain` bundle plus `EXTRA_TEXT` made Gemini and
-Claude work but left ChatGPT treating the large character as message text rather than a reliable
-file. The chooser now supplies alternate single-file intents: a structured
-`jugale-request.json` primary for receivers such as ChatGPT and the existing `prompt.txt` fallback
-for text-only receivers. A disposable real-device canary harness completed the alternate-intent
-matrix on 2026-07-29: ChatGPT consumed the JSON variant, while Gemini and Claude consumed the text
-variant; each read the file-only marker and returned an edited character. The inbound Android JSON
-flow is now implemented: restricted manifest
-filter, cold/warm native buffering, validation and deduplication, preview, named current/other/empty
-folder targets, and versioned `before-import` replacement. Its merged manifest and real-device
-cold/warm/error paths remain for the next Dev APK. The Help Center has now been rebuilt from typed
-EN/IT catalogs and revised after adversarial user-task review: one non-duplicated topic home, six
-plain-language guides, real localized screenshots, a visual Android chatbot round-trip, contextual
-links, native troubleshooting accordions, deep links, keyboard focus
-restoration and access while a character is open. Catalog tests reject the internal sync/share
-jargon that made the first draft unhelpful. The remaining
-polish backlog still includes list reordering (drag + keyboard), broader Android/device coverage,
-macOS notarization if distribution justifies the paid account, and continued performance work.
+## Engineering-quality baseline ✅ done (2026-08-03)
 
-Native Android work can now be exercised before a stable cut through `vX.Y.Z-dev.N` tags on
-`develop`: CI produces a private draft containing a release-signed `JUGALE Dev` APK with the
-separate `it.azzato.jugale.dev` application ID. It installs beside stable JUGALE, skips the stable
-updater, and cannot trigger Pages or the stable release jobs. The complete Dev/stable procedures are
-recorded in `docs/AUTOMATION.md` and summarized for future agents in `AGENTS.md`.
+The cross-cutting remediation made the architecture enforceable rather than aspirational:
+
+- the source document, editable draft, validated persistable document, and render projection are
+  separate typed representations; invalid or fallback projections cannot overwrite
+  `character.json`, and unknown keys remain lossless;
+- application coordination is dependency-injected and tested independently from browser/Tauri
+  adapters; storage, recents, history, Android sharing/import, and recovery paths use explicit
+  result contracts instead of unchecked exceptions or casts;
+- schema/model parity, persistence races and failures, accessibility behavior, and critical user
+  flows have regression coverage. The suite grew from 50 files / 322 tests to 63 files / 370 tests;
+- ESLint is blocking with zero warnings, global coverage is thresholded (75.21% at completion), and
+  the complete web gate plus desktop/mobile Chromium E2E runs in CI;
+- route-level, editor, locale, and dice-scene lazy loading reduced the initial JavaScript entry from
+  1,108.37 kB / 309.85 kB gzip to 481.67 kB / 139.86 kB gzip (Vite's decimal report). A
+  500 KiB / 150 KiB gzip budget
+  now prevents regressions;
+- documentation ownership, local-link checks, command checks, schema markers, and CI wiring are
+  verified by `npm run check:docs`.
+- twelve JVM tests cover extracted pure rules in the Android updater/share plugins; the native
+  workflow compiles and merges the debug APK before running those suites.
+
+Character versions, Android outbound/inbound sharing, the typed EN/IT Help Center, and the private
+Android Dev release channel are shipped. Their operational contracts and release procedures are in
+[AUTOMATION.md](AUTOMATION.md), while schema and persistence invariants are in
+[SCHEMA.md](SCHEMA.md).
+
+## Remaining polish and explicit debt
+
+- Edit-mode list reordering with both drag and keyboard controls.
+- Issue-to-field navigation, a full heading-hierarchy normalization, and reduced-motion treatment
+  for the remaining decorative transitions.
+- Broader Android/device coverage, including re-running the documented receiver matrix after share
+  payload changes or major receiver-app updates.
+- macOS notarization and Windows signing if distribution needs justify their account/certificate
+  costs.
+- Further performance work is opportunistic: the initial entry is within budget, while the deferred
+  3D dice chunk remains intentionally large and is loaded only on demand.

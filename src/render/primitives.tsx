@@ -1,24 +1,5 @@
 import type { ReactNode } from "react";
-
-/** Schemes safe to turn an untrusted character.json string into a real <a href>. */
-const SAFE_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
-
-/**
- * Sanitize an untrusted URL from character.json. The JSON can come from anywhere
- * (downloaded, shared, AI-generated), so a `link` of `javascript:…`, `data:text/html,…`,
- * `vbscript:…`, etc. would be an XSS vector when clicked. We parse with no base — so only an
- * **absolute** URL with an allowed scheme survives; bare/relative strings and protocol-relative
- * `//host` (which could point off-origin) are rejected. Returns the normalized href, or null so
- * the caller renders inert text.
- */
-export function safeHref(link: string): string | null {
-  try {
-    const url = new URL(link.trim()); // no base ⇒ relative/bare/protocol-relative throws
-    return SAFE_PROTOCOLS.has(url.protocol) ? url.href : null;
-  } catch {
-    return null; // not an absolute, parseable URL
-  }
-}
+import { safeHref } from "./format";
 
 /** Renders a wiki link when the URL is present and safe, otherwise plain content.
  *  Links are the soul of the sheet — but only http(s)/mailto ones (see safeHref). */
@@ -68,8 +49,6 @@ export function Panel({
     </section>
   );
 }
-
-export const fmtMod = (n: number): string => (n >= 0 ? `+${n}` : `${n}`);
 
 /** A rounded disclosure chevron that rotates 90° when open. Used by expandable rows. */
 export function Caret({ open }: { open: boolean }) {

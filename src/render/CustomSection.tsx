@@ -1,15 +1,25 @@
 import { useState } from "react";
-import type { Character } from "../schema";
+import type { Character, CustomSection as Custom } from "../schema";
 import { Panel, DataTable } from "./primitives";
 import { Field, TextInput, Select, EntryList, EntryRow, TagListEditor, StringListEditor } from "./editControls";
 import { newCustomSection } from "../model/factories";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT, type StringKey } from "../i18n/useI18n";
 
-type Custom = Character["customSections"][number];
 type CustomLayout = Custom["layout"];
 
 const LAYOUTS: CustomLayout[] = ["text", "list", "checklist", "keyValue", "cards", "table"];
+
+const displayValue = (value: unknown): string => {
+  if (value == null) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+};
+
+const isItemRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+const itemRecord = (value: unknown): Record<string, unknown> => isItemRecord(value) ? value : {};
 
 export function CustomSections({ c }: { c: Character }) {
   const t = useT();
@@ -63,7 +73,6 @@ function LayoutEditor({ section, index }: { section: Custom; index: number }) {
   const editField = useCharacter((s) => s.editField);
   const addItem = useCharacter((s) => s.addItem);
   const removeItem = useCharacter((s) => s.removeItem);
-  const items = section.items as Record<string, unknown>[];
   const itemsPath = ["customSections", index, "items"] as const;
   const setItems = (next: unknown[]) => editField([...itemsPath], next);
 
@@ -83,7 +92,8 @@ function LayoutEditor({ section, index }: { section: Custom; index: number }) {
     case "list":
       return (
         <StringListEditor
-          values={items.map((x) => (typeof x === "string" ? x : String(x?.label ?? "")))}
+          values={section.items.map((item) =>
+            typeof item === "string" ? item : displayValue(itemRecord(item).label ?? item))}
           onChange={setItems}
           label={t("custom.title")}
           addLabel={t("edit.add")}
@@ -93,8 +103,9 @@ function LayoutEditor({ section, index }: { section: Custom; index: number }) {
     case "checklist":
       return (
         <EntryList onAdd={() => addItem([...itemsPath], { label: "", done: false })} addLabel={t("edit.add")}>
-          {items.map((it, j) => (
-            <EntryRow key={j} onRemove={() => removeItem([...itemsPath], j)} removeLabel={t("edit.remove")}>
+          {section.items.map((item, j) => {
+            const it = itemRecord(item);
+            return <EntryRow key={j} onRemove={() => removeItem([...itemsPath], j)} removeLabel={t("edit.remove")}>
               <label className="edit-toggle">
                 <input
                   type="checkbox"
@@ -107,32 +118,34 @@ function LayoutEditor({ section, index }: { section: Custom; index: number }) {
                 onChange={(v) => editField([...itemsPath, j, "label"], v)}
                 label={t("custom.title")}
               />
-            </EntryRow>
-          ))}
+            </EntryRow>;
+          })}
         </EntryList>
       );
 
     case "keyValue":
       return (
         <EntryList onAdd={() => addItem([...itemsPath], { key: "", value: "" })} addLabel={t("edit.add")}>
-          {items.map((it, j) => (
-            <EntryRow key={j} onRemove={() => removeItem([...itemsPath], j)} removeLabel={t("edit.remove")}>
+          {section.items.map((item, j) => {
+            const it = itemRecord(item);
+            return <EntryRow key={j} onRemove={() => removeItem([...itemsPath], j)} removeLabel={t("edit.remove")}>
               <TextInput value={String(it.key ?? "")} onChange={(v) => editField([...itemsPath, j, "key"], v)} label="key" />
               <TextInput value={String(it.value ?? "")} onChange={(v) => editField([...itemsPath, j, "value"], v)} label="value" />
-            </EntryRow>
-          ))}
+            </EntryRow>;
+          })}
         </EntryList>
       );
 
     case "cards":
       return (
         <EntryList onAdd={() => addItem([...itemsPath], { title: "", text: "" })} addLabel={t("edit.add")}>
-          {items.map((it, j) => (
-            <EntryRow key={j} onRemove={() => removeItem([...itemsPath], j)} removeLabel={t("edit.remove")}>
+          {section.items.map((item, j) => {
+            const it = itemRecord(item);
+            return <EntryRow key={j} onRemove={() => removeItem([...itemsPath], j)} removeLabel={t("edit.remove")}>
               <TextInput value={String(it.title ?? "")} onChange={(v) => editField([...itemsPath, j, "title"], v)} label={t("custom.title")} />
               <TextInput value={String(it.text ?? "")} multiline onChange={(v) => editField([...itemsPath, j, "text"], v)} label={t("edit.description")} />
-            </EntryRow>
-          ))}
+            </EntryRow>;
+          })}
         </EntryList>
       );
 
@@ -200,9 +213,6 @@ function CustomEdit({ c }: { c: Character }) {
 
 /** Renders a user-defined section by its `layout` hint — zero code per new section. */
 function Layout({ section }: { section: Custom }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const items = section.items as any[];
-
   switch (section.layout) {
     case "text":
       return <p>{section.content}</p>;
@@ -210,8 +220,8 @@ function Layout({ section }: { section: Custom }) {
     case "list":
       return (
         <ul className="bullets">
-          {items.map((it, i) => (
-            <li key={i}>{typeof it === "string" ? it : (it?.label ?? JSON.stringify(it))}</li>
+          {section.items.map((item, i) => (
+            <li key={i}>{typeof item === "string" ? item : displayValue(itemRecord(item).label ?? item)}</li>
           ))}
         </ul>
       );
@@ -219,18 +229,18 @@ function Layout({ section }: { section: Custom }) {
     case "checklist":
       return (
         <ul className="checklist">
-          {items.map((it, i) => (
-            <li key={i}>
-              {it?.done ? "☑" : "☐"} {it?.label ?? String(it)}
-            </li>
-          ))}
+          {section.items.map((item, i) => {
+            const it = itemRecord(item);
+            return <li key={i}>{it.done ? "☑" : "☐"} {displayValue(it.label ?? item)}</li>;
+          })}
         </ul>
       );
 
     case "keyValue":
       return (
         <dl className="kv">
-          {items.map((it, i) => {
+          {section.items.map((item, i) => {
+            const it = itemRecord(item);
             const key = it?.key ?? Object.keys(it ?? {})[0];
             const value = it?.value ?? Object.values(it ?? {})[0];
             return (
@@ -246,21 +256,25 @@ function Layout({ section }: { section: Custom }) {
     case "cards":
       return (
         <div className="cards">
-          {items.map((it, i) => (
-            <div key={i} className="mini-card">
-              <strong>{it?.title ?? it?.name}</strong>
-              <p>{it?.text ?? it?.description}</p>
-            </div>
-          ))}
+          {section.items.map((item, i) => {
+            const it = itemRecord(item);
+            return <div key={i} className="mini-card">
+              <strong>{displayValue(it.title ?? it.name)}</strong>
+              <p>{displayValue(it.text ?? it.description)}</p>
+            </div>;
+          })}
         </div>
       );
 
     case "table": {
-      const columns = section.columns.length > 0 ? section.columns : Object.keys(items[0] ?? {});
+      const columns = section.columns.length > 0 ? section.columns : Object.keys(itemRecord(section.items[0]));
       return (
         <DataTable
           headers={columns}
-          rows={items.map((it) => columns.map((col) => it?.[col]))}
+          rows={section.items.map((item) => {
+            const row = itemRecord(item);
+            return columns.map((column) => displayValue(row[column]));
+          })}
         />
       );
     }

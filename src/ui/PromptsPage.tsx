@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Panel } from "../render/primitives";
 import { useT, useI18n } from "../i18n/useI18n";
 import type { Locale } from "../i18n/useI18n";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import type { Character } from "../schema";
 import {
   PROMPTS,
@@ -18,6 +18,7 @@ import {
 import { usePromptSegments } from "./usePromptSegments";
 import { characterJsonSchema } from "../schema/jsonSchema";
 import { SCHEMA_CHANGELOG } from "../schema/changelog";
+import { buildPromptBundle, promptBundleFilename } from "../prompts/bundle";
 import { saveJsonAs, saveTextAs } from "../storage/exporter";
 import { notifySaveOutcome } from "./saveToast";
 import { useToast } from "./useToast";
@@ -27,23 +28,7 @@ import {
   sharePromptAndroid,
   type SharePromptKind,
 } from "../share/androidShare";
-import { BookIcon, PencilIcon } from "./AppIcons";
-
-/** Book icon button — opens the full Prompts page (App owns the open/close state). */
-export function PromptsButton({ onClick, label }: { onClick: () => void; label?: string }) {
-  const t = useT();
-  return (
-    <button
-      type="button"
-      className="btn btn-icon"
-      aria-label={label ?? t("prompts.title")}
-      data-overlay-trigger="prompts"
-      onClick={onClick}
-    >
-      <BookIcon />
-    </button>
-  );
-}
+import { PencilIcon } from "./AppIcons";
 
 /** Lucide "refresh-cw". */
 function ResetIcon() {
@@ -93,6 +78,17 @@ function ShareIcon() {
       <circle cx="18" cy="19" r="3" />
       <path d="m8.6 10.5 6.8-4" />
       <path d="m8.6 13.5 6.8 4" />
+    </svg>
+  );
+}
+
+/** Lucide "download". */
+function DownloadIcon() {
+  return (
+    <svg className="inline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <path d="m7 10 5 5 5-5" />
+      <path d="M12 15V3" />
     </svg>
   );
 }
@@ -214,6 +210,41 @@ function ShareButton({
   );
 }
 
+function DownloadBundleButton({
+  kind,
+  text,
+  character,
+}: {
+  kind: SharePromptKind;
+  text: string;
+  character: Character | null;
+}) {
+  const t = useT();
+  const [downloading, setDownloading] = useState(false);
+
+  async function download() {
+    if (downloading) return;
+    setDownloading(true);
+    const bundle = buildPromptBundle(kind, text, character);
+    notifySaveOutcome(await saveTextAs(bundle.text, promptBundleFilename(kind), "text/plain"));
+    setDownloading(false);
+  }
+
+  return (
+    <button
+      type="button"
+      className="btn btn-icon prompt-download-btn"
+      onClick={download}
+      disabled={downloading}
+      aria-label={t("prompts.downloadBundle")}
+      aria-busy={downloading}
+      title={t(character ? "prompts.downloadBundleWithCharacter" : "prompts.downloadBundleWithoutCharacter")}
+    >
+      <DownloadIcon />
+    </button>
+  );
+}
+
 function PromptBlock({
   title,
   hint,
@@ -238,6 +269,7 @@ function PromptBlock({
         </div>
         <div className="prompt-block-tools">
           {isAndroid() && <ShareButton kind={kind} title={title} text={text} character={character} />}
+          <DownloadBundleButton kind={kind} text={text} character={character} />
           <CopyButton text={text} withBase={withBase} />
         </div>
       </div>
@@ -275,6 +307,7 @@ function CustomSection({
             <ClearIcon />
           </button>
           {isAndroid() && <ShareButton kind="custom" title={t("prompts.custom")} text={copyText} character={character} />}
+          <DownloadBundleButton kind="custom" text={copyText} character={character} />
           <CopyButton text={copyText} withBase />
         </div>
       </div>
@@ -438,6 +471,7 @@ export function PromptsPage() {
         <p className="prompts-intro prompts-intro-lead"><strong>{t("prompts.introLead")}</strong></p>
         <p className="prompts-intro">{t("prompts.introHow")}</p>
         <p className="prompts-intro">{t("prompts.introEdit")}</p>
+        <p className="prompts-intro">{t("prompts.downloadBundleIntro")}</p>
         {isAndroid() && <p className="prompts-intro prompts-share-intro">{t("prompts.shareIntro")}</p>}
 
         <div className="prompts-params">

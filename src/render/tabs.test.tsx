@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadCharacter } from "../schema";
-import { getVisibleTabs } from "./tabs";
+import { getVisibleTabs } from "./tabVisibility";
 
 /** A bare character: only Play + Attributes show; Inventory/Story are content-gated. */
 const bare = () => loadCharacter({ meta: { name: "Nobody" } }).character!;

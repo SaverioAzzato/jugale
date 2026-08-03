@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Character } from "../schema";
 import { Panel } from "./primitives";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT } from "../i18n/useI18n";
 
 function DeathSaves({ saves }: { saves: Character["session"]["deathSaves"] }) {

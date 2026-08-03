@@ -1,15 +1,73 @@
 import { create } from "zustand";
-import { loadCharacter, maxHitDice, isBodyArmor, type Character, type Issue } from "../schema";
+import {
+  loadCharacter,
+  maxHitDice,
+  type Character,
+  type AbilityId,
+  type CharacterValidation,
+  type Issue,
+  type LoadResult,
+} from "../schema";
 import { applyAction, getByPath, makeRng, type FormulaChange, type RolledFace } from "../model/formula";
 import { setIn, insertAt, removeAt, type Path } from "../model/edit";
-import { interpolate, translate, useI18n, type StringKey } from "../i18n/useI18n";
-import { useToast } from "../ui/useToast";
-import { useDice } from "../ui/useDice";
+import { type StringKey } from "../i18n/useI18n";
 import { type GalleryImage, type StorageProvider } from "../storage/provider";
-import { saveJsonAs } from "../storage/exporter";
-import { notifySaveOutcome } from "../ui/saveToast";
-import { useSettings } from "../ui/useSettings";
 import type { CharacterVersion, VersionReason } from "../storage/versions";
+import { createPersistenceCoordinator } from "./persistenceCoordinator";
+import { createVersionCoordinator } from "./versionCoordinator";
+import {
+  addCondition,
+  adjustHitDice,
+  adjustResource,
+  clamp,
+  clearDeathOnRevive,
+  damage,
+  heal,
+  patchDraftFromProjection,
+  patchHp,
+  pruneEmptyMaterials,
+  removeCondition,
+  setCurrency,
+  setCurrentHp,
+  setDeathSave,
+  setItemQuantity,
+  setTempHp,
+  toggleEquipped,
+  toggleInspiration,
+} from "./characterMutations";
+
+export interface CharacterStoreDependencies {
+  now(): number;
+  makeRng(seed: number): ReturnType<typeof makeRng>;
+  schedule(callback: () => void, delayMs: number): ReturnType<typeof setTimeout>;
+  cancelScheduled(handle: ReturnType<typeof setTimeout>): void;
+  t(key: StringKey): string;
+  toast: { push(kind: "success" | "error" | "info", message: string, detail?: string): void };
+  presentDice(faces: RolledFace[]): void;
+  versionHistoryEnabled(): boolean;
+  exportDocument(data: unknown, defaultName: string): Promise<boolean>;
+}
+
+export type CoreCharacterEdit =
+  | { field: "meta.name" | "meta.player" | "meta.summary"; value: string }
+  | { field: "ability.score"; ability: AbilityId; value: number }
+  | { field: "ability.saveProficient"; ability: AbilityId; value: boolean }
+  | { field: "ability.modifierOverride"; ability: AbilityId; value: number | null }
+  | { field: "combat.hp.max"; value: number }
+  | { field: "class.level"; index: number; value: number };
+
+function coreEditPath(edit: CoreCharacterEdit): Path {
+  switch (edit.field) {
+    case "meta.name": return ["meta", "name"];
+    case "meta.player": return ["meta", "player"];
+    case "meta.summary": return ["meta", "summary"];
+    case "ability.score": return ["abilities", edit.ability, "score"];
+    case "ability.saveProficient": return ["abilities", edit.ability, "saveProficient"];
+    case "ability.modifierOverride": return ["abilities", edit.ability, "modifierOverride"];
+    case "combat.hp.max": return ["combat", "hp", "max"];
+    case "class.level": return ["classes", edit.index, "level"];
+  }
+}
 
 const FIELD_LABEL: Record<string, StringKey> = {
   "combat.hp.current": "vitals.hp",
@@ -18,13 +76,12 @@ const FIELD_LABEL: Record<string, StringKey> = {
 };
 
 /** "PF +5, Dadi Vita −1" — non-zero changes only, with localized field labels. */
-function describeChanges(changes: FormulaChange[], c: Character): string {
-  const locale = useI18n.getState().locale;
+function describeChanges(changes: FormulaChange[], c: Character, t: CharacterStoreDependencies["t"]): string {
   return changes
     .map((ch) => {
       const delta = ch.after - ch.before;
       if (delta === 0) return null;
-      let label = FIELD_LABEL[ch.path] ? translate(locale, FIELD_LABEL[ch.path]) : "";
+      let label = FIELD_LABEL[ch.path] ? t(FIELD_LABEL[ch.path]) : "";
       if (!label) {
         const res = ch.path.match(/^resources\.([^.]+)\.current$/);
         label = (res && c.resources.find((r) => r.id === res[1])?.label) || ch.path;
@@ -53,42 +110,20 @@ function diffLiveFields(before: Character, after: Character): FormulaChange[] {
 }
 
 /** Emit error toasts, then a success toast summarizing changes (+ dice rolls subtitle). */
-function notify(label: string, c: Character, changes: FormulaChange[], rolls: string[], errors: string[]): void {
+function notify(
+  deps: CharacterStoreDependencies,
+  label: string,
+  c: Character,
+  changes: FormulaChange[],
+  rolls: string[],
+  errors: string[],
+): void {
   if (errors.length > 0) {
-    const prefix = translate(useI18n.getState().locale, "toast.formulaError");
-    errors.forEach((e) => useToast.getState().push("error", `${prefix}: ${e}`));
+    const prefix = deps.t("toast.formulaError");
+    errors.forEach((e) => deps.toast.push("error", `${prefix}: ${e}`));
   }
-  const summary = describeChanges(changes, c);
-  if (summary) useToast.getState().push("success", `${label} — ${summary}`, rolls.length ? rolls.join(" · ") : undefined);
-}
-
-const clamp = (n: number, lo: number, hi: number) =>
-  Math.max(lo, Math.min(hi, n));
-
-/** Drop spell material rows with no text (blank ones the user added and left empty).
- *  Returns the same reference when nothing changed, so callers can skip a no-op save. */
-function pruneEmptyMaterials(c: Character): Character {
-  let changed = false;
-  const spellSections = c.spellSections.map((sec) => ({
-    ...sec,
-    entries: sec.entries.map((e) => {
-      if (!Array.isArray(e.materials) || e.materials.length === 0) return e;
-      const kept = e.materials.filter((m) => (m.text ?? "").trim() !== "");
-      if (kept.length === e.materials.length) return e;
-      changed = true;
-      return { ...e, materials: kept };
-    }),
-  }));
-  return changed ? { ...c, spellSections } : c;
-}
-
-/** Regaining HP from 0 clears death saves, so a later death starts the count fresh. */
-function clearDeathOnRevive(before: Character, after: Character): Character {
-  const ds = after.session.deathSaves;
-  if (before.combat.hp.current <= 0 && after.combat.hp.current > 0 && (ds.successes > 0 || ds.failures > 0)) {
-    return { ...after, session: { ...after.session, deathSaves: { ...ds, successes: 0, failures: 0 } } };
-  }
-  return after;
+  const summary = describeChanges(changes, c, deps.t);
+  if (summary) deps.toast.push("success", `${label} — ${summary}`, rolls.length ? rolls.join(" · ") : undefined);
 }
 
 const slug = (s: string) =>
@@ -99,7 +134,14 @@ const slug = (s: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "") || "personaggio";
 
-interface CharacterState {
+export interface CharacterState {
+  /** Original parsed input for recovery/provenance. */
+  source: unknown | null;
+  /** Lossless working JSON. All edits target this value. */
+  draft: unknown | null;
+  validation: CharacterValidation | null;
+  /** Exact document known to be in the bound provider after its last successful read/write. */
+  lastPersisted: unknown | null;
   character: Character | null;
   issues: Issue[];
   migrated: boolean;
@@ -158,6 +200,8 @@ interface CharacterState {
   toggleEditMode: () => void;
   /** Set any field at a path (text/number/boolean/enum). */
   editField: (path: Path, value: unknown) => void;
+  /** Typed commands for high-frequency schema fields; prevents path/value mismatches at compile time. */
+  editCoreField: (edit: CoreCharacterEdit) => void;
   /** Append a new entry to the array at `path` (use a factory for the entry). */
   addItem: (path: Path, item: unknown) => void;
   /** Remove the entry at `index` from the array at `path`. */
@@ -189,104 +233,75 @@ function revokeImages(images: GalleryImage[]): void {
   }
 }
 
-export const useCharacter = create<CharacterState>((set, get) => {
-  let saveTimer: ReturnType<typeof setTimeout> | null = null;
-  let validateTimer: ReturnType<typeof setTimeout> | null = null;
-  let saveQueue: Promise<boolean> = Promise.resolve(true);
-
-  const cancelScheduledSave = () => {
-    if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = null;
-  };
+export function createCharacterStore(deps: CharacterStoreDependencies) {
+  return create<CharacterState>((set, get) => {
+  const loadedFields = (result: LoadResult) => ({
+    source: result.source,
+    draft: result.draft,
+    validation: result.validation,
+    character: result.projection,
+    issues: result.issues,
+    migrated: result.migrated,
+    ok: result.ok,
+  });
 
   const reportWriteFailure = (provider: StorageProvider, error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
     if (get().provider === provider) {
-      useToast.getState().push("error", translate(useI18n.getState().locale, "toast.saveFailed"), message);
+      deps.toast.push("error", deps.t("toast.saveFailed"), message);
       set({ saveError: message, liveSync: false, readOnly: true });
     }
   };
 
-  /** Serialize writes and clear dirty only if no newer character state appeared meanwhile. */
-  const persistCurrent = (): Promise<boolean> => {
-    const write = saveQueue.then(async () => {
-      const { provider, liveSync, character, dirty } = get();
-      if (!provider || !liveSync || !character || !dirty) return true;
-      try {
-        await provider.write(character);
-        if (get().provider === provider && get().character === character) {
-          set({ dirty: false, saveError: null });
-        }
-        return true;
-      } catch (error) {
-        reportWriteFailure(provider, error);
-        return false;
-      }
+  const persistence = createPersistenceCoordinator({
+    get,
+    set,
+    reportFailure: reportWriteFailure,
+    schedule: deps.schedule,
+    cancelScheduled: deps.cancelScheduled,
+  });
+  const flushPendingSave = persistence.flush;
+  const versions = createVersionCoordinator({
+    getState: get,
+    setState: (patch) => set(patch),
+    flushPendingSave,
+    dependencies: deps,
+  });
+
+  /** Replace the lossless draft, then derive validation + projection without promoting either. */
+  const commitDraft = (nextDraft: unknown) => {
+    if (get().versionBusy || get().validation?.kind === "future-schema") return;
+    const result = loadCharacter(nextDraft);
+    set({
+      draft: result.draft,
+      validation: result.validation,
+      character: result.projection,
+      issues: result.issues,
+      migrated: get().migrated || result.migrated,
+      ok: result.ok,
+      dirty: true,
     });
-    saveQueue = write;
-    return write;
+    persistence.schedule();
   };
 
-  const flushPendingSave = async (): Promise<boolean> => {
-    cancelScheduledSave();
-    await saveQueue;
-    const { provider, dirty, liveSync, readOnly } = get();
-    if (provider && dirty && (!liveSync || readOnly)) return false;
-    return persistCurrent();
-  };
+  /** Apply a structural edit directly to the draft. */
+  const applyEdit = (nextDraft: unknown) => commitDraft(nextDraft);
 
-  // Re-run validation after a structural edit so the issues chip stays live. Only `issues`
-  // is updated — never `character`, or Zod's defaults/coercions would clobber whatever the
-  // user is mid-typing (e.g. a temporarily-empty name). Derived values (AC, PB, mod) need
-  // nothing: they recompute at render time.
-  const scheduleRevalidate = () => {
-    if (validateTimer) clearTimeout(validateTimer);
-    validateTimer = setTimeout(() => {
-      const c = get().character;
-      if (!c) return;
-      set({ issues: loadCharacter(c).issues });
-    }, 300);
-  };
-
-  /** Apply a structural edit, mark dirty, schedule a save + a revalidate. */
-  const applyEdit = (next: Character) => {
-    if (get().versionBusy) return;
-    set({ character: next, dirty: true });
-    scheduleSave();
-    scheduleRevalidate();
-  };
-
-  const scheduleSave = () => {
-    cancelScheduledSave();
-    saveTimer = setTimeout(() => {
-      saveTimer = null;
-      void persistCurrent();
-    }, 250);
-  };
-
-  /** Apply an immutable patch to the character, mark dirty, schedule a save. */
+  /** Run existing typed domain logic on the projection, then copy only its changes to the draft. */
   const mutate = (fn: (c: Character) => Character) => {
     if (get().versionBusy) return;
-    const c = get().character;
-    if (!c) return;
-    set({ character: clearDeathOnRevive(c, fn(c)), dirty: true });
-    scheduleSave();
+    const { character: c, draft, validation } = get();
+    if (!c || draft == null || validation?.kind === "future-schema") return;
+    const next = clearDeathOnRevive(c, fn(c));
+    commitDraft(patchDraftFromProjection(c, next, draft));
   };
-
-  const patchHp = (
-    c: Character,
-    hp: Partial<Character["combat"]["hp"]>,
-  ): Character => ({
-    ...c,
-    combat: { ...c.combat, hp: { ...c.combat.hp, ...hp } },
-  });
 
   /** Built-in rest reset + any registered actions of that kind, with a summary toast. */
   const doRest = (kind: "shortRest" | "longRest") => {
     if (get().versionBusy) return;
     const c = get().character;
     if (!c) return;
-    const rng = makeRng(Date.now());
+    const rng = deps.makeRng(deps.now());
 
     let rested: Character;
     if (kind === "shortRest") {
@@ -320,14 +335,21 @@ export const useCharacter = create<CharacterState>((set, get) => {
       faces.push(...r.faces);
     }
 
-    const label = translate(useI18n.getState().locale, kind === "shortRest" ? "vitals.shortRest" : "vitals.longRest");
-    notify(label, c, diffLiveFields(c, cur), rolls, errors);
-    if (faces.length) useDice.getState().present(faces);
-    set({ character: clearDeathOnRevive(c, cur), dirty: true });
-    scheduleSave();
+    const label = deps.t(kind === "shortRest" ? "vitals.shortRest" : "vitals.longRest");
+    notify(deps, label, c, diffLiveFields(c, cur), rolls, errors);
+    if (faces.length) deps.presentDice(faces);
+    const draft = get().draft;
+    if (draft != null) {
+      const next = clearDeathOnRevive(c, cur);
+      commitDraft(patchDraftFromProjection(c, next, draft));
+    }
   };
 
   return {
+    source: null,
+    draft: null,
+    validation: null,
+    lastPersisted: null,
     character: null,
     issues: [],
     migrated: false,
@@ -343,148 +365,84 @@ export const useCharacter = create<CharacterState>((set, get) => {
     versionBusy: false,
 
     loadRaw: (raw, sourceName = "", images = [], readOnly = false) => {
-      cancelScheduledSave();
+      persistence.cancel();
       const r = loadCharacter(raw);
+      const future = r.validation.kind === "future-schema";
       revokeImages(get().images);
       set({
-        ...r,
+        ...loadedFields(r),
+        lastPersisted: null,
         sourceName,
         images,
         provider: null,
         liveSync: false,
         dirty: false,
         saveError: null,
-        readOnly,
+        readOnly: readOnly || future,
         editMode: false,
         versionBusy: false,
       });
     },
 
     connect: (provider, raw, sourceName, images = []) => {
-      cancelScheduledSave();
+      persistence.cancel();
       const r = loadCharacter(raw);
       revokeImages(get().images);
+      const future = r.validation.kind === "future-schema";
       set({
-        ...r,
+        ...loadedFields(r),
+        lastPersisted: r.source,
         sourceName,
         images,
         provider,
-        liveSync: true,
+        liveSync: !future,
         dirty: false,
         saveError: null,
-        readOnly: false,
+        readOnly: future,
         editMode: false,
         versionBusy: false,
       });
     },
 
     exportCharacter: async () => {
-      const { character } = get();
-      if (!character) return;
-      const outcome = await saveJsonAs(character, `${slug(character.meta.name)}.json`);
-      if (notifySaveOutcome(outcome)) set({ dirty: false }); // clear dirty only on a real write
+      const { character, draft, validation } = get();
+      if (!character || draft == null) return;
+      if (await deps.exportDocument(draft, `${slug(character.meta.name)}.json`) && validation?.kind === "valid") {
+        set({ dirty: false });
+      }
     },
 
     flushPendingSave,
 
-    createVersion: async (reason = "checkpoint", title) => {
-      const initial = get();
-      if (initial.versionBusy || !initial.provider?.versions || !initial.liveSync || initial.readOnly) return null;
-      set({ versionBusy: true });
-      try {
-        if (!(await flushPendingSave())) return null;
-        const { provider, character } = get();
-        if (!provider?.versions || !character) return null;
-        const version = await provider.versions.create(character, reason, title);
-        const message = interpolate(translate(useI18n.getState().locale, "versions.saved"), {
-          filename: version.filename,
-        });
-        useToast.getState().push("success", message);
-        return version;
-      } catch (error) {
-        const detail = error instanceof Error ? error.message : String(error);
-        useToast.getState().push(
-          "error",
-          translate(useI18n.getState().locale, "versions.saveFailed"),
-          detail,
-        );
-        return null;
-      } finally {
-        set({ versionBusy: false });
-      }
-    },
+    createVersion: versions.createVersion,
 
-    replaceCharacter: async (raw, reason, snapshotOverride) => {
-      if (get().versionBusy) return false;
-      const next = loadCharacter(raw); // validate before touching current state or storage
-      set({ versionBusy: true });
-      try {
-        if (!(await flushPendingSave())) return false;
-        const { provider, character, sourceName, images } = get();
-        if (!character) return false;
-
-        if (!provider) {
-          set({ ...next, sourceName, images, dirty: true, editMode: false });
-          return true;
-        }
-        if (!get().liveSync || get().readOnly) {
-          useToast.getState().push("error", translate(useI18n.getState().locale, "versions.replaceUnavailable"));
-          return false;
-        }
-
-        const shouldSnapshot = Boolean(provider.versions && (
-          snapshotOverride ?? (reason === "before-restore" || useSettings.getState().versionHistory)
-        ));
-        if (shouldSnapshot) {
-          try {
-            await provider.versions!.create(character, reason);
-          } catch (error) {
-            const detail = error instanceof Error ? error.message : String(error);
-            useToast.getState().push(
-              "error",
-              translate(useI18n.getState().locale, "versions.replaceAborted"),
-              detail,
-            );
-            return false;
-          }
-        }
-
-        try {
-          await provider.write(next.character);
-        } catch (error) {
-          const detail = error instanceof Error ? error.message : String(error);
-          useToast.getState().push(
-            "error",
-            translate(useI18n.getState().locale, "versions.replaceFailed"),
-            detail,
-          );
-          if (get().provider === provider) {
-            set({ saveError: detail, liveSync: false, readOnly: true });
-          }
-          return false;
-        }
-
-        set({ ...next, sourceName, images, dirty: false, saveError: null, editMode: false });
-        return true;
-      } finally {
-        set({ versionBusy: false });
-      }
-    },
+    replaceCharacter: versions.replaceCharacter,
 
     setRawJson: (raw) => {
       if (!get().character || get().versionBusy) return;
       const r = loadCharacter(raw);
-      // Keep provider/liveSync/sourceName/images/editMode/readOnly as they are — only the
-      // character (and its issues) change, then the usual debounced save fires.
-      set({ character: r.character, issues: r.issues, migrated: r.migrated, ok: r.ok, dirty: true });
-      scheduleSave();
+      if (get().validation?.kind === "future-schema") return;
+      set({
+        draft: r.draft,
+        validation: r.validation,
+        character: r.projection,
+        issues: r.issues,
+        migrated: get().migrated || r.migrated,
+        ok: r.ok,
+        dirty: true,
+      });
+      persistence.schedule();
     },
 
     clear: () => {
       if (get().versionBusy) return;
-      cancelScheduledSave();
+      persistence.cancel();
       revokeImages(get().images);
       set({
+        source: null,
+        draft: null,
+        validation: null,
+        lastPersisted: null,
         character: null,
         issues: [],
         migrated: false,
@@ -506,11 +464,11 @@ export const useCharacter = create<CharacterState>((set, get) => {
       // Leaving Edit mode drops any material rows the user added but left blank.
       if (get().editMode) {
         const c = get().character;
-        if (c) {
+        const draft = get().draft;
+        if (c && draft != null) {
           const cleaned = pruneEmptyMaterials(c);
           if (cleaned !== c) {
-            set({ character: cleaned, dirty: true });
-            scheduleSave();
+            commitDraft(patchDraftFromProjection(c, cleaned, draft));
           }
         }
       }
@@ -518,60 +476,35 @@ export const useCharacter = create<CharacterState>((set, get) => {
     },
 
     editField: (path, value) => {
-      const c = get().character;
-      if (!c) return;
-      applyEdit(setIn(c, path, value));
+      const draft = get().draft;
+      if (draft == null) return;
+      applyEdit(setIn(draft, path, value));
+    },
+
+    editCoreField: (edit) => {
+      const draft = get().draft;
+      if (draft == null) return;
+      applyEdit(setIn(draft, coreEditPath(edit), edit.value));
     },
 
     addItem: (path, item) => {
-      const c = get().character;
-      if (!c) return;
-      applyEdit(insertAt(c, path, item));
+      const draft = get().draft;
+      if (draft == null) return;
+      applyEdit(insertAt(draft, path, item));
     },
 
     removeItem: (path, index) => {
-      const c = get().character;
-      if (!c) return;
-      applyEdit(removeAt(c, path, index));
+      const draft = get().draft;
+      if (draft == null) return;
+      applyEdit(removeAt(draft, path, index));
     },
 
-    setCurrentHp: (n) =>
-      mutate((c) => patchHp(c, { current: Math.max(0, Math.floor(n) || 0) })),
-    setTempHp: (n) =>
-      mutate((c) => patchHp(c, { temp: Math.max(0, Math.floor(n) || 0) })),
-
-    damage: (n) =>
-      mutate((c) => {
-        const fromTemp = Math.min(c.combat.hp.temp, n);
-        return patchHp(c, {
-          temp: c.combat.hp.temp - fromTemp,
-          current: Math.max(0, c.combat.hp.current - (n - fromTemp)),
-        });
-      }),
-
-    heal: (n) =>
-      mutate((c) => {
-        const cap =
-          c.combat.hp.max > 0 ? c.combat.hp.max : c.combat.hp.current + n;
-        return patchHp(c, { current: Math.min(cap, c.combat.hp.current + n) });
-      }),
-
-    adjustResource: (id, delta) =>
-      mutate((c) => ({
-        ...c,
-        resources: c.resources.map((r) =>
-          r.id === id
-            ? { ...r, current: clamp(r.current + delta, 0, r.max) }
-            : r,
-        ),
-      })),
-
-    adjustHitDice: (delta) =>
-      mutate((c) =>
-        patchHp(c, {
-          hitDiceRemaining: clamp(c.combat.hp.hitDiceRemaining + delta, 0, maxHitDice(c)),
-        }),
-      ),
+    setCurrentHp: (value) => mutate((c) => setCurrentHp(c, value)),
+    setTempHp: (value) => mutate((c) => setTempHp(c, value)),
+    damage: (amount) => mutate((c) => damage(c, amount)),
+    heal: (amount) => mutate((c) => heal(c, amount)),
+    adjustResource: (id, delta) => mutate((c) => adjustResource(c, id, delta)),
+    adjustHitDice: (delta) => mutate((c) => adjustHitDice(c, delta)),
 
     runAction: (id) => {
       if (get().versionBusy) return;
@@ -579,87 +512,28 @@ export const useCharacter = create<CharacterState>((set, get) => {
       if (!c) return;
       const action = c.actions.find((a) => a.id === id);
       if (!action) return;
-      const { character, changes, errors, rolls, faces } = applyAction(c, action.formulas, makeRng(Date.now()));
-      notify(action.label || action.id, c, changes, rolls, errors);
-      if (faces.length) useDice.getState().present(faces);
+      const { character, changes, errors, rolls, faces } = applyAction(c, action.formulas, deps.makeRng(deps.now()));
+      notify(deps, action.label || action.id, c, changes, rolls, errors);
+      if (faces.length) deps.presentDice(faces);
       if (changes.length > 0) {
-        set({ character: clearDeathOnRevive(c, character), dirty: true });
-        scheduleSave();
+        const draft = get().draft;
+        if (draft != null) {
+          const next = clearDeathOnRevive(c, character);
+          commitDraft(patchDraftFromProjection(c, next, draft));
+        }
       }
     },
 
     shortRest: () => doRest("shortRest"),
     longRest: () => doRest("longRest"),
 
-    setItemQuantity: (index, qty) =>
-      mutate((c) => ({
-        ...c,
-        inventory: {
-          ...c.inventory,
-          items: c.inventory.items.map((it, i) =>
-            i === index ? { ...it, quantity: Math.max(0, qty) } : it,
-          ),
-        },
-      })),
-
-    toggleEquipped: (index) => {
-      const c = get().character;
-      if (!c) return;
-      const target = c.inventory.items[index];
-      // Only one suit of body armor may be worn at a time: refuse to equip a second one (the
-      // UI also disables the button, so this is the belt-and-suspenders guard). Unequipping and
-      // equipping non-armor / shields are unaffected.
-      if (
-        target &&
-        !target.equipped &&
-        isBodyArmor(target) &&
-        c.inventory.items.some((it, i) => i !== index && it.equipped && isBodyArmor(it))
-      ) {
-        return;
-      }
-      mutate((cur) => ({
-        ...cur,
-        inventory: {
-          ...cur.inventory,
-          items: cur.inventory.items.map((it, i) =>
-            i === index ? { ...it, equipped: !it.equipped } : it,
-          ),
-        },
-      }));
-    },
-
-    setCurrency: (code, value) =>
-      mutate((c) => ({
-        ...c,
-        inventory: {
-          ...c.inventory,
-          currencies: { ...c.inventory.currencies, [code]: Math.max(0, value) },
-        },
-      })),
-
-    addCondition: (name) =>
-      mutate((c) => {
-        const trimmed = name.trim();
-        if (!trimmed || c.session.conditions.includes(trimmed)) return c;
-        return { ...c, session: { ...c.session, conditions: [...c.session.conditions, trimmed] } };
-      }),
-
-    removeCondition: (name) =>
-      mutate((c) => ({
-        ...c,
-        session: { ...c.session, conditions: c.session.conditions.filter((x) => x !== name) },
-      })),
-
-    toggleInspiration: () =>
-      mutate((c) => ({ ...c, session: { ...c.session, inspiration: !c.session.inspiration } })),
-
-    setDeathSave: (kind, value) =>
-      mutate((c) => ({
-        ...c,
-        session: {
-          ...c.session,
-          deathSaves: { ...c.session.deathSaves, [kind]: clamp(value, 0, 3) },
-        },
-      })),
-  };
-});
+    setItemQuantity: (index, quantity) => mutate((c) => setItemQuantity(c, index, quantity)),
+    toggleEquipped: (index) => mutate((c) => toggleEquipped(c, index)),
+    setCurrency: (code, value) => mutate((c) => setCurrency(c, code, value)),
+    addCondition: (name) => mutate((c) => addCondition(c, name)),
+    removeCondition: (name) => mutate((c) => removeCondition(c, name)),
+    toggleInspiration: () => mutate(toggleInspiration),
+    setDeathSave: (kind, value) => mutate((c) => setDeathSave(c, kind, value)),
+    };
+  });
+}

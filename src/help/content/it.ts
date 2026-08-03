@@ -173,7 +173,7 @@ export const helpIt: HelpCatalog = assertHelpCatalog({
         },
         {
           title: "Su web o desktop",
-          steps: ["Apri Prompt e scegli il tipo di lavoro.", "Copia il prompt e scarica i file proposti da JUGALE.", "Allegali alla conversazione con il chatbot.", "Salva la risposta finale come character.json, poi apri quel file oppure rimettilo nella cartella del personaggio."],
+          steps: ["Apri Prompt e scegli il tipo di lavoro.", "Premi Scarica accanto al prompt. JUGALE salva un unico file di testo con prompt, schema e, se presente, il personaggio aperto.", "Allega quel file di testo alla conversazione con il chatbot.", "Salva la risposta finale come character.json, poi apri quel file oppure rimettilo nella cartella del personaggio."],
         },
       ],
     },
@@ -223,8 +223,11 @@ export const helpIt: HelpCatalog = assertHelpCatalog({
             alt: "Editor JSON grezzo con un file personaggio valido",
             caption: "L'editor indica se il JSON è valido prima di tornare alla scheda.",
           },
-          steps: ["Apri JSON grezzo dalla barra in alto.", "Fai la modifica senza rimuovere le altre sezioni.", "Correggi gli eventuali errori di sintassi mostrati dall'editor, poi chiudilo per tornare alla scheda."],
-          details: [{ title: "Esempio minimo valido", paragraphs: ["{ \"meta\": { \"name\": \"Il mio personaggio\" } }"] }],
+          steps: ["Apri JSON grezzo dalla barra in alto.", "Fai la modifica senza rimuovere le altre sezioni.", "Correggi tutti gli errori di sintassi o validazione mostrati dall'editor, poi chiudilo per tornare alla scheda."],
+          details: [
+            { title: "Perché lo stato indica Non salvato", paragraphs: ["JUGALE conserva un draft invalido per permetterti di correggerlo, ma non sostituisce character.json finché il draft non supera la validazione. Un file creato da una versione più recente di JUGALE non viene modificato e può essere esportato intatto."] },
+            { title: "Esempio minimo valido", paragraphs: ["{ \"meta\": { \"name\": \"Il mio personaggio\" } }"] },
+          ],
         },
         {
           title: "Usa lo Schema JSON",

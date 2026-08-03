@@ -14,6 +14,13 @@ Most prompts layer, but one stands alone:
 
 Because every *build/play* task prompt includes the base, the licensing disclaimer and the data contract **travel with every copied prompt** — there's no separate block you have to remember to paste. In the in-app Prompts page the two workflows are split into a **Create, modify & verify** section (base + create/level-up/validate) and a separate **Migrate an old character** section (the standalone migrate prompt + its changelog download).
 
+Every prompt block also has **Download bundle**. It saves one `jugale-<task>-prompt.txt` containing
+the composed prompt and current `character.schema.json`; when a character is open, its complete
+`character.json` is included too. The Migrate bundle additionally carries `schema-changelog.md`.
+The text file uses explicit section delimiters, so it can be attached to a chatbot as one portable
+context file on web, desktop or Android. A character is optional for downloads: prompts can still be
+saved before opening one.
+
 On Android, each applicable prompt also has **Share** beside Copy. It opens one system sharesheet—
 JUGALE does not target or require a particular chatbot—with two single-file `ACTION_SEND` variants.
 The primary `application/json` attachment, `jugale-request.json`, contains the compiled instructions
@@ -22,7 +29,7 @@ contains the same material in delimited sections and duplicates that complete bu
 `EXTRA_TEXT`. Android chooses the first variant supported by the selected receiver. The dual format
 is intentional: device tests found ChatGPT accepting JSON streams but ignoring a text stream, while
 Gemini and Claude accepted the text attachment. The Share control and its explanatory sentence are
-Android-only; web and desktop retain Copy and downloads. The tap itself opens the chooser without
+Android-only; Download bundle and Copy are available on every host. The tap itself opens the chooser without
 an extra confirmation.
 
 ## Parameters (filled in the app, printed into the prompt)

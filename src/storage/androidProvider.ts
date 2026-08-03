@@ -22,21 +22,13 @@
  */
 import { AndroidFs, AndroidUriPermissionState, type AndroidFsUri } from "tauri-plugin-android-fs-api";
 import { isTauri } from "./tauriProvider";
-import type { StorageProvider, GalleryImage, RecentRef, LoadedCharacter } from "./provider";
-import { NO_CHARACTER_JSON } from "./provider";
-import {
-  allocateVersion,
-  normalizeVersionTitle,
-  parseVersionFilename,
-  readVersionTitle,
-  requireVersionFilename,
-  sortVersionsNewestFirst,
-  versionMetadataFilename,
-  type VersionStore,
-} from "./versions";
+import type { StorageProvider, GalleryImage, AndroidRecentRef, LoadedCharacter } from "./provider";
+import type { PersistableCharacterDocument } from "../schema/validate";
+import { normalizeStorageError, storageError } from "./errors";
+import { createVersionStore, type VersionStore } from "./versions";
 
 const IMAGE_RE = /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i;
-export const IMPORT_TARGET_NOT_EMPTY = "IMPORT_TARGET_NOT_EMPTY";
+export const IMPORT_TARGET_NOT_EMPTY = "import-target-not-empty";
 const MIME: Record<string, string> = {
   png: "image/png",
   jpg: "image/jpeg",
@@ -79,13 +71,23 @@ class AndroidFsProvider implements StorageProvider {
     // readTextFile feeds it straight to TextDecoder.decode → "parameter 1 is not of type
     // 'ArrayBuffer'". readFile normalizes to a Uint8Array; Uint8Array.from() is a belt-and-braces
     // guard so either payload shape decodes cleanly. (See tauri-apps/tauri#11959.)
-    const bytes = await AndroidFs.readFile(this.fileUri);
-    return JSON.parse(new TextDecoder("utf-8").decode(Uint8Array.from(bytes)));
+    let text: string;
+    try {
+      const bytes = await AndroidFs.readFile(this.fileUri);
+      text = new TextDecoder("utf-8").decode(Uint8Array.from(bytes));
+    } catch (error) {
+      throw normalizeStorageError(error);
+    }
+    return JSON.parse(text);
   }
 
   /** Truncating in-place write (append defaults to false), so the source file stays canonical. */
-  async write(data: unknown): Promise<void> {
-    await AndroidFs.writeTextFile(this.fileUri, JSON.stringify(data, null, 2));
+  async write(data: PersistableCharacterDocument): Promise<void> {
+    try {
+      await AndroidFs.writeTextFile(this.fileUri, JSON.stringify(data.document, null, 2));
+    } catch (error) {
+      throw normalizeStorageError(error);
+    }
   }
 }
 
@@ -94,79 +96,35 @@ class AndroidFolderProvider extends AndroidFsProvider {
 
   constructor(characterUri: AndroidFsUri, treeUri: AndroidFsUri) {
     super(characterUri);
-    this.versions = {
-      create: async (data, reason, title, now = new Date()) => {
-        const historyUri = await AndroidFs.createDir(treeUri, "history");
-        const existing = new Set(
-          (await AndroidFs.readDir(historyUri)).filter((entry) => entry.type === "File").map((entry) => entry.name),
-        );
-        const version = allocateVersion(now, reason, existing);
-        const uri = await AndroidFs.createNewFile(historyUri, version.filename, "application/json");
-        await AndroidFs.writeTextFile(uri, JSON.stringify(data, null, 2));
-        const normalizedTitle = normalizeVersionTitle(title);
-        if (normalizedTitle) {
-          const metadataUri = await AndroidFs.createNewFile(
-            historyUri,
-            versionMetadataFilename(version.filename),
-            "application/json",
-          );
-          await AndroidFs.writeTextFile(metadataUri, JSON.stringify({ title: normalizedTitle }, null, 2));
-        }
-        return { ...version, title: normalizedTitle };
-      },
-      list: async () => {
-        const rootEntries = await AndroidFs.readDir(treeUri);
-        const history = rootEntries.find((entry) => entry.type === "Dir" && entry.name === "history");
-        if (!history) return [];
-        const entries = await AndroidFs.readDir(history.uri);
-        const versions = entries
-          .filter((entry) => entry.type === "File")
-          .map((entry) => parseVersionFilename(entry.name))
-          .filter((version) => version !== null);
-        const titled = await Promise.all(versions.map(async (version) => {
-          const metadata = entries.find(
-            (entry) => entry.type === "File" && entry.name === versionMetadataFilename(version.filename),
-          );
-          if (!metadata) return version;
-          try {
-            const bytes = await AndroidFs.readFile(metadata.uri);
-            return {
-              ...version,
-              title: readVersionTitle(JSON.parse(new TextDecoder("utf-8").decode(Uint8Array.from(bytes)))),
-            };
-          } catch {
-            return version;
-          }
-        }));
-        return sortVersionsNewestFirst(titled);
-      },
-      read: async (version) => {
-        requireVersionFilename(version.filename);
-        const rootEntries = await AndroidFs.readDir(treeUri);
-        const history = rootEntries.find((entry) => entry.type === "Dir" && entry.name === "history");
-        if (!history) throw new Error(`Missing history/${version.filename}`);
-        const file = (await AndroidFs.readDir(history.uri)).find(
-          (entry) => entry.type === "File" && entry.name === version.filename,
-        );
-        if (!file) throw new Error(`Missing history/${version.filename}`);
-        const bytes = await AndroidFs.readFile(file.uri);
-        return JSON.parse(new TextDecoder("utf-8").decode(Uint8Array.from(bytes)));
-      },
-      delete: async (version) => {
-        requireVersionFilename(version.filename);
-        const rootEntries = await AndroidFs.readDir(treeUri);
-        const history = rootEntries.find((entry) => entry.type === "Dir" && entry.name === "history");
-        if (!history) throw new Error(`Missing history/${version.filename}`);
-        const entries = await AndroidFs.readDir(history.uri);
-        const file = entries.find((entry) => entry.type === "File" && entry.name === version.filename);
-        if (!file) throw new Error(`Missing history/${version.filename}`);
-        await AndroidFs.removeFile(file.uri);
-        const metadata = entries.find(
-          (entry) => entry.type === "File" && entry.name === versionMetadataFilename(version.filename),
-        );
-        if (metadata) await AndroidFs.removeFile(metadata.uri);
-      },
+    const existingHistory = async () => {
+      const rootEntries = await AndroidFs.readDir(treeUri);
+      return rootEntries.find((entry) => entry.type === "Dir" && entry.name === "history")?.uri ?? null;
     };
+    const entries = async () => {
+      const historyUri = await existingHistory();
+      return historyUri ? AndroidFs.readDir(historyUri) : [];
+    };
+    this.versions = createVersionStore({
+      listNames: async () => (await entries())
+        .filter((entry) => entry.type === "File")
+        .map((entry) => entry.name),
+      writeText: async (filename, contents) => {
+        const historyUri = await AndroidFs.createDir(treeUri, "history");
+        const uri = await AndroidFs.createNewFile(historyUri, filename, "application/json");
+        await AndroidFs.writeTextFile(uri, contents);
+      },
+      readText: async (filename) => {
+        const file = (await entries()).find((entry) => entry.type === "File" && entry.name === filename);
+        if (!file) throw storageError("not-found", undefined, `Missing history/${filename}`);
+        const bytes = await AndroidFs.readFile(file.uri);
+        return new TextDecoder("utf-8").decode(Uint8Array.from(bytes));
+      },
+      remove: async (filename) => {
+        const file = (await entries()).find((entry) => entry.type === "File" && entry.name === filename);
+        if (!file) throw storageError("not-found", undefined, `Missing history/${filename}`);
+        await AndroidFs.removeFile(file.uri);
+      },
+    });
   }
 }
 
@@ -175,7 +133,7 @@ class AndroidFolderProvider extends AndroidFsProvider {
 async function resolveFolder(treeUri: AndroidFsUri): Promise<{ fileUri: AndroidFsUri; images: GalleryImage[] }> {
   const entries = await AndroidFs.readDir(treeUri);
   const jsonEntry = entries.find((e) => e.type === "File" && e.name === "character.json");
-  if (!jsonEntry) throw new Error(NO_CHARACTER_JSON);
+  if (!jsonEntry) throw storageError("no-character-json");
 
   const imagesDir = entries.find((e) => e.type === "Dir" && e.name === "images");
   const images: GalleryImage[] = [];
@@ -203,7 +161,7 @@ async function resolveFolder(treeUri: AndroidFsUri): Promise<{ fileUri: AndroidF
 export async function openCharacterFileAndroid(): Promise<{
   provider: StorageProvider;
   raw: unknown;
-  ref: RecentRef;
+  ref: AndroidRecentRef;
 } | null> {
   const uris = await AndroidFs.showOpenFilePicker();
   const fileUri = uris?.[0];
@@ -228,7 +186,7 @@ export async function openCharacterFolderAndroid(): Promise<{
   raw: unknown;
   images: GalleryImage[];
   sourceName: string;
-  ref: RecentRef;
+  ref: AndroidRecentRef;
 } | null> {
   const treeUri = await AndroidFs.showOpenDirPicker();
   if (!treeUri) return null;
@@ -250,8 +208,8 @@ export type AndroidImportTarget =
   | {
       kind: "empty";
       sourceName: string;
-      ref: RecentRef;
-      create: (raw: unknown) => Promise<LoadedCharacter>;
+      ref: AndroidRecentRef;
+      create: (document: PersistableCharacterDocument) => Promise<LoadedCharacter>;
     };
 
 /** Pick an import destination without changing it. Existing characters are loaded for preview;
@@ -263,22 +221,22 @@ export async function pickCharacterImportTargetAndroid(): Promise<AndroidImportT
   await tryPersist(treeUri);
   const entries = await AndroidFs.readDir(treeUri);
   const sourceName = await AndroidFs.getName(treeUri).catch(() => "character");
-  const ref: RecentRef = { platform: "android", kind: "folder", name: sourceName, uri: treeUri };
+  const ref: AndroidRecentRef = { platform: "android", kind: "folder", name: sourceName, uri: treeUri };
   if (entries.some((entry) => entry.type === "File" && entry.name === "character.json")) {
     const { fileUri, images } = await resolveFolder(treeUri);
     const provider = new AndroidFolderProvider(fileUri, treeUri);
     return { kind: "existing", provider, raw: await provider.read(), images, sourceName, ref };
   }
-  if (entries.length > 0) throw new Error(IMPORT_TARGET_NOT_EMPTY);
+  if (entries.length > 0) throw storageError("import-target-not-empty");
   return {
     kind: "empty",
     sourceName,
     ref,
-    create: async (raw) => {
+    create: async (document) => {
       const fileUri = await AndroidFs.createNewFile(treeUri, "character.json", "application/json");
       const provider = new AndroidFolderProvider(fileUri, treeUri);
       try {
-        await provider.write(raw);
+        await provider.write(document);
         return { provider, raw: await provider.read(), images: [], sourceName };
       } catch (error) {
         await AndroidFs.removeFile(fileUri).catch(() => undefined);
@@ -307,11 +265,10 @@ export async function saveJsonAsAndroid(
 
 /** Re-resolve an Android RecentRef via its persisted SAF permission. Throws NO_CHARACTER_JSON if
  *  the permission was lost (user cleared it / the entry is gone) or the folder no longer has one. */
-export async function reopenAndroid(ref: RecentRef): Promise<LoadedCharacter> {
-  const uri = ref.uri as AndroidFsUri | undefined;
-  if (!uri) throw new Error(NO_CHARACTER_JSON);
+export async function reopenAndroid(ref: AndroidRecentRef): Promise<LoadedCharacter> {
+  const uri = ref.uri;
   const usable = await AndroidFs.checkPersistedPickerUriPermission(uri, AndroidUriPermissionState.ReadOrWrite);
-  if (!usable) throw new Error(NO_CHARACTER_JSON);
+  if (!usable) throw storageError("permission-denied");
 
   if (ref.kind === "folder") {
     const { fileUri, images } = await resolveFolder(uri);

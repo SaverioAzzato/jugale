@@ -12,7 +12,8 @@
  * It is intentionally NOT auto-derived from the exported JSON Schema: we want curated starter
  * skeletons (a sensible character, not every default blanked out), and we want to stay lightweight
  * and CSP-safe. Drift only affects *suggestions* (never validation — that stays with loadCharacter),
- * and schemaModel.test.ts guards it by validating the generated scaffold against the real contract.
+ * and schemaModel.test.ts recursively guards keys, enums, and completion defaults against the
+ * exported JSON Schema.
  *
  * Pure (no CodeMirror import) so it's unit-testable on its own; jsonEditor.ts consumes it.
  */
@@ -25,6 +26,7 @@ export type SchemaNode =
   | { type: "null" }
   /** Value defaults to null; carries the shape used when the key is explicitly added. */
   | { type: "nullable"; inner: SchemaNode }
+  | { type: "union"; options: SchemaNode[] }
   | { type: "object"; fields: Record<string, SchemaNode> }
   | { type: "array"; item: SchemaNode };
 
@@ -37,6 +39,7 @@ const enums = (values: string[], def?: string): SchemaNode => ({ type: "string",
 const num = (def = 0): SchemaNode => ({ type: "number", default: def });
 const bool = (def = false): SchemaNode => ({ type: "boolean", default: def });
 const nullable = (inner: SchemaNode): SchemaNode => ({ type: "nullable", inner });
+const union = (...options: SchemaNode[]): SchemaNode => ({ type: "union", options });
 const obj = (fields: Record<string, SchemaNode>): SchemaNode => ({ type: "object", fields });
 const arr = (item: SchemaNode): SchemaNode => ({ type: "array", item });
 
@@ -102,7 +105,13 @@ const NAMED_DESC = obj({ name: str(), description: str(), link: LINK });
 /** The full character contract, in schema order. See src/schema/character.ts. */
 export const CHARACTER_MODEL: SchemaNode = obj({
   schemaVersion: lit(SCHEMA_VERSION),
-  meta: obj({ name: str(), player: str(), summary: str(), ruleset: arr(str()), tags: STRINGS }),
+  meta: obj({
+    name: str(),
+    player: str(),
+    summary: str(),
+    ruleset: arr(union(str(), obj({ name: str(), url: str() }))),
+    tags: STRINGS,
+  }),
   identity: obj({
     race: str(),
     lineage: str(),
@@ -187,10 +196,10 @@ export const CHARACTER_MODEL: SchemaNode = obj({
     obj({
       id: str(),
       title: str(),
-      layout: enums(["text", "list", "checklist", "keyValue", "cards", "table"]),
       link: LINK,
       columns: STRINGS,
       content: str(),
+      layout: enums(["text", "list", "checklist", "keyValue", "cards", "table"]),
       items: arr({ type: "null" }),
     }),
   ),
@@ -236,6 +245,8 @@ function renderScalar(node: SchemaNode): string {
       return "null";
     case "nullable":
       return "null";
+    case "union":
+      return renderScalar(node.options[0] ?? { type: "null" });
     default:
       return "null";
   }
@@ -311,6 +322,9 @@ export interface ValueOption {
 export function valueOptionsAt(node: SchemaNode): ValueOption[] {
   const out: ValueOption[] = [];
   const base = node.type === "nullable" ? node.inner : node;
+  if (base.type === "union") {
+    for (const option of base.options) out.push(...valueOptionsAt(option));
+  } else
   if (base.type === "string" && base.enum) {
     for (const v of base.enum) out.push({ insert: JSON.stringify(v), label: v });
   } else if (base.type === "boolean") {
@@ -322,17 +336,30 @@ export function valueOptionsAt(node: SchemaNode): ValueOption[] {
 
 /** Ordered keys of an object node (for key-completion; caller filters out present ones). */
 export function objectKeys(node: SchemaNode): string[] {
+  if (node.type === "union") {
+    return [...new Set(node.options.flatMap(objectKeys))];
+  }
   return node.type === "object" ? Object.keys(node.fields) : [];
 }
 
 /** The child node for a key of an object node, if any. */
 export function fieldNode(node: SchemaNode, key: string): SchemaNode | null {
+  if (node.type === "union") {
+    return node.options.map((option) => fieldNode(option, key)).find((child) => child !== null) ?? null;
+  }
   return node.type === "object" ? (node.fields[key] ?? null) : null;
 }
 
 /** Descend one path segment (object key or array item) for schema lookup by path. */
 export function childForSegment(node: SchemaNode, seg: string | number): SchemaNode | null {
   const base = node.type === "nullable" ? node.inner : node;
+  if (base.type === "union") {
+    for (const option of base.options) {
+      const child = childForSegment(option, seg);
+      if (child) return child;
+    }
+    return null;
+  }
   if (base.type === "object") return base.fields[String(seg)] ?? null;
   if (base.type === "array") return base.item;
   return null;

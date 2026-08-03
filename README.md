@@ -42,9 +42,14 @@ npm install
 npm run dev        # Vite dev server
 npm run preview    # preview the production build locally
 npm test           # Vitest unit tests
+npm run test:coverage # Vitest with blocking coverage thresholds
+npm run test:e2e   # Playwright desktop/mobile Chromium flows
 npm run typecheck  # tsc --noEmit
 npm run lint       # ESLint
-npm run build      # production web build
+npm run build      # production build + initial-bundle budget
+npm run check:docs # schema/command/local-link documentation drift
+npm run check      # complete local web gate with coverage
+npm run check:ci   # local web gate + Playwright
 ```
 
 Requires Node 20.19+.
@@ -70,7 +75,7 @@ src/
   storage/       # browser, desktop and Android StorageProvider implementations
   i18n/ theme/   # localization and visual themes
 src-tauri/       # Tauri 2 desktop/mobile shell + Android filesystem/updater plugins
-docs/            # spec-first: ARCHITECTURE, SCHEMA, ROADMAP, AUTOMATION
+docs/            # engineering guide plus architecture, schema, automation and product specs
 characters/      # sample characters (also test fixtures); your real PGs go in pg/ (gitignored)
 index.html       # Vite entry
 ```
@@ -79,7 +84,17 @@ index.html       # Vite entry
 
 A character is a folder: `character.json` + `images/`. The JSON is structured enough to validate rules and generate the UI, free enough for any class or homebrew (generic resources, custom sections, links and notes everywhere), and simple enough for an LLM to edit by hand. **[docs/SCHEMA.md](docs/SCHEMA.md)** is both the full contract and the field-by-field user guide for writing or editing one by hand — section by section, with examples and a worked sample at the end.
 
-Rule of thumb: almost everything is **structural** (changes only on level-up/edit); a small enumerated set is **live** play-state (HP, resource `current`, item quantities, currencies, conditions). The UI only mutates the live fields continuously.
+Rule of thumb: almost everything is **structural** (changes only on level-up/edit); a small
+enumerated set is **live** play-state (current/temp HP and remaining Hit Dice, resource `current`,
+item quantities/equipped state, currencies and session state). The UI only mutates those live
+fields continuously.
+
+Loading is lossless and saving fails closed: validation never replaces the editable JSON with a
+default-filled rendering fallback, unknown keys survive round trips, and invalid or future-schema
+documents cannot silently overwrite their bound file. The repository verifies this with unit and
+adapter contract tests, thresholded coverage, critical Playwright flows and native checks. The
+operational rules are in [Engineering](docs/ENGINEERING.md); field semantics remain in
+[Schema](docs/SCHEMA.md).
 
 ### Where each 5e concept lives
 
@@ -136,12 +151,14 @@ Free and open: the **web app is the GitHub Pages site** ([live](https://saverioa
 
 See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the project's ground rules before sending a PR.
 
-- CI (`.github/workflows/ci.yml`) runs typecheck + tests + build on every PR; a PR touching `src-tauri/` also gets a fast Rust `cargo check` (`tauri-check.yml`, no bundling).
+- CI (`.github/workflows/ci.yml`) runs documentation drift checks, zero-warning lint, typecheck,
+  thresholded coverage, build/bundle budget and desktop/mobile Chromium E2E on every PR; a PR
+  touching `src-tauri/` also gets a fast Rust `cargo check` (`tauri-check.yml`, no bundling).
 - You can hand Claude a ticket and get a PR back — via [Claude Code on the web](https://claude.ai/code) (runs on Anthropic's cloud) or a local Claude Code session. See **[docs/AUTOMATION.md](docs/AUTOMATION.md)**.
 
 ## Docs
 
-- [Architecture](docs/ARCHITECTURE.md) · [Schema](docs/SCHEMA.md) · [UI](docs/UI.md) · [Prompts](docs/PROMPTS.md) · [Legal](docs/LEGAL.md) · [Roadmap](docs/ROADMAP.md) · [Automation](docs/AUTOMATION.md)
+- [Engineering](docs/ENGINEERING.md) · [Architecture](docs/ARCHITECTURE.md) · [Schema](docs/SCHEMA.md) · [UI](docs/UI.md) · [Prompts](docs/PROMPTS.md) · [Legal](docs/LEGAL.md) · [Roadmap](docs/ROADMAP.md) · [Automation](docs/AUTOMATION.md)
 
 ## Assets & Credits
 

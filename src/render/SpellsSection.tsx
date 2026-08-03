@@ -7,12 +7,14 @@ import {
   type SpellMaterial,
 } from "../schema";
 import { spellSaveDc, spellAttackBonus } from "../schema";
-import { Caret, Panel, WikiLink, fmtMod } from "./primitives";
+import { Caret, Panel, WikiLink } from "./primitives";
+import { fmtMod } from "./format";
 import { Field, TextInput, Toggle, OptionalNumber, EntryList, EntryRow } from "./editControls";
 import { newSpell, newSpellSection, newSpellMaterial } from "../model/factories";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT, type TFn } from "../i18n/useI18n";
-import { useSettings, type UnitSystem } from "../ui/useSettings";
+import { useSettings } from "../ui/useSettings";
+import type { UnitSystem } from "../model/unitSystem";
 import { convertDistanceText } from "../model/units";
 
 /** Human-readable casting time from the structured field. */

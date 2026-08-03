@@ -1,7 +1,10 @@
 # Architecture — :JUGALE ("Your character, always yours.")
 
-> Status: **Draft for review** · Last updated: 2026-06-21
+> Status: **Implemented** · Last reviewed: 2026-08-03
 > This is the spec-first source of truth for technical decisions. Code follows this doc; when they disagree, fix one of them on purpose, not by accident.
+
+Development practices and the Definition of Done live in [ENGINEERING.md](ENGINEERING.md); this
+document owns system topology, state ownership and host boundaries.
 
 ## 1. Vision & non-negotiable principles
 
@@ -22,61 +25,134 @@ A character-sheet platform where **the JSON is the character** and the app is a 
 | Language | **TypeScript** | Types make schema + rules validation tractable and reduce bugs; great agent support. |
 | UI framework | **React 18 + Vite** | Best ecosystem & agent familiarity, fast HMR, trivial static build for Pages. |
 | Data validation | **Zod** (schema-as-code) → emits **JSON Schema** | One definition validates at runtime *and* exports a JSON Schema we publish for GPTs/external tools. |
-| State | **Zustand** | Tiny, testable, no boilerplate; the app state is basically "one character + session + UI flags". |
+| State | **Zustand** | Tiny, testable, no boilerplate; character state and small UI preference stores remain independently testable. |
 | Styling | **Project CSS + design tokens (CSS vars)** | A bespoke Arcane token layer; themes (dark/night/light) are selected through CSS variables. |
 | Native shell | **Tauri 2** | Single shell for desktop (Win/Mac/Linux) **and** mobile (Android/iOS), wrapping the same web build. Tiny binaries, secure, mostly-config Rust. |
 | Web target | **Same Vite build → GitHub Pages** | The website *is* the app. |
 | Unit/component tests | **Vitest + Testing Library** | Vite-native, fast. |
-| E2E tests | **Playwright** | Cross-browser flows, screenshots, runs in CI. |
+| E2E tests | **Playwright** | Critical Chromium flows at desktop/mobile viewports, traces/screenshots on failure, runs in CI. |
 | CI/CD | **GitHub Actions** | PR checks, multi-platform release builds, Pages deploy — free on public repos. |
 
 ### Why Tauri over Flutter / React Native
 The frontend choice (a web SPA) already implies the answer, because the GitHub Pages site must be byte-for-byte the same app. Flutter would mean rewriting the UI in Dart with heavy canvas rendering (kills the "it's just an open web page" ethos). React Native isn't web and needs a separate, immature desktop story. Tauri 2 wraps our **one** web build for desktop and mobile, so there is exactly one frontend codebase.
 
-## 3. Target module structure
+## 3. Effective module structure
 
 ```
 src/
   schema/         # Zod schemas + types + JSON Schema export + migrations (1.0.0 -> 2.2.0)
-  model/          # Pure domain logic: derived stats, rules validation, resource math, multiclass
-  state/          # Zustand store (character, session, UI), actions, debounced-save orchestration
-  storage/        # StorageProvider interface + TauriFsProvider + FileSystemAccessProvider + handle persistence
-  render/         # Data-driven section renderers (one component per layout kind)
-  components/     # Reusable UI primitives (cards, tables, resource trackers, lightbox, portrait, TOC)
-  features/       # Feature areas: character-sheet, session-play, prompts
-  theme/          # Design tokens + theme switching
-  app/            # App shell, routing, bootstrap, auto-load
-docs/             # ARCHITECTURE.md, SCHEMA.md, ROADMAP.md, PROMPTS.md
-src-tauri/        # Tauri config + thin Rust (fs/dialog plugins)
+  model/          # Pure domain logic: derived stats, rules validation, resource math, units, multiclass
+  state/          # Store factory, pure character mutations, persistence/version coordinators
+  storage/        # StorageProvider, recents/version core, browser/Tauri/Android adapters
+  app/            # Focused shell hooks: opening, recents, incoming share, overlay navigation
+  render/         # Data-driven sheet sections and edit primitives
+  ui/             # Application chrome, overlays, JSON editor and dice UI
+  help/ prompts/  # Typed Help content and external-chatbot prompt composition
+  share/ update/  # Host-facing share and update orchestration
+  i18n/ theme/    # Locale catalogs, design tokens and persisted themes
+  styles/         # Feature CSS imported in explicit cascade order
+docs/             # Engineering guide, architecture/schema specs, ADRs and delivery docs
+src-tauri/        # Tauri config, Rust shell and local Android plugins
 characters/       # Sample characters for dev/tests (one per class archetype); gitignored real PGs
 ```
+
+The permitted dependency direction and extraction rules are normative in
+[ENGINEERING.md](ENGINEERING.md#dependency-direction-and-ownership).
 
 ## 4. Data flow
 
 ```
-load file ─▶ migrate(schemaVersion) ─▶ validate (Zod) ─▶ store.character
+load file ─▶ source document ─▶ supported migration ─▶ draft document
                                                             │
-                                          render: sections derived from data + layout
-                                                            │
-                       session edits (HP, resources, qty, currencies) ─▶ store action
-                                                            │
-                                   debounced save (≈250ms) ─▶ StorageProvider.write()  (only if liveSync)
+                                     validate without replacing the draft
+                                      ┌──────────────┴──────────────┐
+                                      │                             │
+                         render projection                 validation result
+                       (defaults/best effort)       (valid / invalid / future)
+                                      │                             │
+                          UI reads only              valid draft is wrapped as
+                                                     PersistableCharacterDocument
+                                                                    │
+                                            debounced save ─▶ StorageProvider.write()
 ```
 
-- **Validation is non-blocking by default**: an invalid character still loads (so a half-built or hand-edited JSON is never locked out), but surfaces a non-destructive "issues" panel. The explicit "validate" flow (and the validate prompt) can offer fixes.
-- **Migration layer** upgrades older `schemaVersion` to current on load, in memory, and only persists on a real save.
+- **The draft is the user's document.** Validation observes it without replacing it with Zod's
+  parsed/default-filled output. Inline edits, live play changes and accepted raw-JSON edits patch
+  this lossless draft.
+- **The projection is UI-only.** An invalid character still renders best-effort and surfaces a
+  non-destructive issues panel, but no projection or synthetic fallback can be persisted, exported
+  as canonical, or snapshotted.
+- **Persistence is fail-closed.** Only a schema-valid draft on a supported version can produce the
+  explicit persistable value accepted by the persistence coordinator. Rule inconsistencies remain
+  warnings and do not block saving.
+- **Syntax and schema errors are distinct.** Invalid JSON text remains only in the raw editor
+  buffer. Parsed but schema-invalid JSON becomes the draft, keeps all data, and suspends canonical
+  auto-save until corrected.
+- **Migration is in-memory and version-aware.** Older supported documents migrate into the draft
+  and persist only on a real save. Future-schema documents are never migrated or automatically
+  rewritten; they open read-only for best-effort viewing and lossless export.
+
+The normative state model, ownership rules, write-flow census and recovery policy are recorded in
+[ADR 0001](decisions/0001-lossless-character-document.md). This invariant applies above every web,
+desktop and Android storage adapter.
+
+### Application and state boundaries
+
+`src/state/store.ts` exports an instantiable character-store factory. It owns the state transition
+surface, but receives clock, RNG, scheduling, toast, dice presentation, settings and export as
+explicit ports. `src/characterStore.ts` is the application composition root that binds those ports
+to the browser/native UI stores and exports the production singleton. Consequently, `state/` and
+`model/` do not import from `ui/`, and tests can construct isolated stores with deterministic
+dependencies.
+
+Pure play-state transformations live in `state/characterMutations.ts`. The persistence coordinator
+owns debounce, write serialization, cancellation and flush; the version coordinator owns snapshot
+creation and safe whole-character replacement. Both receive controlled state/provider functions,
+so their ordering and failure paths are testable without rendering the application shell.
+
+`App.tsx` only composes the sheet and overlays. Host-specific opening, recents, incoming Android
+shares and overlay/back navigation live in focused hooks under `app/`; `AppToolbar` owns toolbar
+capacity and overflow behavior. These extracted modules have direct hook/component tests in
+addition to full-App and Playwright coverage.
+
+### Side-effect boundaries
+
+File and folder access, IndexedDB, native commands, timers, RNG, downloads and UI notifications
+remain at composition or adapter edges. Core state transitions receive these capabilities through
+ports; render components dispatch use cases rather than calling storage. Host detection belongs to
+opening/share/update composition, while the domain and persistence coordinators remain host-neutral.
 
 ## 5. Persistence per target (the `StorageProvider` abstraction)
 
-| Capability | Web (browser) | Desktop & Mobile (Tauri 2) |
-|---|---|---|
-| Pick character folder/file | File System Access API picker | Tauri `dialog` + `fs` |
-| Live read/write sync | `FileSystemFileHandle.createWritable()` | Tauri `fs` write |
-| Remember last opened | IndexedDB handle | Tauri store / recent-list file |
-| Images | scan dir handle | Tauri `fs` readdir |
-| No-write fallback | import JSON → edit → **export** (with "you'll lose changes" guard on unload) | n/a (always writable) |
+| Capability | Web | Desktop Tauri | Android Tauri |
+|---|---|---|---|
+| Pick folder/file | File System Access or file inputs | native dialog + filesystem path | SAF document/tree URI |
+| Live write | Chromium writable handle | Tauri filesystem plugin | URI write while grant/provider permits |
+| Recents | IndexedDB handle or read-only snapshot | path stored in IndexedDB | SAF URI stored in IndexedDB |
+| Images | folder scan/object URLs | filesystem scan/asset URLs | SAF tree scan/asset URLs |
+| Degraded recovery | read-only import + export | failed write → read-only + export | refused/failed write → read-only + export |
 
-Both implement the same interface; the rest of the app never knows which host it's on. This generalizes the prototype's Electron-vs-browser split (its loader checked `window.electronAPI` to pick a path).
+All implement the same `StorageProvider` boundary; code above opening/composition does not select a
+host-specific write policy.
+
+Persistence guarantees deliberately follow host capabilities:
+
+- Desktop folder writes use a same-directory temporary file followed by rename for canonical JSON
+  and history files. The capability grants include only the required write/rename/remove commands.
+- Browser File System Access writes commit through `FileSystemWritableFileStream.close()`; the
+  browser owns its safe-write implementation and does not expose rename primitives to the app.
+- Android SAF writes truncate the selected document URI in place. SAF exposes neither a portable
+  sibling-temp rename nor a replace primitive, so a provider/write failure is surfaced and the
+  store switches to read-only/export recovery.
+- Single-file desktop picks and Save As targets are written directly because a picker grant covers
+  the selected file, not an arbitrary temporary sibling. Folder workspaces are the stronger atomic
+  path.
+
+Recent references are a discriminated union (`web`, `tauri`, `android`, `snapshot`) with required
+platform fields. Values read from IndexedDB are validated individually; a corrupt entry is dropped
+without hiding valid siblings. Storage failures cross the application boundary as typed errors with
+stable codes (`not-found`, `permission-denied`, `io-failed` and workflow-specific variants) plus the
+original host error as `cause`.
 
 **Android prompt sharing (outbound implemented; transport matrix verified):** the Prompts page exposes
 Share only on Android and always opens the generic system chooser—there are no chatbot package
@@ -112,7 +188,7 @@ version-history snapshot. A dedicated SAF picker also accepts another existing f
 empty one; non-empty folders without `character.json` are rejected and empty-folder creation is
 deferred until final confirmation.
 
-**Character versions (in progress):** `character.json` remains the only canonical file. A
+**Character versions (shipped):** `character.json` remains the only canonical file. A
 writable folder provider may expose the optional `StorageProvider.versions` capability; single
 files, browser snapshots and read-only imports do not. Snapshots are complete JSON copies under
 `history/`, named `character-YYYYMMDD-HHmmss-SSS-<reason>.json`, where reason is `checkpoint`,
@@ -125,7 +201,11 @@ source is open, but effective availability always comes from the current provide
 preference defaults to enabled for new installations, so an old folder becomes version-capable as
 soon as it is opened; no `history/` directory is created until the first real snapshot. An explicit
 user choice already persisted remains authoritative.
-The store serializes canonical writes behind `flushPendingSave()`: a manual checkpoint first drains
+All providers bind small history-directory primitives to one shared version-store core, so
+allocation, ordering, filename validation, title handling and deletion semantics cannot drift by
+host. Snapshot JSON is authoritative and title metadata is optional: a sidecar read/write/delete
+failure never misreports successful snapshot content as failed. A common contract suite runs
+against the Web, Tauri and Android adapters. The store serializes canonical writes behind `flushPendingSave()`: a manual checkpoint first drains
 the debounce and snapshots the exact persisted state. Full replacements use one coordinator that
 validates input, flushes pending play edits, creates the required safety snapshot, writes
 `character.json`, then reloads through `loadCharacter` while retaining the provider and runtime
@@ -165,22 +245,28 @@ truth for where a die may rest rather than relying on visual occlusion alone.
 
 ## 6. Testing strategy
 
-- **Schema & model: exhaustive unit tests.** Validation, migrations, derived-stat math, resource reset (short/long rest), multiclass spell-slot tables, rules consistency checks. This is the part where bugs cost the most, so it gets the most coverage.
+The layer-by-layer testing rules and Definition of Done are canonical in
+[ENGINEERING.md](ENGINEERING.md#testing-strategy). The implemented gate is:
+
+- **Schema & model: exhaustive unit tests.** Validation, migrations, derived-stat math, resource reset (short/long rest), multiclass spell-slot tables, rules consistency checks. Vitest V8 coverage is a blocking gate: the repository has an explicit global baseline and higher non-regression thresholds for `schema/`, `model/`, the character store and persistence adapters.
 - **Renderers: component tests.** Each layout kind renders correct DOM from data, preserves `link`s, escapes HTML.
-- **Flows: Playwright e2e.** Open character → edit session → save/export → reload; theme switch; mobile viewport.
+- **Critical flows: Playwright E2E in Chromium.** A deterministic in-browser File System Access fixture covers open, HP/resource edit, live save and reload in desktop and mobile viewports. Desktop scenarios also cover schema-invalid raw JSON followed by correction, write failure with read-only recovery/export, and folder-version create/restore. Native SAF/dialog behavior remains covered by adapter tests and real-device release checks rather than pretending a browser can reproduce it.
+- **Deterministic harness.** Non-dice component tests receive a minimal `DiceScene` mock instead of attempting WebGL in jsdom; shared setup resets Zustand stores, debounce tests use fake timers, and store-factory tests inject clock, scheduler, RNG and UI-facing ports. Extracted application hooks and coordinators are tested without rendering the full `App` tree.
 - **Fixtures:** a `characters/` set covering distinct mechanics (Warlock pact slots, Fighter no-caster, Cleric prepared, Sorcerer points, multiclass) doubles as test data and as living examples.
+- **Startup budget:** the production entry is capped at 500 KiB minified and 150 KiB gzip by `scripts/check-bundle-budget.mjs`, which runs as part of every build. Secondary pages, CodeMirror and Three.js/DiceScene are separate chunks; DiceScene is requested only on the first roll. Help screenshots are emitted assets but become reachable only with the lazy Help chunk. The 35 KiB of source example JSON remains in the welcome path because the sample picker is primary empty-state functionality; its image URLs do not fetch image bytes until a sample is opened.
 
 ## 7. CI/CD & "ticket → PR" automation
 
-- **PR checks** (`.github/workflows/ci.yml`): typecheck + lint + unit/component + Playwright + web build, on every PR. A second, narrow check (`tauri-check.yml`) runs `cargo check` (no bundling) only on PRs that touch `src-tauri/**`, so a broken Rust change is caught before merge without paying for a full cross-platform build on every PR.
+- **PR checks** (`.github/workflows/ci.yml`): version alignment + zero-warning lint + typecheck + thresholded Vitest coverage + web build and initial-bundle budget, followed by Playwright's desktop/mobile Chromium projects, on every PR and pushes to `main`/`develop`. Failed browser runs upload the Playwright report. A second, narrow check (`tauri-check.yml`) runs `cargo check` (no bundling) only on PRs that touch `src-tauri/**`, so a broken Rust change is caught before merge without paying for a full cross-platform build on every PR.
 - **Release, tag-triggered (`release.yml`, shipped):** merging PRs to `main` does **not** ship anything by itself. Pushing a version tag (`v*`) is the one trigger for both deploy targets: [`pages.yml`](../.github/workflows/pages.yml) redeploys the web app, and `release.yml` builds the Mac/Win/Linux Tauri bundles in parallel (via `tauri-apps/tauri-action`, ad-hoc signed on macOS and with signed updater artifacts + `latest.json`) plus a separate `release-android` job (Java 17, Android SDK, pinned NDK, the four `*-android` Rust targets, `tauri android init --ci` then a **release-signed** `tauri android build --apk`, verified with `apksigner`) and attaches everything — installers and the release-signed APK — to a **draft** GitHub Release on that tag — reviewed and published by hand, so a flaky build never goes public automatically. Desktop apps self-update through Tauri's updater. Android reads release metadata through the GitHub API, then a local Kotlin/Tauri plugin streams the APK into private cache, follows HTTPS redirects internally, verifies GitHub's size and optional SHA-256 digest, and opens Android Package Installer through a scoped `FileProvider`. It never hands the download to a browser or Android `DownloadManager`, avoiding their redirect/completion stall and eliminating CDN hosts from frontend capabilities. See [AUTOMATION.md](AUTOMATION.md) for signing secrets.
 - **Ticket → PR**: no GitHub-Actions-runner `claude.yml` — by design, so nothing bills the Anthropic API per token. Instead, Claude Code on the web (claude.ai/code, runs on Anthropic's cloud via the GitHub App) or a local Claude Code session implements on a branch and opens a PR via `gh`, which `ci.yml` then validates. Full detail in `docs/AUTOMATION.md`.
 - **Distribution is free.** Releases host the binaries; the only optional cost is code-signing/notarization to remove "unidentified developer" warnings (Apple Dev $99/yr, Windows cert) — deferred. Android APK self-signs and sideloads for free; iOS without a paid account is covered by the installable PWA.
 
-## 8. Open decisions (revisit during build)
-- Exact schema shape — see `SCHEMA.md`, reviewed iteratively.
-- Tailwind vs hand-rolled CSS modules for the bespoke look (leaning Tailwind + tokens).
-- Whether desktop also keeps an Electron fallback during the Tauri transition (default: no, go straight to Tauri).
+## 8. Resolved implementation choices
+
+- The current schema contract is defined by `src/schema/character.ts` and documented in `SCHEMA.md`; changes require migration and parity coverage.
+- Styling uses the project CSS token/theme system plus feature styles under `src/styles/`, not Tailwind.
+- Tauri 2 is the only native wrapper. The retired Electron prototype remains available only through the `prototype-v1` tag.
 
 ## 9. Security: Content-Security-Policy
 The app renders untrusted `character.json` (downloaded, shared, AI-generated), so it ships a CSP as defence-in-depth on top of React's escaping and the `safeHref` link allowlist. There are **two CSPs kept in sync**:

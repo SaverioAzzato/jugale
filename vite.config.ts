@@ -4,8 +4,8 @@ import react from "@vitejs/plugin-react";
 import pkg from "./package.json";
 
 // The user-facing app version is `package.json`'s version — the single source of
-// truth, kept in lockstep with the release tag by hand (see docs/AUTOMATION.md,
-// "Cutting a release"). Baked into the bundle at build time and shown in the footer.
+// truth, kept in lockstep with the release tag by scripts/set-version.sh (see
+// docs/AUTOMATION.md, "Cutting a release"). Baked into the bundle at build time and shown in the footer.
 const APP_VERSION = `v${pkg.version}`;
 
 // Content-Security-Policy for the *web* build. Kept in sync with the Tauri webview CSP
@@ -53,5 +53,27 @@ export default defineConfig({
     globals: true,
     setupFiles: ["src/test/setup.ts"],
     include: ["src/**/*.test.{js,ts,tsx}"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "html"],
+      reportsDirectory: "coverage",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/test/**", "src/vite-env.d.ts"],
+      thresholds: {
+        statements: 74,
+        branches: 78,
+        functions: 61,
+        lines: 74,
+        "src/schema/**": { statements: 95, branches: 60, functions: 100, lines: 95 },
+        "src/model/**": { statements: 90, branches: 90, functions: 85, lines: 90 },
+        "src/state/store.ts": { statements: 80, branches: 75, functions: 80, lines: 80 },
+        "src/storage/{provider,tauriProvider,androidProvider,versions}.ts": {
+          statements: 75,
+          branches: 70,
+          functions: 75,
+          lines: 75,
+        },
+      },
+    },
   },
 });

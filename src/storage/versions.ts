@@ -18,6 +18,14 @@ export interface VersionStore {
   delete(version: CharacterVersion): Promise<void>;
 }
 
+/** Host primitives for the history directory; policy stays shared in this module. */
+export interface VersionStorage {
+  listNames(): Promise<string[]>;
+  readText(filename: string): Promise<string>;
+  writeText(filename: string, contents: string): Promise<void>;
+  remove(filename: string): Promise<void>;
+}
+
 const VERSION_FILENAME_RE =
   /^character-(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})-(\d{3})-(checkpoint|before-import|before-restore)\.json$/;
 
@@ -59,7 +67,9 @@ export function parseVersionFilename(filename: string): CharacterVersion | null 
 }
 
 export function requireVersionFilename(filename: string): void {
-  if (!parseVersionFilename(filename)) throw new Error(`Invalid character version filename: ${filename}`);
+  if (!parseVersionFilename(filename)) {
+    throw storageError("invalid-version-filename", undefined, `Invalid character version filename: ${filename}`);
+  }
 }
 
 /** Sidecar metadata keeps history labels out of both the canonical character and its snapshots. */
@@ -100,3 +110,56 @@ export function allocateVersion(
 export function sortVersionsNewestFirst(versions: CharacterVersion[]): CharacterVersion[] {
   return [...versions].sort((a, b) => b.filename.localeCompare(a.filename));
 }
+
+/**
+ * Shared versioning policy for every host. Snapshot content is authoritative; optional title
+ * sidecars are best-effort and can never turn a successful snapshot into a failed checkpoint.
+ */
+export function createVersionStore(storage: VersionStorage): VersionStore {
+  return {
+    create: async (data, reason, title, now = new Date()) => {
+      const version = allocateVersion(now, reason, new Set(await storage.listNames()));
+      await storage.writeText(version.filename, JSON.stringify(data, null, 2));
+      const normalizedTitle = normalizeVersionTitle(title);
+      if (normalizedTitle) {
+        try {
+          await storage.writeText(
+            versionMetadataFilename(version.filename),
+            JSON.stringify({ title: normalizedTitle }, null, 2),
+          );
+        } catch {
+          return version;
+        }
+      }
+      return { ...version, title: normalizedTitle };
+    },
+    list: async () => {
+      const names = await storage.listNames();
+      const versions = names.map(parseVersionFilename).filter((version) => version !== null);
+      const titled = await Promise.all(versions.map(async (version) => {
+        const metadata = versionMetadataFilename(version.filename);
+        if (!names.includes(metadata)) return version;
+        try {
+          return { ...version, title: readVersionTitle(JSON.parse(await storage.readText(metadata))) };
+        } catch {
+          return version;
+        }
+      }));
+      return sortVersionsNewestFirst(titled);
+    },
+    read: async (version) => {
+      requireVersionFilename(version.filename);
+      return JSON.parse(await storage.readText(version.filename));
+    },
+    delete: async (version) => {
+      requireVersionFilename(version.filename);
+      await storage.remove(version.filename);
+      try {
+        await storage.remove(versionMetadataFilename(version.filename));
+      } catch {
+        // Missing or failed optional metadata does not change snapshot deletion success.
+      }
+    },
+  };
+}
+import { storageError } from "./errors";

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type TouchEvent, type WheelEvent } from "react";
 import { Panel } from "./primitives";
 import { useT } from "../i18n/useI18n";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import type { Character } from "../schema";
 import { useUiBackHandler } from "../ui/uiBack";
 import { useSettings } from "../ui/useSettings";

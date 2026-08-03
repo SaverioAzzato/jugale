@@ -1,20 +1,26 @@
 # Character Schema — `character.json` v2.2.0
 
-> Status: **Draft for review** · The contract between the JSON (source of truth), the UI (data-driven renderer), and external GPTs.
+> Status: **Implemented** · Last reviewed: 2026-08-03 · The contract between the JSON (source of truth), the UI (data-driven renderer), and external GPTs.
 > Design goals, in order: **(1) structured enough** to validate rules and generate UI, **(2) free enough** for any class/homebrew, **(3) simple enough** for an LLM to read and edit by hand.
 
 The canonical, machine-readable schema is the Zod definition in `src/schema/` (it also emits a JSON Schema, published for GPTs). This document is the human-facing explanation and rationale.
+Engineering rules for typing, persistence and testing are in [ENGINEERING.md](ENGINEERING.md).
 
 ## 0. Core principles
 
 - **Truth is minimal.** Store inputs, not outputs. Ability modifiers, proficiency bonus, spell save DC, total level, etc. are **derived** by the app and need not appear in the JSON. They are *accepted* if present (handy for GPTs) but the app recomputes and flags mismatches.
+- **Persistence is lossless and fail-closed.** The parsed source, editable draft, validation result
+  and render projection are distinct representations. Validation/defaults never replace the draft,
+  and a render fallback is never a persistable document. Only a schema-valid draft using a
+  supported version may overwrite the canonical `character.json`; see
+  [ADR 0001](decisions/0001-lossless-character-document.md).
 - **Structural vs. live state.** Almost everything is **structural** (changes only on an explicit level-up/edit). A short, enumerated set of fields is **live** (the UI updates them continuously during play):
 
   | Live field | Meaning |
   |---|---|
-  | `combat.hp.current`, `combat.hp.temp` | current / temporary hit points |
+  | `combat.hp.current`, `combat.hp.temp`, `combat.hp.hitDiceRemaining` | current / temporary hit points and remaining Hit Dice |
   | `resources[].current` | remaining uses of any tracked resource |
-  | `inventory.items[].quantity` | item counts you spend |
+  | `inventory.items[].quantity`, `inventory.items[].equipped` | item counts and equipped state |
   | `inventory.currencies.*` | coins |
   | `session.*` | conditions, death saves, inspiration, session notes |
 
@@ -41,12 +47,16 @@ The canonical, machine-readable schema is the Zod definition in `src/schema/` (i
   "inventory":    { ... },   // items, currencies, attunement, notes
   "origin":       { ... },   // race traits, background feature
   "narrative":    { ... },   // personality, appearance, backstory
+  "actions":      [ ... ],   // formula-driven rests and custom buttons
   "customSections":[ ... ],  // user-defined sections rendered by a layout hint
   "session":      { ... }    // purely ephemeral play-state
 }
 ```
 
-Only `schemaVersion` and `meta.name` are strictly required; every section has a sensible empty default, so a half-built character still loads and validates as "incomplete" rather than "invalid".
+Only `meta.name` must be supplied to the current Zod contract; `schemaVersion` and every other
+section have defaults, so a half-built character still loads and validates as incomplete rather
+than invalid. Persisted current documents should always include the explicit `schemaVersion` shown
+above so external tools can select the right contract and migration path.
 
 ## 2. Sections
 
@@ -250,6 +260,10 @@ Anything the schema didn't anticipate, rendered by a layout hint.
 ]
 ```
 `layout`: `text | list | checklist | keyValue | cards | table`. The renderer has one component per layout kind — so custom sections need **zero** code to appear.
+The TypeScript model is a union discriminated by this `layout`, so layout-specific rendering must
+narrow explicitly. `items[]` remains `unknown[]` intentionally: it is the documented freeform
+escape hatch and existing user-defined row shapes must remain lossless. Renderers validate each
+item at use time; unknown keys at both section and row level are preserved.
 
 ### `actions[]` — rests & custom buttons (formula-driven)
 ```jsonc
@@ -276,14 +290,39 @@ The UI shows each action's formulae in a consultable "Formulas" info panel next 
 
 ## 3. Validation tiers
 
-The app validates on load but **never refuses to render**:
-1. **Schema (shape)** — types/enums via Zod. Failures → "issues" panel, app still loads with defaults.
+The app validates on load but **never refuses to render a parsed JSON object**. Validation produces
+issues and a persistence decision; it does not replace the lossless draft with its parsed output:
+
+1. **Schema (shape)** — types/enums via Zod. Failures → "issues" panel and a best-effort render
+   projection with local defaults. The original fields, invalid values and unknown keys remain in
+   the draft; canonical auto-save is suspended.
 2. **Rules (5e consistency)** — e.g. proficiency bonus vs level, ability scores in range, spell levels vs available slots, multiclass prerequisites. These are *warnings*, surfaced by the in-app validator and the "validate" prompt, which can propose fixes on confirmation.
 3. **Derived recompute** — modifiers/DC/bonuses recomputed; stored values that disagree are flagged, not trusted.
+
+The raw editor keeps syntactically invalid text only in its local buffer and leaves the last parsed
+draft unchanged. Parsed schema-invalid edits do update the draft, so they can be corrected without
+data loss, but they cannot enter the canonical save queue. When the draft becomes valid, the next
+save serializes that draft, not the projection; unknown top-level and nested keys survive the
+round-trip. “Lossless” refers to JSON values and keys, not whitespace, comments or duplicate keys
+discarded by JSON parsing.
+
+An explicit recovery export may copy an invalid or future draft to a new user-chosen destination,
+with its status made clear. It never silently replaces the bound canonical file.
 
 ## 4. Migration
 
 `src/schema/migrate.ts` upgrades older files in memory on load (persisted only on a real save). It is version-aware: a v1 file walks the chain `1.0.0 → 2.0.0 → 2.1.0 → 2.2.0`; a newer file takes only the remaining minor steps. `needsMigration` compares the full version (not only the major), so a `2.0.0`/`2.1.0` file is correctly flagged as behind.
+
+Version comparison happens before migration. A document declaring a version newer than `2.2.0`
+is a **future-schema document**: it is not migrated, normalized or written back automatically,
+even when its known fields happen to satisfy today's Zod schema. The app may derive a best-effort
+read-only projection and export the untouched JSON for recovery or transfer to a newer app.
+
+For an older supported document, migration creates the draft while the pre-migration source remains
+available until a real write succeeds. Every migration step must preserve unconsumed keys, and the
+final draft must validate before it is persistable. The offline migration script may create a
+backup for recovery, but it must not overwrite the input or report success when the migrated draft
+is invalid.
 
 ### `2.1.0 → 2.2.0` (AC)
 - The flat `combat.armorClass` fallback is removed. AC now comes from `combat.armorClassOverride` (manual, wins), else the sum of equipped items' `ac`, else `10 + Dex modifier`.
@@ -304,7 +343,7 @@ The app validates on load but **never refuses to render**:
 - Unknown fields preserved under the nearest section or `customSections`.
 
 ## 5. Worked example
-The canonical v2 template is `characters/example-warlock/character.json` (it supersedes the prototype's `pg.example/` template). Additional fixtures — a non-caster (Fighter), a prepared caster (Cleric), a points caster (Sorcerer), and a multiclass — land in **M1**, each exercising a different mechanic and doubling as a test fixture.
+The canonical v2 template is `characters/example-warlock/character.json` (it supersedes the prototype's `pg.example/` template). Shipped fixtures include a non-caster (Fighter), a prepared caster (Cleric), a points caster (Sorcerer), and a multiclass; each exercises a different mechanic and doubles as a test fixture.
 
 ## 6. Changing the schema
 
@@ -315,11 +354,16 @@ The Zod schema in `src/schema/character.ts` is the source of truth, but a field 
 - **`src/schema/validate.ts`** — add an `IssueCode` + rule check if the field has a 5e consistency rule worth flagging.
 - **`src/schema/migrate.ts`** (+ `migrate.test.ts`) — map the field from v1 and from any older v2 shape; keep it lossless. Add an assertion.
 - **`src/model/factories.ts`** (+ `factories.test.ts`) — if it's (or lives in) an add-able list entry, the blank-entry factory must include it so a freshly-added row validates clean.
-- **UI** — the read view and the Edit-mode editor in the relevant `src/render/*Section.tsx`; wire a brand-new section into `src/render/tabs.tsx` (and `getVisibleTabs`/`TabContent` if it can be empty).
-- **`src/i18n/useI18n.ts`** — EN **and** IT keys for every new label/placeholder (UI chrome is never hardcoded).
+- **UI** — the read view and the Edit-mode editor in the relevant `src/render/*Section.tsx`; wire a brand-new section into `src/render/tabs.tsx`, `src/render/tabVisibility.ts`, and `TabContent` when relevant.
+- **`src/i18n/en.ts` and `src/i18n/it.ts`** — matching keys for every new label/placeholder (UI chrome is never hardcoded).
 - **Example characters** — `characters/example-*/character.json`; showcase a non-trivial field in `example-warlock` (the canonical template). `characters.test.ts` loads them all and asserts zero issues.
 - **Docs** — this file (§1 top-level list, §2 the section, §4 migration note), `docs/UI.md` (tab/section), and the README "Where each 5e concept lives" table.
-- **Prompts** — the data-contract bullets in `src/prompts/prompts.ts` **and** their mirror in `docs/PROMPTS.md`, plus `src/ui/HelpPage.tsx` (EN+IT) and the `.github/agents/*.agent.md` seed prompts.
-- **Verify** — `npm run typecheck && npm test && npm run build`, then exercise the field in the live preview in both Play and Edit modes.
+- **Prompts and Help** — the data-contract bullets in `src/prompts/prompts.ts` and their mirror in
+  `docs/PROMPTS.md`, typed EN/IT Help catalogs under `src/help/content/`, and the
+  `.github/agents/*.agent.md` end-user seed prompts.
+- **Raw editor** — update `src/ui/schemaModel.ts`; its recursive parity test must continue matching
+  JSON Schema keys, enums and completion defaults.
+- **Verify** — run `npm run check` and the relevant E2E/native checks from
+  [ENGINEERING.md](ENGINEERING.md#definition-of-done), then exercise the field in both Play and Edit modes.
 
 Keep shipped content SRD 5.1-only unless another freely licensed rules version is deliberately added with its own attribution: never bake a commercial sourcebook's content into schema defaults, examples, prompts, or docs (generic 5e mechanics terminology is fine; proprietary creative content is not).

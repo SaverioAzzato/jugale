@@ -5,9 +5,11 @@ import type { TFn } from "../i18n/useI18n";
 import { EmptyState } from "./EmptyState";
 
 const recent = (key: string): RecentEntry => ({
-  platform: "web",
+  platform: "snapshot",
   kind: "folder",
   name: `Character ${key}`,
+  raw: { meta: { name: key } },
+  images: [],
   key,
   lastOpenedAt: 1,
 });

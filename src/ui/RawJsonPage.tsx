@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT } from "../i18n/useI18n";
 import type { JsonEditorHandle, PanelDiagnostic } from "./jsonEditor";
 import { useUiBackHandler } from "./uiBack";
@@ -18,6 +18,7 @@ export function RawJsonPage() {
   const handleRef = useRef<JsonEditorHandle | null>(null);
   const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestText = useRef<string>("");
+  const committedText = useRef<string>("");
 
   const [diagnostics, setDiagnostics] = useState<PanelDiagnostic[]>([]);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -55,8 +56,10 @@ export function RawJsonPage() {
   // Commit valid JSON to the store (debounced). Invalid JSON is left uncommitted — the squiggles
   // and the Problems panel already show why — so the sheet keeps the last good state.
   const commit = (text: string) => {
+    if (text === committedText.current) return;
     try {
       setRawJson(JSON.parse(text));
+      committedText.current = text;
     } catch {
       /* syntax error: reported inline; don't touch the store */
     }
@@ -64,8 +67,9 @@ export function RawJsonPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const initial = JSON.stringify(useCharacter.getState().character ?? {}, null, 2);
+    const initial = JSON.stringify(useCharacter.getState().draft ?? {}, null, 2);
     latestText.current = initial;
+    committedText.current = initial;
 
     void import("./jsonEditor").then(({ createJsonEditor }) => {
       if (cancelled || !hostRef.current) return;

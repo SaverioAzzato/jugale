@@ -43,6 +43,11 @@ export function needsMigration(data: Json): boolean {
   return ltTriple(versionTriple(data), CURRENT_TRIPLE);
 }
 
+/** Future documents are never fed through an older migration chain or written back implicitly. */
+export function hasFutureSchema(data: Json): boolean {
+  return ltTriple(CURRENT_TRIPLE, versionTriple(data));
+}
+
 export function migrateToCurrent(data: Json): Json {
   if (data == null || typeof data !== "object") return data;
   let out = data;

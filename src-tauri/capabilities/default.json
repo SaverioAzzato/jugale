@@ -12,6 +12,8 @@
     "fs:default",
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
+    "fs:allow-rename",
+    "fs:allow-remove",
     "fs:allow-read-dir",
     "fs:allow-exists",
     {

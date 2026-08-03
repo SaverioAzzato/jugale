@@ -1,7 +1,7 @@
 import type { Character } from "../schema";
 import { Panel, WikiLink } from "./primitives";
 import { Stepper } from "./controls";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT } from "../i18n/useI18n";
 
 /** Item categories worth keeping in reach during combat. */

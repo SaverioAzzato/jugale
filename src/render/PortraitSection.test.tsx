@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { loadCharacter } from "../schema";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { PortraitSection } from "./PortraitSection";
 import { handleTransientBack } from "../ui/uiBack";
 import { useSettings } from "../ui/useSettings";

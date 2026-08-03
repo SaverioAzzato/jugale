@@ -2,7 +2,7 @@ import type { Character } from "../schema";
 import { Panel, WikiLink } from "./primitives";
 import { Field, TextInput, Select, OptionalNumber, NumberInput, Toggle, EntryList, EntryRow } from "./editControls";
 import { newFeature } from "../model/factories";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT, type StringKey } from "../i18n/useI18n";
 
 const SOURCES = ["class", "subclass", "race", "background", "feat", "item", "custom"] as const;

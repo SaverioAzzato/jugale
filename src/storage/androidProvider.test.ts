@@ -3,13 +3,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock the native SAF plugin: an in-memory folder with character.json + two images.
 // Everything the vi.mock factory needs is created via vi.hoisted (the factory is hoisted
 // above normal top-level consts, so it can't close over them).
-const { persist, checkPerm, writeText, createDir, createNewFile, removeFile, savepicker, TREE, JSON_URI, SAVE_URI, HISTORY_URI, VERSION_URI, META_URI } = vi.hoisted(() => {
+const { persist, checkPerm, writeText, createDir, createNewFile, removeFile, savepicker, historyFiles, uriContents, TREE, JSON_URI, SAVE_URI, HISTORY_URI, VERSION_URI, META_URI } = vi.hoisted(() => {
   const TREE = { uri: "content://tree/PG", documentTopTreeUri: "content://tree/PG" };
   const JSON_URI = { uri: "content://doc/character.json", documentTopTreeUri: TREE.uri };
   const SAVE_URI = { uri: "content://doc/export.json", documentTopTreeUri: TREE.uri };
   const HISTORY_URI = { uri: "content://doc/history", documentTopTreeUri: TREE.uri };
   const VERSION_URI = { uri: "content://doc/version", documentTopTreeUri: TREE.uri };
   const META_URI = { uri: "content://doc/version-meta", documentTopTreeUri: TREE.uri };
+  const historyFiles = new Map<string, typeof VERSION_URI>();
+  const uriContents = new Map<string, string>();
   return {
     TREE,
     JSON_URI,
@@ -19,10 +21,19 @@ const { persist, checkPerm, writeText, createDir, createNewFile, removeFile, sav
     META_URI,
     persist: vi.fn(async () => {}),
     checkPerm: vi.fn(async () => true),
-    writeText: vi.fn(async () => {}),
+    writeText: vi.fn(async (uri: { uri: string }, contents: string) => { uriContents.set(uri.uri, contents); }),
     createDir: vi.fn(async () => HISTORY_URI),
-    createNewFile: vi.fn(async (_parent, name: string) => name.endsWith(".meta.json") ? META_URI : VERSION_URI),
-    removeFile: vi.fn(async () => {}),
+    createNewFile: vi.fn(async (_parent, name: string) => {
+      const uri = name.endsWith(".meta.json") ? META_URI : VERSION_URI;
+      historyFiles.set(name, uri);
+      return uri;
+    }),
+    removeFile: vi.fn(async (uri: { uri: string }) => {
+      for (const [name, candidate] of historyFiles) if (candidate.uri === uri.uri) historyFiles.delete(name);
+      uriContents.delete(uri.uri);
+    }),
+    historyFiles,
+    uriContents,
     // typed nullable so a test can simulate the user cancelling the saver (null)
     savepicker: vi.fn(async (): Promise<typeof SAVE_URI | null> => SAVE_URI),
   };
@@ -49,8 +60,8 @@ vi.mock("tauri-plugin-android-fs-api", () => {
         // For character.json return a *plain number[]* (not a Uint8Array) on purpose: that mirrors
         // the Android WebView IPC payload that crashed TextDecoder in readTextFile. The provider
         // must still decode it. Other URIs are images → raw bytes.
-        if (uri.uri === META_URI.uri)
-          return Array.from(new TextEncoder().encode(JSON.stringify({ title: "Before dragon" })));
+        if (uriContents.has(uri.uri))
+          return Array.from(new TextEncoder().encode(uriContents.get(uri.uri)!));
         if (uri.uri === JSON_URI.uri || uri.uri === VERSION_URI.uri)
           return Array.from(new TextEncoder().encode(JSON.stringify({ meta: { name: "Astrid" } })));
         return new Uint8Array([1, 2, 3]);
@@ -63,19 +74,7 @@ vi.mock("tauri-plugin-android-fs-api", () => {
             { type: "Dir", name: "history", uri: HISTORY_URI },
           ];
         if (uri.uri === HISTORY_URI.uri)
-          return [
-            {
-              type: "File",
-              name: "character-20260727-153012-184-checkpoint.json",
-              uri: VERSION_URI,
-            },
-            {
-              type: "File",
-              name: "character-20260727-153012-184-checkpoint.meta.json",
-              uri: META_URI,
-            },
-            { type: "File", name: "ignore-me.json", uri: SAVE_URI },
-          ];
+          return [...historyFiles].map(([name, fileUri]) => ({ type: "File", name, uri: fileUri }));
         // images/ — returned out of order to prove alphabetical sorting
         return [
           { type: "File", name: "02-b.png", uri: IMG_B },
@@ -95,6 +94,8 @@ import {
   saveJsonAsAndroid,
 } from "./androidProvider";
 import { AndroidFs } from "tauri-plugin-android-fs-api";
+import { loadCharacter } from "../schema";
+import { expectVersionStoreContract } from "../test/versionStoreContract";
 
 beforeEach(() => {
   persist.mockClear();
@@ -104,6 +105,13 @@ beforeEach(() => {
   createNewFile.mockClear();
   removeFile.mockClear();
   savepicker.mockClear();
+  historyFiles.clear();
+  uriContents.clear();
+  historyFiles.set("character-20260727-153012-184-checkpoint.json", VERSION_URI);
+  historyFiles.set("character-20260727-153012-184-checkpoint.meta.json", META_URI);
+  historyFiles.set("ignore-me.json", SAVE_URI);
+  uriContents.set(VERSION_URI.uri, JSON.stringify({ meta: { name: "Astrid" } }));
+  uriContents.set(META_URI.uri, JSON.stringify({ title: "Before dragon" }));
   // jsdom lacks createObjectURL
   globalThis.URL.createObjectURL = vi.fn(() => "blob:mock");
 });
@@ -121,7 +129,9 @@ describe("openCharacterFolderAndroid", () => {
 
   it("writes back in place to the character.json URI (single source of truth)", async () => {
     const res = await openCharacterFolderAndroid();
-    await res!.provider.write({ meta: { name: "Edited" } });
+    const loaded = loadCharacter({ meta: { name: "Edited" } });
+    if (loaded.validation.kind !== "valid") throw new Error("Expected a persistable fixture");
+    await res!.provider.write(loaded.validation.persistable);
     expect(writeText).toHaveBeenCalledWith(JSON_URI, JSON.stringify({ meta: { name: "Edited" } }, null, 2));
   });
 
@@ -140,6 +150,7 @@ describe("openCharacterFolderAndroid", () => {
 
     const listed = await store.list();
     expect(listed.map((version) => version.filename)).toEqual([
+      created.filename,
       "character-20260727-153012-184-checkpoint.json",
     ]);
     expect(await store.read(listed[0])).toEqual({ meta: { name: "Astrid" } });
@@ -147,6 +158,7 @@ describe("openCharacterFolderAndroid", () => {
     await store.delete(listed[0]);
     expect(removeFile).toHaveBeenCalledWith(VERSION_URI);
     expect(removeFile).toHaveBeenCalledWith(META_URI);
+    await expectVersionStoreContract(store, 103);
   });
 });
 
@@ -172,7 +184,9 @@ describe("pickCharacterImportTargetAndroid", () => {
     expect(target?.kind).toBe("empty");
     expect(createNewFile).not.toHaveBeenCalled();
     if (target?.kind !== "empty") throw new Error("Expected empty target");
-    await target.create({ meta: { name: "New" } });
+    const loaded = loadCharacter({ meta: { name: "New" } });
+    if (loaded.validation.kind !== "valid") throw new Error("Expected a persistable fixture");
+    await target.create(loaded.validation.persistable);
     expect(createNewFile).toHaveBeenCalledWith(TREE, "character.json", "application/json");
     expect(writeText).toHaveBeenCalledWith(VERSION_URI, JSON.stringify({ meta: { name: "New" } }, null, 2));
   });

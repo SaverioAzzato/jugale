@@ -13,6 +13,7 @@ import {
   type SchemaNode,
 } from "./schemaModel";
 import { loadCharacter } from "../schema";
+import { characterJsonSchema } from "../schema/jsonSchema";
 
 /** Turn a CodeMirror snippet template into plain JSON text: `${}`→"", `${custom}`→custom, `${10}`→10. */
 const strip = (snippet: string): string => snippet.replace(/\$\{([^}]*)\}/g, "$1");
@@ -125,5 +126,131 @@ describe("schemaModel — helpers", () => {
     expect(objectKeys(fieldNode(CHARACTER_MODEL, "meta")!)).toEqual(["name", "player", "summary", "ruleset", "tags"]);
     expect(hasIdField(nodeAt(["resources", 0]))).toBe(true);
     expect(hasIdField(nodeAt(["abilities", "str"]))).toBe(false);
+  });
+});
+
+type JsonSchema = Record<string, unknown>;
+
+const schemaRoot = characterJsonSchema as JsonSchema;
+
+function resolvePointer(pointer: string): JsonSchema {
+  return pointer.slice(2).split("/").reduce<unknown>((value, segment) => {
+    const key = segment.replace(/~1/g, "/").replace(/~0/g, "~");
+    return (value as JsonSchema)[key];
+  }, schemaRoot) as JsonSchema;
+}
+
+function resolveSchema(schema: JsonSchema): JsonSchema {
+  if (typeof schema.$ref !== "string") return schema;
+  const { $ref: _ref, ...siblings } = schema;
+  return { ...resolveSchema(resolvePointer(schema.$ref)), ...siblings };
+}
+
+function schemaType(schema: JsonSchema): string | undefined {
+  const type = schema.type;
+  return typeof type === "string" ? type : undefined;
+}
+
+function nullableBranch(schema: JsonSchema): JsonSchema | null {
+  const resolved = resolveSchema(schema);
+  if (Array.isArray(resolved.type) && resolved.type.includes("null")) {
+    const type = resolved.type.find((entry) => entry !== "null");
+    const { default: _default, ...withoutDefault } = resolved;
+    return { ...withoutDefault, type };
+  }
+  if (!Array.isArray(resolved.anyOf)) return null;
+  const branches = (resolved.anyOf as JsonSchema[]).map(resolveSchema);
+  const nonNull = branches.filter((branch) => schemaType(branch) !== "null");
+  if (branches.length !== 2 || nonNull.length !== 1) return null;
+  const { default: _default, ...inner } = nonNull[0];
+  return inner;
+}
+
+/** Merge the discriminated custom-section object union into the editor's enum-shaped view. */
+function mergedObjectUnion(schema: JsonSchema): JsonSchema | null {
+  const resolved = resolveSchema(schema);
+  if (!Array.isArray(resolved.anyOf)) return null;
+  const branches = (resolved.anyOf as JsonSchema[]).map(resolveSchema);
+  if (!branches.length || branches.some((branch) => schemaType(branch) !== "object")) return null;
+  const properties: Record<string, JsonSchema> = {};
+  for (const branch of branches) {
+    for (const [key, value] of Object.entries((branch.properties ?? {}) as Record<string, JsonSchema>)) {
+      const property = resolveSchema(value);
+      const existing = properties[key];
+      if (key === "layout" && typeof property.const === "string") {
+        const values = new Set<string>([...((existing?.enum as string[] | undefined) ?? []), property.const]);
+        properties[key] = { ...property, const: undefined, enum: [...values], default: existing?.default ?? property.default };
+      } else if (!existing) {
+        properties[key] = property;
+      }
+    }
+  }
+  return { type: "object", properties };
+}
+
+function expectParity(model: SchemaNode, input: JsonSchema, path = "$"): void {
+  const schema = resolveSchema(input);
+  if (model.type === "nullable") {
+    const inner = nullableBranch(schema);
+    expect(inner, `${path} should be nullable`).not.toBeNull();
+    if ("default" in schema) expect(schema.default, `${path} nullable default`).toBeNull();
+    expectParity(model.inner, inner!, path);
+    return;
+  }
+  if (model.type === "union") {
+    const branches = (schema.anyOf as JsonSchema[] | undefined)?.map(resolveSchema) ?? [];
+    expect(branches, `${path} union branch count`).toHaveLength(model.options.length);
+    model.options.forEach((option) => {
+      const branch = branches.find((candidate) => schemaType(candidate) === option.type);
+      expect(branch, `${path} missing ${option.type} union branch`).toBeDefined();
+      expectParity(option, branch!, path);
+    });
+    return;
+  }
+  if (model.type === "object") {
+    const objectSchema = schemaType(schema) === "object" ? schema : mergedObjectUnion(schema);
+    expect(objectSchema, `${path} should be an object`).not.toBeNull();
+    let properties = (objectSchema!.properties ?? {}) as Record<string, JsonSchema>;
+    if (
+      Object.keys(properties).length === 0 &&
+      objectSchema!.default &&
+      typeof objectSchema!.default === "object" &&
+      !Array.isArray(objectSchema!.default) &&
+      objectSchema!.additionalProperties &&
+      typeof objectSchema!.additionalProperties === "object"
+    ) {
+      properties = Object.fromEntries(
+        Object.entries(objectSchema!.default as Record<string, unknown>)
+          .map(([key, value]) => [key, { ...(objectSchema!.additionalProperties as JsonSchema), default: value }]),
+      );
+    }
+    expect(Object.keys(properties), `${path} object keys`).toEqual(Object.keys(model.fields));
+    for (const [key, child] of Object.entries(model.fields)) expectParity(child, properties[key], `${path}.${key}`);
+    return;
+  }
+  if (model.type === "array") {
+    expect(schemaType(schema), `${path} type`).toBe("array");
+    const item = (schema.items ?? {}) as JsonSchema;
+    if (Object.keys(item).length > 0) expectParity(model.item, item, `${path}[]`);
+    else expect(model.item.type, `${path} unknown item sentinel`).toBe("null");
+    return;
+  }
+  if (model.type === "null") {
+    expect(schemaType(schema), `${path} type`).toBe("null");
+    return;
+  }
+  const actualType = schemaType(schema);
+  expect(actualType === "integer" ? "number" : actualType, `${path} type`).toBe(model.type);
+  if (model.type === "string" && model.enum) {
+    expect(schema.enum, `${path} enum`).toEqual(model.enum);
+  }
+  if ("default" in model && "default" in schema) {
+    expect(schema.default, `${path} default`).toEqual(model.default);
+  }
+}
+
+describe("schemaModel — exported contract parity", () => {
+  it("matches every JSON Schema key, enum, and completion-bearing primitive default", () => {
+    expectParity(CHARACTER_MODEL, schemaRoot);
   });
 });

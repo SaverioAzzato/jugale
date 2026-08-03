@@ -1,0 +1,215 @@
+/* Component styles. Colors/radii come exclusively from tokens in theme/themes.css. */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  /* Root zoom scales viewport units too; divide them back so the painted app still reaches the
+     physical bottom edge at every Interface scale (the old 80% view exposed a visible seam). */
+  min-height: calc(100vh / var(--ui-scale));
+  color: var(--text);
+  font-family: var(--font-sans);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, var(--bg-glow), transparent 60%),
+    var(--bg);
+  background-repeat: no-repeat;
+  /* Prevent double-tap browser zoom on app chrome; individual components can still own gestures. */
+  touch-action: manipulation;
+}
+
+a {
+  color: inherit;
+}
+.muted {
+  color: var(--muted);
+}
+
+/* ---- app header (sticky): toolbar row + tab row ---- */
+.appbar {
+  position: sticky;
+  top: 0;
+  /* Above the transparent WebGL dice layer: dice can never cover the toolbar or its tabs. */
+  z-index: 50;
+  background: var(--surface);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  /* On mobile (notch / status bar / gesture area) keep the toolbar clear of the system UI.
+     Pairs with viewport-fit=cover in index.html; resolves to 0 on every desktop browser. */
+  padding-top: env(safe-area-inset-top);
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px max(20px, env(safe-area-inset-right)) 10px max(20px, env(safe-area-inset-left));
+  flex-wrap: nowrap;
+  overflow: visible;
+}
+.tabbar {
+  display: flex;
+  gap: 4px;
+  padding: 0 max(14px, env(safe-area-inset-right)) 0 max(14px, env(safe-area-inset-left));
+  overflow-x: auto;
+  border-top: 1px solid var(--border);
+}
+.tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab.is-active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+.app {
+  min-height: calc(100vh / var(--ui-scale));
+  /* Reserve the fixed status bar plus the home-indicator / gesture safe area. */
+  padding-bottom: calc(34px + env(safe-area-inset-bottom));
+}
+
+/* A completed horizontal gesture pages in the new tab from the same direction as the swipe.
+   Keeping this on the remounted wrapper avoids animating ordinary edits inside a tab. */
+.sheet-swipe-from-right {
+  animation: sheet-swipe-from-right 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sheet-swipe-from-left {
+  animation: sheet-swipe-from-left 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes sheet-swipe-from-right {
+  from {
+    opacity: 0.72;
+    transform: translateX(calc(12vw / var(--ui-scale)));
+  }
+}
+@keyframes sheet-swipe-from-left {
+  from {
+    opacity: 0.72;
+    transform: translateX(calc(-12vw / var(--ui-scale)));
+  }
+}
+.toolbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/* Lower-priority actions collapse here when the measured toolbar width is exhausted. */
+.toolbar-overflow {
+  position: relative;
+  flex: 0 0 auto;
+}
+.toolbar-overflow > summary {
+  list-style: none;
+}
+.toolbar-overflow > summary::-webkit-details-marker {
+  display: none;
+}
+.toolbar-more span {
+  display: block;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 1px;
+  transform: translateY(-1px);
+}
+.toolbar-overflow[open] .toolbar-more {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+.toolbar-overflow-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  box-shadow: var(--shadow);
+}
+.toolbar-overflow-menu button {
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  padding: 9px 10px;
+  color: var(--text);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.toolbar-overflow-menu button:hover,
+.toolbar-overflow-menu button:focus-visible {
+  outline: none;
+  background: var(--accent-weak);
+}
+.toolbar-overflow-menu button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.btn-back {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.back-icon {
+  width: 18px;
+  height: 18px;
+}
+.sample {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.sample.is-active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+.validation {
+  font-size: 13px;
+  font-weight: 600;
+}
+.validation.is-ok {
+  color: var(--ok);
+}
+.validation.is-warn {
+  color: var(--warn);
+}
+.validation.is-error {
+  color: var(--error);
+}

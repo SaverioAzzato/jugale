@@ -1,14 +1,15 @@
 import { AbilityId, type Character } from "../schema";
 import { abilityModifierFor, savingThrowBonus } from "../schema";
-import { Panel, fmtMod } from "./primitives";
-import { useCharacter } from "../state/store";
+import { Panel } from "./primitives";
+import { fmtMod } from "./format";
+import { useCharacter } from "../characterStore";
 import { useT, type StringKey } from "../i18n/useI18n";
 import { NumberInput, Toggle, OptionalNumber } from "./editControls";
 
 export function AbilitiesSection({ c }: { c: Character }) {
   const t = useT();
   const editMode = useCharacter((s) => s.editMode);
-  const editField = useCharacter((s) => s.editField);
+  const editCoreField = useCharacter((s) => s.editCoreField);
 
   return (
     <Panel plain title={t("abilities.title")} id="abilities">
@@ -28,18 +29,18 @@ export function AbilitiesSection({ c }: { c: Character }) {
                     min={1}
                     max={30}
                     label={t("abilities.score")}
-                    onChange={(v) => editField(["abilities", id, "score"], v)}
+                    onChange={(value) => editCoreField({ field: "ability.score", ability: id, value })}
                   />
                   <div className="ability-edit-extra">
                     <Toggle
                       checked={a.saveProficient}
                       label={t("abilities.saveProf")}
-                      onChange={(v) => editField(["abilities", id, "saveProficient"], v)}
+                      onChange={(value) => editCoreField({ field: "ability.saveProficient", ability: id, value })}
                     />
                     <OptionalNumber
                       value={a.modifierOverride}
                       label={t("edit.modifierOverride")}
-                      onChange={(v) => editField(["abilities", id, "modifierOverride"], v)}
+                      onChange={(value) => editCoreField({ field: "ability.modifierOverride", ability: id, value })}
                     />
                   </div>
                 </>

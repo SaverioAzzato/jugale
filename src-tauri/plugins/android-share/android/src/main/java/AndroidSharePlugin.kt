@@ -16,10 +16,7 @@ import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 import java.util.UUID
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -118,7 +115,7 @@ class AndroidSharePlugin(private val activity: Activity) : Plugin(activity) {
         val fingerprint = payload.optString("id", "error:${payload.optString("error")}")
         val now = System.currentTimeMillis()
         synchronized(pendingLock) {
-            if (fingerprint == lastFingerprint && now - lastReceivedAt < DUPLICATE_WINDOW_MS) return
+            if (AndroidShareRules.isRecentDuplicate(fingerprint, lastFingerprint, now, lastReceivedAt)) return
             lastFingerprint = fingerprint
             lastReceivedAt = now
             pendingShare = payload
@@ -127,8 +124,7 @@ class AndroidSharePlugin(private val activity: Activity) : Plugin(activity) {
     }
 
     private fun readIncoming(intent: Intent): JSObject {
-        val mime = intent.type?.lowercase() ?: throw IncomingShareException("unsupported-type")
-        if (mime !in ALLOWED_INCOMING_MIMES) throw IncomingShareException("unsupported-type")
+        val mime = AndroidShareRules.validateIncomingMime(intent.type)
         if (intent.action == Intent.ACTION_SEND_MULTIPLE || (intent.clipData?.itemCount ?: 0) > 1) {
             throw IncomingShareException("multiple-files")
         }
@@ -141,26 +137,17 @@ class AndroidSharePlugin(private val activity: Activity) : Plugin(activity) {
                 val count = input.read(buffer)
                 if (count < 0) break
                 output.write(buffer, 0, count)
-                if (output.size() > MAX_INCOMING_BYTES) throw IncomingShareException("too-large")
+                if (output.size() > AndroidShareRules.MAX_INCOMING_BYTES) throw IncomingShareException("too-large")
             }
             output.toByteArray()
         } ?: throw IncomingShareException("unreadable")
         if (bytes.isEmpty()) throw IncomingShareException("empty-file")
 
-        val text = try {
-            StandardCharsets.UTF_8.newDecoder()
-                .onMalformedInput(CodingErrorAction.REPORT)
-                .onUnmappableCharacter(CodingErrorAction.REPORT)
-                .decode(ByteBuffer.wrap(bytes))
-                .toString()
-                .removePrefix("\uFEFF")
-        } catch (_: Exception) {
-            throw IncomingShareException("invalid-utf8")
-        }
+        val text = AndroidShareRules.decodeStrictUtf8(bytes)
         val parsed = try { JSONTokener(text).nextValue() } catch (_: Exception) { null }
         if (parsed !is JSONObject) throw IncomingShareException("invalid-json")
 
-        val digest = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        val digest = AndroidShareRules.sha256Hex(bytes)
         return JSObject().apply {
             put("status", "character")
             put("id", digest)
@@ -191,22 +178,19 @@ class AndroidSharePlugin(private val activity: Activity) : Plugin(activity) {
     private data class PreparedVariant(val args: ShareVariantArg, val uri: Uri)
 
     private fun prepareVariants(args: SharePromptArgs): List<PreparedVariant> {
-        require(args.title.isNotBlank() && args.title.length <= MAX_TITLE_CHARS) { "Invalid share title" }
-        require(args.variants.isNotEmpty() && args.variants.size <= MAX_VARIANTS) { "Invalid share variant count" }
-
-        val names = mutableSetOf<String>()
-        var totalBytes = 0
-        args.variants.forEach { variant ->
-            require(variant.text.toByteArray(StandardCharsets.UTF_8).size <= MAX_TEXT_BYTES) { "Prompt is too large" }
-            val file = variant.file
-            val expectedMime = ALLOWED_FILES[file.name] ?: error("Attachment filename is not allowed")
-            require(file.mime == expectedMime) { "Attachment MIME does not match its filename" }
-            require(names.add(file.name)) { "Duplicate attachment filename" }
-            val size = file.contents.toByteArray(StandardCharsets.UTF_8).size
-            require(size in 1..MAX_FILE_BYTES) { "Attachment is empty or too large" }
-            totalBytes += size
-            require(totalBytes <= MAX_TOTAL_BYTES) { "Share payload is too large" }
-        }
+        AndroidShareRules.validateOutgoing(
+            args.title,
+            args.variants.map { variant ->
+                OutgoingShareVariant(
+                    text = variant.text,
+                    file = OutgoingShareFile(
+                        name = variant.file.name,
+                        mime = variant.file.mime,
+                        contents = variant.file.contents,
+                    ),
+                )
+            },
+        )
 
         val shareRoot = File(activity.cacheDir, "shares")
         check(shareRoot.exists() || shareRoot.mkdirs()) { "Could not create share cache" }
@@ -250,23 +234,4 @@ class AndroidSharePlugin(private val activity: Activity) : Plugin(activity) {
         activity.startActivity(chooser)
     }
 
-    private companion object {
-        val ALLOWED_FILES = mapOf(
-            "character.schema.json" to "application/json",
-            "character.json" to "application/json",
-            "schema-changelog.md" to "text/markdown",
-            "prompt.txt" to "text/plain",
-            "jugale-request.json" to "application/json",
-        )
-        const val MAX_VARIANTS = 4
-        const val MAX_TITLE_CHARS = 120
-        const val MAX_TEXT_BYTES = 1 * 1024 * 1024
-        const val MAX_FILE_BYTES = 5 * 1024 * 1024
-        const val MAX_TOTAL_BYTES = 10 * 1024 * 1024
-        val ALLOWED_INCOMING_MIMES = setOf("application/json")
-        const val MAX_INCOMING_BYTES = 5 * 1024 * 1024
-        const val DUPLICATE_WINDOW_MS = 2_000L
-    }
 }
-
-private class IncomingShareException(val code: String) : Exception(code)

@@ -10,37 +10,9 @@ import {
 import { Panel } from "../render/primitives";
 import { isTauri } from "../storage/tauriProvider";
 import { useUpdate } from "../update/useUpdate";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 
 const TOAST_OPTIONS = [5, 10, 15, 20, 0];
-
-/** Gear icon button — opens the full settings page (App owns the open/close state). */
-export function SettingsButton({ onClick }: { onClick: () => void }) {
-  const t = useT();
-  return (
-    <button
-      type="button"
-      className="btn btn-icon"
-      aria-label={t("settings.title")}
-      data-overlay-trigger="settings"
-      onClick={onClick}
-    >
-      <svg
-        viewBox="0 0 24 24"
-        width="24"
-        height="24"
-        className="settings-icon"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <path
-          fill="currentColor"
-          d="M12 8.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5ZM9.75 2.25h4.5a.75.75 0 0 1 .73.58l.5 2.1a8.06 8.06 0 0 1 1.62.94l2.06-.76a.75.75 0 0 1 .9.33l2.1 3.64a.75.75 0 0 1-.16.95l-1.7 1.4a8.1 8.1 0 0 1 0 1.94l1.7 1.4a.75.75 0 0 1 .16.95l-2.1 3.64a.75.75 0 0 1-.9.33l-2.06-.76a8.06 8.06 0 0 1-1.62.94l-.5 2.1a.75.75 0 0 1-.73.58h-4.5a.75.75 0 0 1-.73-.58l-.5-2.1a8.06 8.06 0 0 1-1.62-.94l-2.06.76a.75.75 0 0 1-.9-.33l-2.1-3.64a.75.75 0 0 1 .16-.95l1.7-1.4a8.1 8.1 0 0 1 0-1.94l-1.7-1.4a.75.75 0 0 1-.16-.95l2.1-3.64a.75.75 0 0 1 .9-.33l2.06.76a8.06 8.06 0 0 1 1.62-.94l.5-2.1a.75.75 0 0 1 .73-.58Z"
-        />
-      </svg>
-    </button>
-  );
-}
 
 /** Full-page settings: language, theme, notification duration. */
 export function SettingsPage() {

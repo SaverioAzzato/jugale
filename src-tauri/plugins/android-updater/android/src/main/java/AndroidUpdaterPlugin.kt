@@ -12,7 +12,6 @@ import app.tauri.plugin.Plugin
 import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
-import java.net.URI
 import java.net.URL
 import java.security.MessageDigest
 
@@ -57,11 +56,7 @@ class AndroidUpdaterPlugin(private val activity: Activity) : Plugin(activity) {
     }
 
     private fun downloadVerifiedApk(args: DownloadArgs): File {
-        validateInitialUrl(args.url)
-        require(args.fileName.matches(Regex("[A-Za-z0-9._-]+\\.apk", RegexOption.IGNORE_CASE))) {
-            "Invalid APK filename"
-        }
-        require(args.expectedSize > 0) { "GitHub did not provide a valid APK size" }
+        AndroidUpdaterRules.validateDownload(args.url, args.fileName, args.expectedSize)
 
         val updatesDir = File(activity.cacheDir, "updates")
         check(updatesDir.exists() || updatesDir.mkdirs()) { "Could not create update cache" }
@@ -116,10 +111,10 @@ class AndroidUpdaterPlugin(private val activity: Activity) : Plugin(activity) {
             check(downloaded == args.expectedSize) {
                 "Incomplete APK download (${downloaded} of ${args.expectedSize} bytes)"
             }
-            check(signature.contentEquals(byteArrayOf(0x50, 0x4b, 0x03, 0x04))) {
+            check(AndroidUpdaterRules.hasApkSignature(signature)) {
                 "Downloaded file is not an APK/ZIP"
             }
-            verifyDigest(args.expectedDigest, digest.digest())
+            AndroidUpdaterRules.verifyDigest(args.expectedDigest, digest.digest())
 
             if (target.exists() && !target.delete()) error("Could not replace cached APK")
             check(partial.renameTo(target)) { "Could not finalize downloaded APK" }
@@ -132,19 +127,10 @@ class AndroidUpdaterPlugin(private val activity: Activity) : Plugin(activity) {
         }
     }
 
-    private fun validateInitialUrl(rawUrl: String) {
-        val uri = URI(rawUrl)
-        check(uri.scheme.equals("https", ignoreCase = true)) { "APK URL must use HTTPS" }
-        check(uri.host.equals("github.com", ignoreCase = true)) { "APK must come from github.com" }
-        check(uri.path.startsWith("/SaverioAzzato/jugale/releases/download/")) {
-            "APK is not a JUGALE release asset"
-        }
-    }
-
     private fun openFollowingRedirects(initialUrl: String): HttpURLConnection {
         var current = URL(initialUrl)
         repeat(MAX_REDIRECTS + 1) { redirectCount ->
-            check(current.protocol.equals("https", ignoreCase = true)) { "Update redirect must use HTTPS" }
+            AndroidUpdaterRules.validateRedirectUrl(current.toString())
             val connection = current.openConnection() as HttpURLConnection
             connection.instanceFollowRedirects = false
             connection.connectTimeout = CONNECT_TIMEOUT_MS
@@ -180,16 +166,6 @@ class AndroidUpdaterPlugin(private val activity: Activity) : Plugin(activity) {
             }
         }
         error("Too many update redirects")
-    }
-
-    private fun verifyDigest(expected: String?, actualBytes: ByteArray) {
-        if (expected.isNullOrBlank()) return
-        val normalized = expected.removePrefix("sha256:").lowercase()
-        check(normalized.matches(Regex("[0-9a-f]{64}"))) { "GitHub returned an invalid APK digest" }
-        val actual = actualBytes.joinToString("") { "%02x".format(it) }
-        check(MessageDigest.isEqual(normalized.toByteArray(), actual.toByteArray())) {
-            "APK SHA-256 verification failed"
-        }
     }
 
     private fun openInstaller(apk: File) {

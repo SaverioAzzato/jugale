@@ -1,5 +1,5 @@
 import { CharacterSchema, type Character } from "./character";
-import { migrateToCurrent, needsMigration } from "./migrate";
+import { hasFutureSchema, migrateToCurrent, needsMigration } from "./migrate";
 import { isBodyArmor } from "./derive";
 
 export type Severity = "error" | "warning";
@@ -17,7 +17,8 @@ export type IssueCode =
   | "hpExceedsMax"
   | "spellMaterialMissing"
   | "spellRitualNoDuration"
-  | "multipleBodyArmor";
+  | "multipleBodyArmor"
+  | "futureSchema";
 
 export interface Issue {
   path: string;
@@ -29,11 +30,60 @@ export interface Issue {
   params?: Record<string, string | number>;
 }
 
+const persistableDocumentBrand: unique symbol = Symbol("PersistableCharacterDocument");
+
+/** Proof produced only by this module after current-schema validation succeeds. */
+export interface PersistableCharacterDocument {
+  readonly document: unknown;
+  readonly [persistableDocumentBrand]: true;
+}
+
+export type CharacterValidation =
+  | { kind: "valid"; persistable: PersistableCharacterDocument; issues: Issue[] }
+  | { kind: "schema-invalid"; issues: Issue[] }
+  | { kind: "future-schema"; schemaVersion: string; issues: Issue[] };
+
 export interface LoadResult {
+  /** Parsed input before migration. Never synthesized from the projection. */
+  source: unknown;
+  /** Lossless working document after supported migrations. The only persistence candidate. */
+  draft: unknown;
+  /** Safe value for the renderer. Defaults here must never be persisted. */
+  projection: Character;
+  validation: CharacterValidation;
+  /** Backward-compatible renderer alias. */
   character: Character;
   issues: Issue[];
   migrated: boolean;
   ok: boolean;
+}
+
+function cloneJson<T>(value: T): T {
+  try {
+    return structuredClone(value);
+  } catch {
+    return value;
+  }
+}
+
+function fallbackName(data: unknown): string {
+  const name = (data as { meta?: { name?: unknown } } | null)?.meta?.name;
+  return name != null ? String(name) : "Personaggio";
+}
+
+/** Keep every valid top-level section in the renderer while defaulting only broken sections. */
+function bestEffortProjection(data: unknown): Character {
+  const baseInput: Record<string, unknown> = { meta: { name: fallbackName(data) } };
+  if (data == null || typeof data !== "object" || Array.isArray(data)) {
+    return CharacterSchema.parse(baseInput);
+  }
+
+  let candidate = baseInput;
+  for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+    const trial = { ...candidate, [key]: value };
+    if (CharacterSchema.safeParse(trial).success) candidate = trial;
+  }
+  return CharacterSchema.parse(candidate);
 }
 
 /**
@@ -43,12 +93,43 @@ export interface LoadResult {
  * locked out. Rule inconsistencies are `warning` issues.
  */
 export function loadCharacter(raw: unknown): LoadResult {
-  const migrated = needsMigration(raw);
-  const data = migrateToCurrent(raw);
+  const source = cloneJson(raw);
+  const future = hasFutureSchema(source);
+  const migrated = !future && needsMigration(source);
+  const draft = future ? cloneJson(source) : migrateToCurrent(cloneJson(source));
 
-  const parsed = CharacterSchema.safeParse(data);
+  if (future) {
+    const schemaVersion = String((source as { schemaVersion?: unknown } | null)?.schemaVersion ?? "");
+    const issues: Issue[] = [{
+      path: "schemaVersion",
+      message: `Schema version ${schemaVersion} is newer than the supported version`,
+      severity: "error",
+      code: "futureSchema",
+      params: { schemaVersion },
+    }];
+    const projection = bestEffortProjection(draft);
+    const validation: CharacterValidation = { kind: "future-schema", schemaVersion, issues };
+    return { source, draft, projection, validation, character: projection, issues, migrated: false, ok: false };
+  }
+
+  const parsed = CharacterSchema.safeParse(draft);
   if (parsed.success) {
-    return { character: parsed.data, issues: ruleChecks(parsed.data), migrated, ok: true };
+    const issues = ruleChecks(parsed.data);
+    const persistable = {
+      document: draft,
+      [persistableDocumentBrand]: true,
+    } as PersistableCharacterDocument;
+    const validation: CharacterValidation = { kind: "valid", persistable, issues };
+    return {
+      source,
+      draft,
+      projection: parsed.data,
+      validation,
+      character: parsed.data,
+      issues,
+      migrated,
+      ok: true,
+    };
   }
 
   const issues: Issue[] = parsed.error.issues.map((i) => ({
@@ -57,12 +138,9 @@ export function loadCharacter(raw: unknown): LoadResult {
     severity: "error",
     code: "schema",
   }));
-  const name =
-    (data as { meta?: { name?: unknown } } | null)?.meta?.name != null
-      ? String((data as { meta: { name: unknown } }).meta.name)
-      : "Personaggio";
-  const fallback = CharacterSchema.parse({ meta: { name } });
-  return { character: fallback, issues, migrated, ok: false };
+  const projection = bestEffortProjection(draft);
+  const validation: CharacterValidation = { kind: "schema-invalid", issues };
+  return { source, draft, projection, validation, character: projection, issues, migrated, ok: false };
 }
 
 /** 5e consistency checks. Non-blocking warnings surfaced in the UI + validate prompt. */

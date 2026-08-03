@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CharacterVersion, VersionReason } from "../storage/versions";
 import { interpolate, useI18n, useT, type StringKey } from "../i18n/useI18n";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useToast } from "./useToast";
 import { VersionDialog } from "./VersionDialog";
 

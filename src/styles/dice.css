@@ -1,0 +1,200 @@
+/* ---- dice palette (topbar or floating) + thrown dice ---- */
+.dice-palette {
+  position: relative;
+  display: inline-flex;
+}
+.dice-palette-floating {
+  position: fixed;
+  z-index: 50;
+  bottom: calc(48px + env(safe-area-inset-bottom));
+}
+.dice-palette-floating.floating-right {
+  right: max(16px, env(safe-area-inset-right));
+}
+.dice-palette-floating.floating-left {
+  left: max(16px, env(safe-area-inset-left));
+}
+.dice-palette-floating .dice-toggle {
+  width: 56px;
+  height: 56px;
+  border-color: var(--border-strong);
+  border-radius: 50%;
+  background: var(--surface-2);
+  box-shadow: var(--shadow);
+}
+.dice-palette-floating .die-3d-icon {
+  width: 30px;
+  height: 30px;
+}
+.dice-toggle {
+  touch-action: none;
+}
+.die-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.die-svg polygon {
+  fill: var(--surface-2);
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+.die-svg-label {
+  fill: var(--gold);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.die-3d-icon {
+  display: block;
+  width: 26px;
+  height: 26px;
+  overflow: visible;
+}
+.die-3d-face {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.92); /* shrinks each facet toward its own center — the gap this opens
+  between facets is real transparency down to the button background, not a stroke. */
+}
+.die-3d-face-top {
+  fill: var(--gold);
+}
+.die-3d-face-left {
+  fill: var(--accent);
+}
+.die-3d-face-right {
+  fill: var(--accent);
+  filter: brightness(0.75);
+}
+
+.dice-menu {
+  position: fixed;
+  /* The palette and appbar are themselves above .dice-canvas; this keeps the menu above their
+     buttons as well, even while resting dice remain on screen. */
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  min-width: 128px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  animation: dice-menu-in 0.12s ease-out both;
+}
+@keyframes dice-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+.dice-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  touch-action: none;
+}
+.dice-option:hover {
+  background: var(--accent-weak);
+}
+.dice-option .die-svg {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+}
+.dice-option span {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.dice-option .die-svg-label {
+  font-size: 0;
+}
+
+/* Update banner: slim bar pinned to the top, above everything, shown only when a newer
+ * release is found (desktop: install in place; Android: open the APK). */
+.update-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem max(0.75rem, env(safe-area-inset-right)) 0.5rem max(0.75rem, env(safe-area-inset-left));
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+  background: var(--surface-2, #1e1e2b);
+  border-bottom: 1px solid var(--accent, #8a7bf0);
+  font-size: 0.9rem;
+}
+.update-banner-text {
+  min-width: 0;
+}
+.update-banner-action {
+  padding: 0.25rem 0.75rem;
+}
+.update-banner-dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.25rem;
+}
+.update-progress {
+  grid-column: 1 / -1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--border);
+}
+.update-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 120ms linear;
+}
+.update-progress.is-indeterminate > span {
+  width: 35%;
+  animation: update-progress-indeterminate 1s ease-in-out infinite alternate;
+}
+@keyframes update-progress-indeterminate {
+  from { transform: translateX(-20%); }
+  to { transform: translateX(205%); }
+}
+
+/* Thrown 3D dice: a full-viewport WebGL layer. pointer-events stays none on the
+ * container so the sheet underneath is always clickable; DiceScene picks dice via
+ * its own global pointer listeners + raycasting. */
+.dice-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+}
+.dice-canvas-gl {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dice-menu {
+    animation-duration: 0.01ms;
+  }
+}

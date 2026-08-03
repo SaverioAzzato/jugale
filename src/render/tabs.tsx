@@ -16,46 +16,7 @@ import { PortraitSection } from "./PortraitSection";
 import { DescriptionSection, BioSection, ProficienciesSection, OriginSection, NarrativeSection } from "./TextSections";
 import { CustomSections } from "./CustomSection";
 import { IdentitySection } from "./IdentitySection";
-import { useCharacter } from "../state/store";
-
-import type { StringKey } from "../i18n/useI18n";
-
-export interface TabDef {
-  id: string;
-  labelKey: StringKey;
-}
-
-const hasInventory = (c: Character): boolean =>
-  c.inventory.items.length > 0 || Object.values(c.inventory.currencies).some((v) => Number(v) > 0);
-
-const hasStory = (c: Character): boolean =>
-  (c.meta.summary?.trim().length ?? 0) > 0 ||
-  c.origin.raceTraits.length > 0 ||
-  c.origin.backgroundFeature != null ||
-  c.customSections.length > 0 ||
-  [c.identity.alignment, c.identity.size, c.identity.age].some((v) => v && v.trim().length > 0) ||
-  [
-    c.narrative.personality,
-    c.narrative.ideals,
-    c.narrative.bonds,
-    c.narrative.flaws,
-    c.narrative.appearance,
-    c.narrative.backstory,
-    c.narrative.notes,
-  ].some((a) => a.length > 0);
-
-/** Tabs are data-driven: Inventario/Storia appear only when they'd have content
- *  (Storia also shows when a loaded folder supplied images, even with no prose).
- *  In edit mode every tab is shown so empty sections can be filled in. */
-export function getVisibleTabs(c: Character, hasImages = false, editMode = false): TabDef[] {
-  const tabs: TabDef[] = [
-    { id: "gioco", labelKey: "tab.gioco" },
-    { id: "scheda", labelKey: "tab.scheda" },
-  ];
-  if (editMode || hasInventory(c)) tabs.push({ id: "inventario", labelKey: "tab.inventario" });
-  if (editMode || hasImages || hasStory(c)) tabs.push({ id: "storia", labelKey: "tab.storia" });
-  return tabs;
-}
+import { useCharacter } from "../characterStore";
 
 const COMBAT_CATEGORIES = new Set(["ammo", "consumable", "potion"]);
 

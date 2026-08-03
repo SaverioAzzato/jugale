@@ -1,11 +1,12 @@
 import { type ReactNode } from "react";
 import type { Character } from "../schema";
 import { abilityModifierFor, derivedArmorClass, maxHitDice } from "../schema";
-import { Panel, fmtMod } from "./primitives";
+import { Panel } from "./primitives";
+import { fmtMod } from "./format";
 import { Stepper } from "./controls";
 import { usePressRepeat } from "./usePressRepeat";
 import { Field, NumberInput, OptionalNumber } from "./editControls";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT } from "../i18n/useI18n";
 import { useSettings } from "../ui/useSettings";
 import { formatDistance } from "../model/units";
@@ -93,11 +94,12 @@ function HpControl({ c }: { c: Character }) {
 function CombatEdit({ c }: { c: Character }) {
   const t = useT();
   const editField = useCharacter((s) => s.editField);
+  const editCoreField = useCharacter((s) => s.editCoreField);
   const hp = c.combat.hp;
   return (
     <div className="edit-grid">
       <Field label={t("vitals.hpMax")}>
-        <NumberInput value={hp.max} min={0} label={t("vitals.hpMax")} onChange={(v) => editField(["combat", "hp", "max"], v)} />
+        <NumberInput value={hp.max} min={0} label={t("vitals.hpMax")} onChange={(value) => editCoreField({ field: "combat.hp.max", value })} />
       </Field>
       <Field label={t("vitals.hpCurrent")}>
         <NumberInput value={hp.current} label={t("vitals.hpCurrent")} onChange={(v) => editField(["combat", "hp", "current"], v)} />

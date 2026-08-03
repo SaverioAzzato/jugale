@@ -15,6 +15,7 @@ export {
   type AttackProfile,
   type AttackEntry,
   type Action,
+  type CustomSection,
 } from "./character";
 export {
   abilityModifier,
@@ -28,7 +29,16 @@ export {
   derivedArmorClass,
   isBodyArmor,
 } from "./derive";
-export { migrateToCurrent, needsMigration, schemaMajor } from "./migrate";
-export { loadCharacter, ruleChecks, type Issue, type IssueCode, type LoadResult, type Severity } from "./validate";
+export { migrateToCurrent, needsMigration, hasFutureSchema, schemaMajor } from "./migrate";
+export {
+  loadCharacter,
+  ruleChecks,
+  type CharacterValidation,
+  type PersistableCharacterDocument,
+  type Issue,
+  type IssueCode,
+  type LoadResult,
+  type Severity,
+} from "./validate";
 export { characterJsonSchema } from "./jsonSchema";
 export { SCHEMA_CHANGELOG } from "./changelog";

@@ -2,7 +2,7 @@ import type { Character } from "../schema";
 import { Panel } from "./primitives";
 import { Field, TextInput, Select, StringListEditor, EntryList, EntryRow } from "./editControls";
 import { newAction } from "../model/factories";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT } from "../i18n/useI18n";
 
 /**

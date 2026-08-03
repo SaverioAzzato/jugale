@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * character.json schema v2.1.0 — the contract documented in docs/SCHEMA.md.
+ * character.json schema v2.2.0 — the contract documented in docs/SCHEMA.md.
  *
  * Conventions:
  * - Every section has a default so a minimal `{ meta: { name } }` validates.
@@ -429,17 +429,22 @@ const Narrative = z
   .passthrough()
   .default({});
 
-const CustomSection = z
-  .object({
-    id: z.string().default(""),
-    title: z.string().default(""),
-    layout: z.enum(["text", "list", "checklist", "keyValue", "cards", "table"]).default("text"),
-    link,
-    columns: z.array(z.string()).default([]),
-    content: z.string().default(""),
-    items: z.array(z.any()).default([]),
-  })
-  .passthrough();
+const CustomSectionCommon = {
+  id: z.string().default(""),
+  title: z.string().default(""),
+  link,
+  columns: z.array(z.string()).default([]),
+  content: z.string().default(""),
+};
+/** Layout is the discriminator; table cells remain the intentional freeform escape hatch. */
+const CustomSection = z.union([
+  z.object({ ...CustomSectionCommon, layout: z.literal("text").default("text"), items: z.array(z.unknown()).default([]) }).passthrough(),
+  z.object({ ...CustomSectionCommon, layout: z.literal("list"), items: z.array(z.unknown()).default([]) }).passthrough(),
+  z.object({ ...CustomSectionCommon, layout: z.literal("checklist"), items: z.array(z.unknown()).default([]) }).passthrough(),
+  z.object({ ...CustomSectionCommon, layout: z.literal("keyValue"), items: z.array(z.unknown()).default([]) }).passthrough(),
+  z.object({ ...CustomSectionCommon, layout: z.literal("cards"), items: z.array(z.unknown()).default([]) }).passthrough(),
+  z.object({ ...CustomSectionCommon, layout: z.literal("table"), items: z.array(z.unknown()).default([]) }).passthrough(),
+]);
 
 /**
  * A registered action: rest perks or custom buttons. `formulas` are `path = expr`
@@ -510,3 +515,4 @@ export type Item = z.infer<typeof Item>;
 export type AttackProfile = z.infer<typeof AttackProfile>;
 export type AttackEntry = z.infer<typeof Attack>;
 export type Action = z.infer<typeof Action>;
+export type CustomSection = z.infer<typeof CustomSection>;

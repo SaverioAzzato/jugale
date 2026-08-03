@@ -1,10 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Character } from "../schema";
-import { SCHEMA_CHANGELOG } from "../schema/changelog";
-import { characterJsonSchema } from "../schema/jsonSchema";
+import { buildPromptBundle, type PromptBundleKind } from "../prompts/bundle";
 import { isAndroid } from "../storage/androidProvider";
 
-export type SharePromptKind = "base" | "create" | "level-up" | "validate" | "custom" | "migrate";
+export type SharePromptKind = PromptBundleKind;
 
 export interface AndroidShareFile {
   name: "jugale-request.json" | "prompt.txt";
@@ -24,10 +23,6 @@ export interface AndroidSharePayload {
 
 const asJson = (value: unknown) => JSON.stringify(value, null, 2);
 
-function bundleSection(title: string, contents: string): string {
-  return `===== ${title} =====\n${contents}`;
-}
-
 /** Build two single-file ACTION_SEND variants for one Android chooser.
  * JSON is primary because ChatGPT accepts JSON streams but ignores text/plain streams. The text
  * alternate keeps receivers such as Gemini and Claude available. `create` never includes the open
@@ -41,19 +36,13 @@ export function buildPromptSharePayload(
   const needsCharacter = kind === "level-up" || kind === "validate" || kind === "migrate";
   if (needsCharacter && !character) return null;
 
-  const sections = [
-    bundleSection("PROMPT", text),
-    bundleSection("character.schema.json", asJson(characterJsonSchema)),
-  ];
-  if (kind !== "create" && character) sections.push(bundleSection("character.json", asJson(character)));
-  if (kind === "migrate") sections.push(bundleSection("schema-changelog.md", SCHEMA_CHANGELOG));
-
-  const bundle = sections.join("\n\n");
-  const attachments: Record<string, unknown> = {
-    "character.schema.json": characterJsonSchema,
-  };
-  if (kind !== "create" && character) attachments["character.json"] = character;
-  if (kind === "migrate") attachments["schema-changelog.md"] = SCHEMA_CHANGELOG;
+  // Create intentionally starts clean when shared. Downloads use the open character when present,
+  // but the Android share contract has always omitted it for this task.
+  const { text: bundle, attachments } = buildPromptBundle(
+    kind,
+    text,
+    kind === "create" ? null : character,
+  );
   const request = asJson({
     jugaleRequestVersion: 1,
     readme:

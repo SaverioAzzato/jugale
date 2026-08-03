@@ -3,9 +3,10 @@ import type { Character, AttackProfile } from "../schema";
 import { Caret, Panel, WikiLink } from "./primitives";
 import { Field, TextInput, EntryList, EntryRow } from "./editControls";
 import { newInnateAttack } from "../model/factories";
-import { useCharacter } from "../state/store";
+import { useCharacter } from "../characterStore";
 import { useT } from "../i18n/useI18n";
-import { useSettings, type UnitSystem } from "../ui/useSettings";
+import { useSettings } from "../ui/useSettings";
+import type { UnitSystem } from "../model/unitSystem";
 import { convertDistanceText } from "../model/units";
 
 interface AttackView {
