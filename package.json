@@ -1,6 +1,6 @@
 {
   "name": "jugale",
-  "version": "1.15.0-dev.1",
+  "version": "1.15.0-dev.2",
   "private": true,
   "type": "module",
   "description": "Your character, always yours — a JSON-source-of-truth character sheet platform (web + desktop + mobile).",
@@ -63,6 +63,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^20.19.0",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
     "@types/three": "^0.184.1",
