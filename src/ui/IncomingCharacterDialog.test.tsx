@@ -15,6 +15,10 @@ describe("IncomingCharacterDialog", () => {
         issues={[{ severity: "warning", code: "hpExceedsMax", path: "combat.hp.current", message: "high" }]}
         targetName="Astrid"
         nameMismatch
+        source="android-share"
+        valid
+        canChooseTarget
+        createsNew={false}
         busy={false}
         onApply={apply}
         onChooseTarget={vi.fn()}
@@ -37,6 +41,10 @@ describe("IncomingCharacterDialog", () => {
         issues={[]}
         targetName={null}
         nameMismatch={false}
+        source="android-share"
+        valid
+        canChooseTarget
+        createsNew={false}
         busy={false}
         onApply={vi.fn()}
         onChooseTarget={vi.fn()}
@@ -56,6 +64,10 @@ describe("IncomingCharacterDialog", () => {
         issues={[]}
         targetName="Astrid"
         nameMismatch={false}
+        source="android-share"
+        valid
+        canChooseTarget
+        createsNew={false}
         busy={false}
         onApply={vi.fn()}
         onChooseTarget={vi.fn()}
@@ -64,5 +76,72 @@ describe("IncomingCharacterDialog", () => {
     );
     expect(screen.getByRole("dialog", { name: "Personaggio ricevuto" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Applica a Astrid" })).toBeInTheDocument();
+  });
+
+  it("requires an empty character folder for a picked file when none is open", () => {
+    const chooseTarget = vi.fn();
+    render(
+      <IncomingCharacterDialog
+        characterName="Astrid"
+        schemaVersion="2.2.0"
+        issues={[]}
+        targetName={null}
+        nameMismatch={false}
+        source="file-import"
+        valid
+        canChooseTarget
+        createsNew={false}
+        busy={false}
+        onApply={vi.fn()}
+        onChooseTarget={chooseTarget}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("dialog", { name: "Import character" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Choose character folder" }));
+    expect(chooseTarget).toHaveBeenCalledOnce();
+    expect(screen.getByText(/empty folder creates a new character/i)).toBeInTheDocument();
+  });
+
+  it("names the deferred creation target", () => {
+    render(
+      <IncomingCharacterDialog
+        characterName="Astrid"
+        schemaVersion="2.2.0"
+        issues={[]}
+        targetName="astrid-folder"
+        nameMismatch={false}
+        source="file-import"
+        valid
+        canChooseTarget
+        createsNew
+        busy={false}
+        onApply={vi.fn()}
+        onChooseTarget={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Create in astrid-folder" })).toBeInTheDocument();
+  });
+
+  it("blocks a future-schema import even when it has no schema error rows", () => {
+    render(
+      <IncomingCharacterDialog
+        characterName="Future"
+        schemaVersion="9.0.0"
+        issues={[]}
+        targetName="Current"
+        nameMismatch
+        source="file-import"
+        valid={false}
+        canChooseTarget={false}
+        createsNew={false}
+        busy={false}
+        onApply={vi.fn()}
+        onChooseTarget={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Apply to Current" })).toBeDisabled();
   });
 });

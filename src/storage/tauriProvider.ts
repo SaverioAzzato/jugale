@@ -7,7 +7,7 @@
 import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { exists, mkdir, readDir, readFile, readTextFile, remove, rename, writeTextFile } from "@tauri-apps/plugin-fs";
 import { join, basename } from "@tauri-apps/api/path";
-import type { StorageProvider, GalleryImage, TauriRecentRef, LoadedCharacter } from "./provider";
+import type { StorageProvider, GalleryImage, TauriRecentRef, LoadedCharacter, CharacterImportTarget } from "./provider";
 import type { PersistableCharacterDocument } from "../schema/validate";
 import { normalizeStorageError, storageError } from "./errors";
 import { createVersionStore, type VersionStore } from "./versions";
@@ -159,6 +159,38 @@ export async function openCharacterFolderTauri(): Promise<{
     images: await readImagesDirTauri(dirPath),
     sourceName: await basename(dirPath),
     ref: { platform: "tauri", kind: "folder", name: await basename(dirPath), path: dirPath },
+  };
+}
+
+/** Choose a desktop folder as an import destination without changing it. */
+export async function pickCharacterImportTargetTauri(): Promise<CharacterImportTarget | null> {
+  const dirPath = await openDialog({ directory: true, multiple: false, recursive: true });
+  if (!dirPath) return null;
+  const entries = await readDir(dirPath);
+  const sourceName = await basename(dirPath);
+  const ref: TauriRecentRef = { platform: "tauri", kind: "folder", name: sourceName, path: dirPath };
+  const jsonPath = await join(dirPath, "character.json");
+  if (entries.some((entry) => entry.isFile && entry.name === "character.json")) {
+    const provider = new TauriFolderProvider(jsonPath, dirPath);
+    return {
+      kind: "existing",
+      provider,
+      raw: await provider.read(),
+      images: await readImagesDirTauri(dirPath),
+      sourceName,
+      ref,
+    };
+  }
+  if (entries.length > 0) throw storageError("import-target-not-empty");
+  return {
+    kind: "empty",
+    sourceName,
+    ref,
+    create: async (document) => {
+      const provider = new TauriFolderProvider(jsonPath, dirPath);
+      await provider.write(document);
+      return { provider, raw: await provider.read(), images: [], sourceName };
+    },
   };
 }
 

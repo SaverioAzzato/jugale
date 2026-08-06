@@ -74,6 +74,17 @@ export interface LoadedCharacter {
   sourceName: string;
 }
 
+/** A folder selected as an import destination. Existing folders are previewed before replacement;
+ * empty folders defer creating character.json until the user confirms the import. */
+export type CharacterImportTarget =
+  | ({ kind: "existing"; ref: RecentRef } & LoadedCharacter)
+  | {
+      kind: "empty";
+      sourceName: string;
+      ref: RecentRef;
+      create: (document: PersistableCharacterDocument) => Promise<LoadedCharacter>;
+    };
+
 /** Thrown by reopenWebHandle when the user declines the browser's re-permission prompt. */
 export const RECENT_PERMISSION_DENIED = "recent-permission-denied";
 
@@ -254,6 +265,50 @@ export async function openCharacterFolder(): Promise<{
     images: await readImagesDir(dir),
     sourceName: dir.name,
     ref: { platform: "web", kind: "folder", name: dir.name, handle: dir },
+  };
+}
+
+/** Choose a web folder as an import destination without writing to it. */
+export async function pickCharacterImportTargetWeb(): Promise<CharacterImportTarget | null> {
+  const picker = (window as PickerWindow).showDirectoryPicker;
+  if (!picker) throw storageError("import-folder-unsupported");
+  let dir: WebDirectoryHandle;
+  try {
+    dir = await picker({ mode: "readwrite" });
+  } catch {
+    return null;
+  }
+  const entries: Array<[string, { kind: "file" | "directory" }]> = [];
+  for await (const entry of dir.entries()) entries.push(entry);
+  const ref: WebRecentRef = { platform: "web", kind: "folder", name: dir.name, handle: dir };
+  if (entries.some(([name, entry]) => name === "character.json" && entry.kind === "file")) {
+    const handle = await dir.getFileHandle("character.json");
+    const provider = new WebFolderProvider(handle, dir);
+    return {
+      kind: "existing",
+      provider,
+      raw: await provider.read(),
+      images: await readImagesDir(dir),
+      sourceName: dir.name,
+      ref,
+    };
+  }
+  if (entries.length > 0) throw storageError("import-target-not-empty");
+  return {
+    kind: "empty",
+    sourceName: dir.name,
+    ref,
+    create: async (document) => {
+      const handle = await dir.getFileHandle("character.json", { create: true });
+      const provider = new WebFolderProvider(handle, dir);
+      try {
+        await provider.write(document);
+        return { provider, raw: await provider.read(), images: [], sourceName: dir.name };
+      } catch (error) {
+        await dir.removeEntry("character.json").catch(() => undefined);
+        throw error;
+      }
+    },
   };
 }
 

@@ -15,6 +15,8 @@ async function installFakeFileSystem(page: Page) {
       localStorage.setItem("e2e.writes", "0");
       localStorage.removeItem("e2e.failWrites");
       localStorage.removeItem("e2e.export");
+      localStorage.removeItem("e2e.newCharacter");
+      localStorage.removeItem("e2e.importTarget");
       localStorage.removeItem("e2e.history");
     }
 
@@ -74,14 +76,38 @@ async function installFakeFileSystem(page: Page) {
       queryPermission: async () => "granted",
       requestPermission: async () => "granted",
     };
+    const importedCharacterHandle = {
+      kind: "file",
+      name: "character.json",
+      getFile: async () => new File([localStorage.getItem("e2e.newCharacter") || "{}"], "character.json", { type: "application/json" }),
+      createWritable: async () => writable((text) => localStorage.setItem("e2e.newCharacter", text)),
+      queryPermission: async () => "granted",
+      requestPermission: async () => "granted",
+    };
+    const emptyRootHandle = {
+      kind: "directory",
+      name: "imported-hero",
+      getFileHandle: async (name: string, options?: { create?: boolean }) => {
+        if (name !== "character.json" || (!options?.create && localStorage.getItem("e2e.newCharacter") === null)) throw new Error("missing");
+        return importedCharacterHandle;
+      },
+      getDirectoryHandle: rootHandle.getDirectoryHandle,
+      entries: async function* () {
+        if (localStorage.getItem("e2e.newCharacter") !== null) yield ["character.json", importedCharacterHandle];
+      },
+      removeEntry: async () => localStorage.removeItem("e2e.newCharacter"),
+      queryPermission: async () => "granted",
+      requestPermission: async () => "granted",
+    };
     const exportHandle = {
       kind: "file",
       name: "e2e-export.json",
+      getFile: async () => new File([localStorage.getItem("e2e.export") || "{}"], "e2e-export.json", { type: "application/json" }),
       createWritable: async () => writable((text) => localStorage.setItem("e2e.export", text)),
     };
     Object.assign(window, {
       showOpenFilePicker: async () => [characterHandle],
-      showDirectoryPicker: async () => rootHandle,
+      showDirectoryPicker: async () => localStorage.getItem("e2e.importTarget") === "empty" ? emptyRootHandle : rootHandle,
       showSaveFilePicker: async () => exportHandle,
     });
   }, CHARACTER);
@@ -97,6 +123,13 @@ async function openFolder(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "Open folder" }).click();
   await expect(page.getByText("E2E Hero", { exact: true })).toBeVisible();
+}
+
+async function toolbarAction(page: Page, name: string) {
+  const direct = page.getByRole("button", { name, exact: true });
+  if (await direct.isVisible().catch(() => false)) return direct;
+  await page.getByRole("button", { name: "More actions" }).click();
+  return page.getByRole("menuitem", { name, exact: true });
 }
 
 test.beforeEach(async ({ page }) => installFakeFileSystem(page));
@@ -128,6 +161,41 @@ test("downloads one prompt bundle with schema and the open character", async ({ 
   expect(bundle).toContain("===== character.schema.json =====");
   expect(bundle).toContain("===== character.json =====");
   expect(bundle).toContain('"name": "E2E Hero"');
+});
+
+test("previews and creates an imported character in an empty folder", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => localStorage.setItem("e2e.importTarget", "empty"));
+  await (await toolbarAction(page, "Import character JSON")).click();
+  const dialog = page.getByRole("dialog", { name: "Import character" });
+  await expect(dialog).toContainText("E2E Hero");
+  await dialog.getByRole("button", { name: "Choose character folder" }).click();
+  await dialog.getByRole("button", { name: "Create in imported-hero" }).click();
+
+  await expect(page.getByText("E2E Hero", { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("e2e.newCharacter") || "{}").meta?.name)).toBe("E2E Hero");
+  await expect(await toolbarAction(page, "Save version")).toBeVisible();
+});
+
+test("previews an import, snapshots the open character and applies the update", async ({ page }) => {
+  await openFolder(page);
+  await page.evaluate((updated) => localStorage.setItem("e2e.character", JSON.stringify(updated)), {
+    ...CHARACTER,
+    meta: { ...CHARACTER.meta, name: "Imported Hero" },
+  });
+
+  await (await toolbarAction(page, "Import character JSON")).click();
+  const dialog = page.getByRole("dialog", { name: "Import character" });
+  await expect(dialog).toContainText("Imported Hero");
+  await expect(dialog).toContainText("saved to Versions");
+  await dialog.getByRole("button", { name: "Apply to E2E Hero" }).click();
+
+  await expect(page.getByText("Imported Hero", { exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const files = JSON.parse(localStorage.getItem("e2e.history") || "{}") as Record<string, string>;
+    const snapshots = Object.entries(files).filter(([name]) => name.endsWith("before-import.json"));
+    return snapshots.some(([, raw]) => JSON.parse(raw).meta?.name === "E2E Hero");
+  })).toBe(true);
 });
 
 test("keeps schema-invalid raw JSON out of storage, then saves the correction", async ({ page }, testInfo) => {

@@ -2,6 +2,7 @@ export const STORAGE_ERROR_CODES = [
   "no-character-json",
   "recent-permission-denied",
   "import-target-not-empty",
+  "import-folder-unsupported",
   "not-found",
   "permission-denied",
   "io-failed",

@@ -76,8 +76,9 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
   right (default on a clean install), and floating bottom left. Confirm both floating variants have
   the larger touch target while the toolbar variant stays compact. Check safe areas and 80%, 100%, 120%.
 - ☐ With the dice button in the top bar, at a narrow viewport / 120% scale, toolbar actions that do
-  not fit move into `…` in this order: Settings, Help, Export, Versions, Save version, prompts, Raw
-  JSON, Edit, dice. Unavailable version actions are skipped; dice disappears last. Back remains.
+  not fit move into `…` in this order: Settings, Help, Import, Export, Versions, Save version,
+  prompts, Raw JSON, Edit, dice. Unavailable version actions are skipped; dice disappears last.
+  Back remains. Hover every icon-only action and verify its localized hint appears.
 - ☐ Make the tab row overflow, then swipe between sheet pages: the active tab label automatically
   scrolls into view without moving the document vertically.
 - ☐ Start vertical and horizontal swipes on `+`, `−`, Damage, Heal and ordinary sheet buttons:
@@ -92,6 +93,13 @@ Legend: ☐ = check on the built artifact from the draft Release (not `npm run d
 - ☐ **Prompt bundle download**: every prompt saves one `.txt` containing prompt and JSON Schema.
   With a character open it also contains the complete `character.json`; without one it remains
   available and omits that section. Migrate additionally contains the schema changelog.
+- ☐ **Manual character import**: use the toolbar Import action with valid, schema-invalid and
+  future-schema JSON. The preview must precede every write; invalid/future Apply must remain
+  disabled. With a writable folder open and versioning enabled, Apply replaces only
+  `character.json`, preserves images and creates a `before-import` snapshot. With no character
+  open, choose a truly empty character folder and confirm that `character.json` is created and
+  bound there, with Versions available when enabled. A non-empty folder without `character.json`
+  must be rejected; Cancel must write nothing.
 - ☐ **Prompt sharing**: on the Prompts page, Base/Create/Custom can open Android's generic
   sharesheet without a character; Level up/Validate/Migrate are disabled and explain why. With a
   character open, share Level up and verify the chooser opens immediately. ChatGPT should receive

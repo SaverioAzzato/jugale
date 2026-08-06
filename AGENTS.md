@@ -100,6 +100,14 @@ always preview the character and name the destination before writing. Existing f
 `replaceCharacter(..., "before-import")`; a non-empty folder without `character.json` is rejected,
 and an empty folder is created only after confirmation. Never broaden the manifest filter to `*/*`.
 
+The top-bar manual Import action is the cross-platform counterpart: it picks one JSON without
+modifying that source and reuses the same preview/validation and `before-import` replacement path.
+With no character open it asks for a character folder: an existing `character.json` is previewed
+as a replacement target, a truly empty folder gets a deferred `character.json` only after final
+confirmation, and a non-empty folder without one is rejected. Browsers without writable folder
+access must report that limitation rather than silently downloading or changing semantics. Invalid
+or future-schema candidates must never reach either replacement or new-folder creation.
+
 Version titles are optional history metadata stored in `<snapshot>.meta.json`, never inside either
 the canonical `character.json` or the snapshot. All folder providers must keep create/list/delete
 behavior aligned across browser File System Access, desktop Tauri fs, and Android SAF.

@@ -53,12 +53,16 @@ export function App() {
   const {
     fileInputRef,
     folderInputRef,
+    fileAccessSupported,
     handleOpenJson,
     handleOpenFolder,
+    pickJsonCandidate,
+    parseJsonCandidate,
     handleImportFile,
     handleImportFolder,
     reportOpenError,
   } = useCharacterOpening();
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState("gioco");
   const [swipeDirection, setSwipeDirection] = useState<-1 | 1 | null>(null);
@@ -90,10 +94,20 @@ export function App() {
     incoming: incomingCharacter,
     targetName: incomingTargetName,
     nameMismatch: incomingNameMismatch,
+    stageFileImport,
     chooseTarget: chooseIncomingTarget,
     apply: applyIncomingCharacter,
     cancel: cancelIncomingCharacter,
   } = useIncomingCharacterShare(character?.meta.name ?? null, reportOpenError);
+  const handleImportCharacter = () => {
+    if (!fileAccessSupported) {
+      importInputRef.current?.click();
+      return;
+    }
+    void pickJsonCandidate().then((candidate) => {
+      if (candidate) stageFileImport(candidate.raw, candidate.sourceName);
+    });
+  };
   const tabs = character ? getVisibleTabs(character, images.length > 0, editMode) : [];
   const tab = tabs.some((t) => t.id === activeTab)
     ? activeTab
@@ -159,6 +173,7 @@ export function App() {
           liveSync={liveSync}
           diceButtonPosition={diceButtonPosition}
           onBack={handleUiBack}
+          onImport={handleImportCharacter}
           onExport={exportCharacter}
           onEdit={toggleEditMode}
           onVersion={() => setSaveVersionOpen(true)}
@@ -173,6 +188,20 @@ export function App() {
           onChange={handleImportFile}
         />
         <input ref={folderInputRef} type="file" hidden multiple onChange={handleImportFolder} />
+        <input
+          ref={importInputRef}
+          type="file"
+          accept="application/json,.json"
+          hidden
+          onChange={(event) => {
+            const file = event.currentTarget.files?.[0];
+            event.currentTarget.value = "";
+            if (!file) return;
+            void parseJsonCandidate(file).then((candidate) => {
+              if (candidate) stageFileImport(candidate.raw, candidate.sourceName);
+            });
+          }}
+        />
 
         {!overlay && character && tabs.length > 0 && (
           <nav className="tabbar" ref={tabbarRef} role="tablist" aria-label="Sections">
@@ -301,6 +330,18 @@ export function App() {
           issues={incomingCharacter.preview.issues}
           targetName={incomingTargetName}
           nameMismatch={incomingNameMismatch}
+          source={incomingCharacter.source}
+          valid={incomingCharacter.preview.validation.kind === "valid"}
+          canChooseTarget={incomingCharacter.source === "android-share" || !character}
+          createsNew={incomingCharacter.target?.kind === "empty"}
+          snapshotCurrent={
+            incomingCharacter.source === "file-import" &&
+            incomingTargetName !== null &&
+            versionHistory &&
+            versionsAvailable &&
+            liveSync &&
+            !readOnly
+          }
           busy={versionBusy}
           onApply={() => void applyIncomingCharacter()}
           onChooseTarget={() => void chooseIncomingTarget()}

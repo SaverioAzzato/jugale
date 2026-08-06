@@ -4,13 +4,9 @@ import { useT } from "../i18n/useI18n";
 import { PencilIcon } from "./AppIcons";
 import { DicePalette } from "./DicePalette";
 import { HelpButton, PromptsButton, SettingsButton } from "./OverlayButtons";
-import { toolbarCapacity } from "./toolbarLayout";
+import { toolbarCapacity, TOOLBAR_PRIORITY, type ToolbarActionId } from "./toolbarLayout";
 import { useUiBackHandler } from "./uiBack";
 import { useSettings, type DiceButtonPosition } from "./useSettings";
-
-type ToolbarActionId = "dice" | "edit" | "version" | "history" | "export" | "raw" | "prompts" | "help" | "settings";
-
-const TOOLBAR_PRIORITY: ToolbarActionId[] = ["dice", "edit", "raw", "prompts", "version", "history", "export", "help", "settings"];
 
 function useToolbarCapacity(
   toolbarRef: RefObject<HTMLElement>,
@@ -56,6 +52,7 @@ interface AppToolbarProps {
   liveSync: boolean;
   diceButtonPosition: DiceButtonPosition;
   onBack(): void;
+  onImport(): void;
   onExport(): void;
   onEdit(): void;
   onVersion(): void;
@@ -65,7 +62,7 @@ interface AppToolbarProps {
 export function AppToolbar(props: AppToolbarProps) {
   const {
     overlay, overlayBackRef, characterOpen, editMode, versionHistory, versionsAvailable,
-    versionBusy, readOnly, liveSync, diceButtonPosition, onBack, onExport, onEdit, onVersion, onOverlay,
+    versionBusy, readOnly, liveSync, diceButtonPosition, onBack, onImport, onExport, onEdit, onVersion, onOverlay,
   } = props;
   const t = useT();
   const toolbarRef = useRef<HTMLElement>(null);
@@ -77,6 +74,7 @@ export function AppToolbar(props: AppToolbarProps) {
           (!["version", "history"].includes(id) || (versionHistory && versionsAvailable)))
       : [
           ...(diceButtonPosition === "toolbar" ? (["dice"] as ToolbarActionId[]) : []),
+          "import",
           "prompts",
           "settings",
         ],
@@ -112,6 +110,7 @@ export function AppToolbar(props: AppToolbarProps) {
         {overlay && overlay !== "settings" && <SettingsButton onClick={() => onOverlay("settings")} />}
         {!overlay && (
           <>
+            {visible.has("import") && <IconButton label={t("app.import")} onClick={onImport}><ImportIcon /></IconButton>}
             {characterOpen && visible.has("export") && <IconButton label={t("app.export")} onClick={onExport}><DownloadIcon /></IconButton>}
             {characterOpen && visible.has("edit") && (
               <button
@@ -137,6 +136,7 @@ export function AppToolbar(props: AppToolbarProps) {
             {overflow.length > 0 && (
               <ToolbarOverflow
                 actions={overflow}
+                onImport={onImport}
                 onExport={onExport}
                 onEdit={onEdit}
                 onVersion={onVersion}
@@ -167,6 +167,7 @@ function IconButton({ label, onClick, disabled, trigger, children }: {
 
 interface ToolbarOverflowProps {
   actions: ToolbarActionId[];
+  onImport(): void;
   onExport(): void;
   onEdit(): void;
   onVersion(): void;
@@ -174,7 +175,7 @@ interface ToolbarOverflowProps {
   onOverlay(overlay: AppOverlay): void;
 }
 
-function ToolbarOverflow({ actions, onExport, onEdit, onVersion, versionDisabled, onOverlay }: ToolbarOverflowProps) {
+function ToolbarOverflow({ actions, onImport, onExport, onEdit, onVersion, versionDisabled, onOverlay }: ToolbarOverflowProps) {
   const t = useT();
   const ref = useRef<HTMLDetailsElement>(null);
   const [open, setOpen] = useState(false);
@@ -197,6 +198,7 @@ function ToolbarOverflow({ actions, onExport, onEdit, onVersion, versionDisabled
     edit: { label: t("edit.toggle"), run: onEdit },
     version: { label: t("versions.save"), run: onVersion, disabled: versionDisabled },
     history: { label: t("versions.open"), run: () => onOverlay("versions"), trigger: "versions" },
+    import: { label: t("app.import"), run: onImport },
     export: { label: t("app.export"), run: onExport },
     raw: { label: t("code.toggle"), run: () => onOverlay("json"), trigger: "json" },
     prompts: { label: t("prompts.title"), run: () => onOverlay("prompts"), trigger: "prompts" },
@@ -237,6 +239,10 @@ function CodeIcon() {
 
 function DownloadIcon() {
   return <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 20h14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+
+function ImportIcon() {
+  return <svg className="settings-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21V9m0 0 5 5m-5-5-5 5M5 4h14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
 
 function RawJsonButton({ onClick, label }: { onClick(): void; label: string }) {

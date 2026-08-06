@@ -154,6 +154,12 @@ without hiding valid siblings. Storage failures cross the application boundary a
 stable codes (`not-found`, `permission-denied`, `io-failed` and workflow-specific variants) plus the
 original host error as `cause`.
 
+**Prompt bundle download (all hosts):** every prompt can be exported as one delimited UTF-8 text
+file containing the composed prompt and current JSON Schema. If a character is open, its complete
+`character.json` is included; the Migrate bundle also includes the schema changelog. The
+download remains available without a character and then omits only `character.json`. This is the
+portable web/desktop/Android path; Android additionally exposes the direct system-share path below.
+
 **Android prompt sharing (outbound implemented; transport matrix verified):** the Prompts page exposes
 Share only on Android and always opens the generic system chooser—there are no chatbot package
 names, provider SDKs, accounts or API keys in JUGALE. The frontend builds the same prompt, JSON
@@ -187,6 +193,19 @@ while images remain. Existing targets use `replaceCharacter(..., "before-import"
 version-history snapshot. A dedicated SAF picker also accepts another existing folder or a truly
 empty one; non-empty folders without `character.json` are rejected and empty-folder creation is
 deferred until final confirmation.
+
+**Manual character import (all hosts):** the toolbar Import action picks one JSON file without
+binding or modifying the selected source, then stages it through the same lossless preview and
+validation state used by Android inbound sharing. A schema-invalid or future-schema candidate can
+be inspected but cannot be applied. With a character open, confirmation delegates to
+`replaceCharacter(..., "before-import")`, preserving its flush, optional version snapshot,
+fail-closed write and unchanged runtime images. Without a character, the user chooses a character
+folder. An existing `character.json` becomes a previewed replacement target; a truly empty folder
+gets a deferred `character.json` only after final confirmation, so the new character immediately
+has folder images and version history available. Non-empty folders without `character.json` are
+rejected. Chromium, desktop and Android implement writable folder targets; other browsers report
+the limitation instead of falling back to a download. Cancellation or a failed creation leaves
+both the candidate and every existing character untouched.
 
 **Character versions (shipped):** `character.json` remains the only canonical file. A
 writable folder provider may expose the optional `StorageProvider.versions` capability; single

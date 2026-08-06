@@ -24,7 +24,7 @@ No install, no account, no subscription:
 
 Then, on the welcome screen:
 
-1. **Have a character already?** Open its `character.json` (or its folder, to get the portrait too). Recently-opened characters are one click away.
+1. **Have a character already?** Open its `character.json` (or its folder, to get the portrait too). To apply a JSON returned by a chatbot safely, use **Import character JSON** in the top bar: JUGALE previews it before replacing the open character or creating a new character folder. Recently-opened characters are one click away.
 2. **Starting fresh?** Build one with any chatbot using the in-app **Prompts** (the book icon) — they walk you through 5e rules one decision at a time — or turn on **Edit mode** (the pencil) and fill the sheet in by hand. New to the format? See the in-app **Help** (the **?**) or [docs/SCHEMA.md](docs/SCHEMA.md).
 
 > **Status:** the generalized v2 app is live on web, desktop, and Android. The original vanilla-JS prototype is retired and preserved at [`prototype-v1`](https://github.com/SaverioAzzato/jugale/releases/tag/prototype-v1). The [roadmap](docs/ROADMAP.md) records the completed milestones and remaining polish.
@@ -133,7 +133,7 @@ When you change the schema, see the checklist in [docs/SCHEMA.md](docs/SCHEMA.md
 
 ## GPT prompts
 
-Four copy-ready prompts — **base / create / level-up / validate** — let any external chatbot (ChatGPT, Claude, etc.) build, level up, and validate a character against this app's `character.json` contract. Available in-app (the book icon next to Settings, with a one-click JSON Schema download) and documented in **[docs/PROMPTS.md](docs/PROMPTS.md)**.
+The in-app Prompts page (the book icon next to Settings) provides the **base / create / level-up / validate** workflows, a standalone **migrate** workflow and a **custom** instruction for any external chatbot (ChatGPT, Claude, etc.). Beside every prompt, **Download bundle** saves one text file containing the composed prompt and current JSON Schema; when a character is open it also contains the complete `character.json`, and Migrate adds the schema changelog. The bundle works on web, desktop and Android, while Android also offers direct sharing through the system chooser. The full workflow is documented in **[docs/PROMPTS.md](docs/PROMPTS.md)**.
 
 ## Content & licensing
 

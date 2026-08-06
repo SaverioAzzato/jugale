@@ -2,6 +2,7 @@ import { createRef } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AppToolbar } from "./AppToolbar";
+import { TOOLBAR_PRIORITY } from "./toolbarLayout";
 
 const base = () => ({
   overlay: null,
@@ -15,6 +16,7 @@ const base = () => ({
   liveSync: true,
   diceButtonPosition: "floating-right" as const,
   onBack: vi.fn(),
+  onImport: vi.fn(),
   onExport: vi.fn(),
   onEdit: vi.fn(),
   onVersion: vi.fn(),
@@ -36,5 +38,22 @@ describe("AppToolbar", () => {
     expect(screen.getByRole("button", { name: "GPT prompts" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Settings" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "How to use :JUGALE" })).not.toBeInTheDocument();
+  });
+
+  it("exposes import before a character is open and gives every toolbar icon a hover hint", () => {
+    const props = { ...base(), characterOpen: false };
+    render(<AppToolbar {...props} />);
+    const importButton = screen.getByRole("button", { name: "Import character JSON" });
+    fireEvent.click(importButton);
+    expect(props.onImport).toHaveBeenCalledOnce();
+    for (const button of screen.getAllByRole("button")) {
+      if (button.classList.contains("btn-icon")) expect(button).toHaveAttribute("title");
+    }
+  });
+
+  it("keeps recovery export ahead of occasional import in the disappearance order", () => {
+    expect([...TOOLBAR_PRIORITY].reverse()).toEqual([
+      "settings", "help", "import", "export", "history", "version", "prompts", "raw", "edit", "dice",
+    ]);
   });
 });

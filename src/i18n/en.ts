@@ -9,6 +9,7 @@
 export const en = {
   // chrome / toolbar
   "app.export": "Export JSON",
+  "app.import": "Import character JSON",
   "common.yes": "Yes",
   "common.no": "No",
   "toolbar.more": "More actions",
@@ -179,6 +180,13 @@ export const en = {
   "incoming.error.invalid-utf8": "The shared file is not valid UTF-8 text.",
   "incoming.error.invalid-json": "The shared file is not a valid JSON object.",
   "incoming.error.unreadable": "JUGALE couldn't read the shared JSON.",
+  "import.title": "Import character",
+  "import.selected": "Selected {name}, schema {schema}.",
+  "import.chooseTargetFirst": "Choose the folder for the new character.",
+  "import.createIn": "Create in {name}",
+  "import.folderWarning": "An empty folder creates a new character; an existing character folder is replaced. Nothing changes before you confirm.",
+  "import.folderUnsupported": "This browser cannot create a writable character folder. Use a Chromium-based browser or the desktop/Android app.",
+  "import.snapshotCurrent": "The current character will be saved to Versions before it is replaced.",
   // prompts page
   "prompts.title": "GPT prompts",
   "prompts.banner": "Automated/AI retrieval is allowed only for the SRD version named in Sources (default: SRD 5.1) or sources whose licence and terms explicitly permit it. Do not mix rules editions; owning or subscribing to a source is not enough.",

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { writes, mkdirMock, removeMock, renameMock, historyFiles } = vi.hoisted(() => {
+const { writes, mkdirMock, removeMock, renameMock, saveMock, historyFiles } = vi.hoisted(() => {
   const historyFiles = new Map<string, string>();
   return {
     writes: vi.fn(async (_path: string, _value: string) => {}),
@@ -13,6 +13,7 @@ const { writes, mkdirMock, removeMock, renameMock, historyFiles } = vi.hoisted((
       if (contents !== undefined) historyFiles.set(toName, contents);
       historyFiles.delete(fromName);
     }),
+    saveMock: vi.fn(async () => null as string | null),
     historyFiles,
   };
 });
@@ -21,7 +22,7 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({
   open: vi.fn(async (options: { directory?: boolean }) =>
     options.directory ? "/hero" : "/hero/character.json",
   ),
-  save: vi.fn(async () => null),
+  save: saveMock,
 }));
 
 vi.mock("@tauri-apps/api/path", () => ({
@@ -53,19 +54,41 @@ vi.mock("@tauri-apps/plugin-fs", () => ({
   rename: renameMock,
 }));
 
-import { openCharacterFileTauri, openCharacterFolderTauri } from "./tauriProvider";
+import { openCharacterFileTauri, openCharacterFolderTauri, pickCharacterImportTargetTauri } from "./tauriProvider";
 import { expectVersionStoreContract } from "../test/versionStoreContract";
+import { loadCharacter } from "../schema";
 
 beforeEach(() => {
   writes.mockClear();
   mkdirMock.mockClear();
   removeMock.mockClear();
   renameMock.mockClear();
+  saveMock.mockReset();
+  saveMock.mockResolvedValue(null);
   historyFiles.clear();
   historyFiles.set(
     "character-20260727-153012-184-checkpoint.json",
     JSON.stringify({ meta: { name: "Old hero" } }),
   );
+});
+
+describe("pickCharacterImportTargetTauri", () => {
+  it("defers writing character.json in a selected empty folder", async () => {
+    const loaded = loadCharacter({ meta: { name: "New" }, extension: { kept: true } });
+    if (loaded.validation.kind !== "valid") throw new Error("Expected a persistable fixture");
+
+    const target = await pickCharacterImportTargetTauri();
+    expect(target?.kind).toBe("empty");
+    expect(writes).not.toHaveBeenCalled();
+    if (target?.kind !== "empty") throw new Error("Expected empty target");
+    await target.create(loaded.validation.persistable);
+
+    expect(writes).toHaveBeenCalledWith(
+      expect.stringMatching(/^\/hero\/character\.json\.jugale-.*\.tmp$/),
+      JSON.stringify(loaded.validation.persistable.document, null, 2),
+    );
+    expect(target.ref).toEqual({ platform: "tauri", kind: "folder", name: "hero", path: "/hero" });
+  });
 });
 
 describe("Tauri folder version store", () => {

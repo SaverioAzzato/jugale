@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { importCharacterFolder, NO_CHARACTER_JSON, openCharacterFile, openCharacterFolder } from "./provider";
+import { importCharacterFolder, NO_CHARACTER_JSON, openCharacterFile, openCharacterFolder, pickCharacterImportTargetWeb } from "./provider";
+import { loadCharacter } from "../schema";
 import { expectVersionStoreContract } from "../test/versionStoreContract";
 
 beforeAll(() => {
@@ -132,5 +133,61 @@ describe("web folder version store", () => {
     });
     const loaded = await openCharacterFile();
     expect(loaded!.provider.versions).toBeUndefined();
+  });
+});
+
+describe("pickCharacterImportTargetWeb", () => {
+  it("defers creating character.json in a chosen empty folder", async () => {
+    let contents = "";
+    let created = false;
+    const handle = {
+      name: "character.json",
+      getFile: async () => ({ text: async () => contents }),
+      createWritable: async () => ({
+        write: async (value: string) => { contents = value; },
+        close: async () => {},
+      }),
+    };
+    const root = {
+      name: "imported-hero",
+      getFileHandle: async (_name: string, options?: { create?: boolean }) => {
+        if (!created && !options?.create) throw new Error("missing");
+        created = true;
+        return handle;
+      },
+      getDirectoryHandle: async () => { throw new Error("missing"); },
+      entries: async function* () {},
+      removeEntry: async () => { created = false; },
+    };
+    Object.defineProperty(window, "showDirectoryPicker", { configurable: true, value: async () => root });
+    const result = loadCharacter({ meta: { name: "Imported" }, extension: { kept: true } });
+    if (result.validation.kind !== "valid") throw new Error("Expected valid fixture");
+
+    const target = await pickCharacterImportTargetWeb();
+    expect(target?.kind).toBe("empty");
+    expect(created).toBe(false);
+    if (target?.kind !== "empty") throw new Error("Expected empty target");
+    const loaded = await target.create(result.validation.persistable);
+
+    expect(JSON.parse(contents)).toMatchObject({ meta: { name: "Imported" }, extension: { kept: true } });
+    expect(target.ref).toMatchObject({ platform: "web", kind: "folder", name: "imported-hero" });
+    expect(await loaded.provider.read()).toMatchObject({ meta: { name: "Imported" } });
+  });
+
+  it("rejects a non-empty folder without character.json", async () => {
+    const root = {
+      name: "not-a-character",
+      getFileHandle: async () => { throw new Error("missing"); },
+      getDirectoryHandle: async () => { throw new Error("missing"); },
+      entries: async function* () { yield ["notes.txt", { kind: "file" as const }] as const; },
+      removeEntry: async () => {},
+    };
+    Object.defineProperty(window, "showDirectoryPicker", { configurable: true, value: async () => root });
+    await expect(pickCharacterImportTargetWeb()).rejects.toThrow("import-target-not-empty");
+  });
+
+  it("reports browsers without writable folder access", async () => {
+    Reflect.deleteProperty(window, "showDirectoryPicker");
+    await expect(pickCharacterImportTargetWeb()).rejects.toThrow("import-folder-unsupported");
   });
 });

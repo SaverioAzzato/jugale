@@ -175,6 +175,7 @@ export function DicePalette({ placement = "toolbar" }: { placement?: DiceButtonP
         type="button"
         className="btn btn-icon dice-toggle"
         data-dice-toggle
+        title={t("dice.roll")}
         aria-label={t("dice.roll")}
         aria-haspopup="menu"
         aria-expanded={open}

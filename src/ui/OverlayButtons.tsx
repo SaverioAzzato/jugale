@@ -23,6 +23,7 @@ export function PromptsButton({ onClick, label }: { onClick: () => void; label?:
     <button
       type="button"
       className="btn btn-icon"
+      title={label ?? t("prompts.title")}
       aria-label={label ?? t("prompts.title")}
       data-overlay-trigger="prompts"
       onClick={onClick}
@@ -38,6 +39,7 @@ export function SettingsButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       className="btn btn-icon"
+      title={t("settings.title")}
       aria-label={t("settings.title")}
       data-overlay-trigger="settings"
       onClick={onClick}

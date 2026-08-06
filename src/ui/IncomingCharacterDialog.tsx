@@ -9,6 +9,11 @@ export function IncomingCharacterDialog({
   issues,
   targetName,
   nameMismatch,
+  source,
+  valid,
+  canChooseTarget,
+  createsNew,
+  snapshotCurrent,
   busy,
   onApply,
   onChooseTarget,
@@ -19,6 +24,11 @@ export function IncomingCharacterDialog({
   issues: Issue[];
   targetName: string | null;
   nameMismatch: boolean;
+  source: "android-share" | "file-import";
+  valid: boolean;
+  canChooseTarget: boolean;
+  createsNew: boolean;
+  snapshotCurrent?: boolean;
   busy: boolean;
   onApply: () => void;
   onChooseTarget: () => void;
@@ -33,26 +43,29 @@ export function IncomingCharacterDialog({
   });
 
   return (
-    <VersionDialog label={t("incoming.title")} onCancel={() => { if (!busy) onCancel(); }}>
-      <h2>{t("incoming.title")}</h2>
-      <p>{interpolate(t("incoming.received"), { name: characterName, schema: schemaVersion })}</p>
+    <VersionDialog label={t(source === "file-import" ? "import.title" : "incoming.title")} onCancel={() => { if (!busy) onCancel(); }}>
+      <h2>{t(source === "file-import" ? "import.title" : "incoming.title")}</h2>
+      <p>{interpolate(t(source === "file-import" ? "import.selected" : "incoming.received"), { name: characterName, schema: schemaVersion })}</p>
       <p>{interpolate(t("versions.issueCounts"), { errors, warnings })}</p>
       {targetName ? (
         <p>{interpolate(t("incoming.target"), { name: targetName })}</p>
-      ) : (
-        <p>{t("incoming.chooseTargetFirst")}</p>
-      )}
-      <p className="incoming-warning">{t("incoming.replaceWarning")}</p>
+      ) : canChooseTarget ? (
+        <p>{t(source === "file-import" ? "import.chooseTargetFirst" : "incoming.chooseTargetFirst")}</p>
+      ) : null}
+      <p className="incoming-warning">{t(createsNew || !targetName ? "import.folderWarning" : "incoming.replaceWarning")}</p>
+      {snapshotCurrent && <p>{t("import.snapshotCurrent")}</p>}
       {nameMismatch && <p>{t("incoming.nameMismatch")}</p>}
       <div className="version-dialog-actions">
         {targetName && (
-          <button type="button" autoFocus className="btn btn-primary" disabled={busy || errors > 0} onClick={onApply}>
-            {interpolate(t("incoming.applyTo"), { name: targetName })}
+          <button type="button" autoFocus className="btn btn-primary" disabled={busy || !valid} onClick={onApply}>
+            {interpolate(t(createsNew ? "import.createIn" : "incoming.applyTo"), { name: targetName })}
           </button>
         )}
-        <button type="button" className="btn" disabled={busy} onClick={onChooseTarget}>
-          {t(targetName ? "incoming.chooseOther" : "incoming.chooseTarget")}
-        </button>
+        {canChooseTarget && (
+          <button type="button" className="btn" disabled={busy} onClick={onChooseTarget}>
+            {t(targetName ? "incoming.chooseOther" : "incoming.chooseTarget")}
+          </button>
+        )}
         <button type="button" className="btn" disabled={busy} onClick={onCancel}>
           {t("prompts.cancel")}
         </button>

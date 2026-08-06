@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { openCharacterFile, recordRecent } = vi.hoisted(() => ({
   openCharacterFile: vi.fn(),
@@ -28,6 +28,11 @@ import type { StorageProvider } from "../storage/provider";
 import { useCharacterOpening } from "./useCharacterOpening";
 
 describe("useCharacterOpening", () => {
+  beforeEach(() => {
+    openCharacterFile.mockReset();
+    recordRecent.mockClear();
+  });
+
   it("connects a picked writable JSON and records it as recent", async () => {
     const provider: StorageProvider = {
       kind: "file",
@@ -43,5 +48,23 @@ describe("useCharacterOpening", () => {
     await waitFor(() => expect(useCharacter.getState().provider).toBe(provider));
     expect(useCharacter.getState().character?.meta.name).toBe("Hero");
     expect(recordRecent).toHaveBeenCalledWith(ref);
+  });
+
+  it("picks an import candidate without binding or recording the selected source", async () => {
+    const provider: StorageProvider = {
+      kind: "file",
+      read: vi.fn(async () => ({})),
+      write: vi.fn(async () => {}),
+    };
+    const ref = { platform: "web" as const, kind: "file" as const, name: "returned.json", handle: {} };
+    openCharacterFile.mockResolvedValue({ provider, raw: { meta: { name: "Returned" } }, ref });
+    const { result } = renderHook(() => useCharacterOpening());
+
+    await expect(result.current.pickJsonCandidate()).resolves.toEqual({
+      raw: { meta: { name: "Returned" } },
+      sourceName: "returned.json",
+    });
+    expect(useCharacter.getState().character).toBeNull();
+    expect(recordRecent).not.toHaveBeenCalled();
   });
 });

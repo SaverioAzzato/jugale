@@ -2,12 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useCharacter } from "../characterStore";
 import { useT, type StringKey } from "../i18n/useI18n";
 import { loadCharacter } from "../schema";
-import {
-  isAndroid,
-  pickCharacterImportTargetAndroid,
-  type AndroidImportTarget,
-} from "../storage/androidProvider";
+import { isAndroid } from "../storage/androidProvider";
 import { recordRecent } from "../storage/recents";
+import { pickCharacterImportTarget } from "../storage/characterImport";
+import type { CharacterImportTarget } from "../storage/provider";
 import {
   listenForCharacterShares,
   takePendingCharacterShare,
@@ -18,9 +16,11 @@ import { isStorageError } from "../storage/errors";
 
 interface PendingIncomingCharacter {
   id: string;
+  source: "android-share" | "file-import";
+  sourceName: string;
   raw: unknown;
   preview: ReturnType<typeof loadCharacter>;
-  target: AndroidImportTarget | null;
+  target: CharacterImportTarget | null;
 }
 
 export function useIncomingCharacterShare(
@@ -45,7 +45,14 @@ export function useIncomingCharacterShare(
     try {
       const raw = JSON.parse(payload.contents) as unknown;
       incomingIdRef.current = payload.id;
-      setIncoming({ id: payload.id, raw, preview: loadCharacter(raw), target: null });
+      setIncoming({
+        id: payload.id,
+        source: "android-share",
+        sourceName: payload.name,
+        raw,
+        preview: loadCharacter(raw),
+        target: null,
+      });
     } catch {
       useToast.getState().push("error", t("incoming.error.invalid-json"));
     }
@@ -71,18 +78,35 @@ export function useIncomingCharacterShare(
     };
   }, [receive, t]);
 
+  /** Stage a user-picked JSON through the same preview/validation path as an Android share. */
+  const stageFileImport = useCallback((raw: unknown, sourceName: string) => {
+    const id = `file-import-${Date.now()}`;
+    incomingIdRef.current = id;
+    setIncoming({
+      id,
+      source: "file-import",
+      sourceName,
+      raw,
+      preview: loadCharacter(raw),
+      target: null,
+    });
+  }, []);
+
   const chooseTarget = useCallback(async () => {
+    if (!incoming || (incoming.source === "file-import" && currentCharacterName !== null)) return;
     try {
-      const target = await pickCharacterImportTargetAndroid();
+      const target = await pickCharacterImportTarget();
       if (target) setIncoming((current) => current ? { ...current, target } : null);
     } catch (error) {
       if (isStorageError(error, "import-target-not-empty")) {
         useToast.getState().push("error", t("incoming.targetNotEmpty"));
+      } else if (isStorageError(error, "import-folder-unsupported")) {
+        useToast.getState().push("error", t("import.folderUnsupported"));
       } else {
         reportOpenError(error);
       }
     }
-  }, [reportOpenError, t]);
+  }, [currentCharacterName, incoming, reportOpenError, t]);
 
   const apply = useCallback(async () => {
     const pending = incoming;
@@ -133,5 +157,5 @@ export function useIncomingCharacterShare(
       : targetName !== incoming.preview.character.meta.name
     : false;
 
-  return { incoming, targetName, nameMismatch, chooseTarget, apply, cancel };
+  return { incoming, targetName, nameMismatch, stageFileImport, chooseTarget, apply, cancel };
 }

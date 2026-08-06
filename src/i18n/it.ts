@@ -2,6 +2,7 @@ import type { StringKey } from "./en";
 
 export const it: Record<StringKey, string> = {
   "app.export": "Esporta JSON",
+  "app.import": "Importa JSON personaggio",
   "common.yes": "Sì",
   "common.no": "No",
   "toolbar.more": "Altre azioni",
@@ -169,6 +170,13 @@ export const it: Record<StringKey, string> = {
   "incoming.error.invalid-utf8": "Il file condiviso non è un testo UTF-8 valido.",
   "incoming.error.invalid-json": "Il file condiviso non è un oggetto JSON valido.",
   "incoming.error.unreadable": "JUGALE non riesce a leggere il JSON condiviso.",
+  "import.title": "Importa personaggio",
+  "import.selected": "Selezionato {name}, schema {schema}.",
+  "import.chooseTargetFirst": "Scegli la cartella per il nuovo personaggio.",
+  "import.createIn": "Crea in {name}",
+  "import.folderWarning": "Una cartella vuota crea un nuovo personaggio; una cartella personaggio esistente viene sostituita. Nulla cambia prima della conferma.",
+  "import.folderUnsupported": "Questo browser non può creare una cartella personaggio scrivibile. Usa un browser basato su Chromium oppure l'app desktop/Android.",
+  "import.snapshotCurrent": "Il personaggio corrente verrà salvato in Versioni prima di essere sostituito.",
   "prompts.title": "Prompt per chatbot",
   "prompts.banner": "Il retrieval automatico/AI è ammesso solo per la versione SRD indicata nelle Fonti (default: SRD 5.1) o per fonti la cui licenza e i cui termini lo consentono esplicitamente. Non mescolare edizioni; possesso o abbonamento non bastano.",
   "prompts.sectionBuildTitle": "Crea, modifica e verifica un personaggio",

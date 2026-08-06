@@ -32,6 +32,16 @@ Gemini and Claude accepted the text attachment. The Share control and its explan
 Android-only; Download bundle and Copy are available on every host. The tap itself opens the chooser without
 an extra confirmation.
 
+When the chatbot returns the complete `character.json`, use **Import character JSON** in JUGALE's
+top bar on any host. The selected file is previewed and validated before anything is written. With
+a character open, Apply uses the same protected replacement path as Android share-back and creates
+a `before-import` version when version history is enabled and available; existing images remain in
+place. Without an open character, **Choose character folder** asks for a truly empty folder and
+creates `character.json` there only after confirmation, immediately enabling folder features such
+as images and version history. Non-empty folders without `character.json` are rejected; browsers
+without writable folder access explain the limitation. Invalid and future-schema files remain
+visible in the preview but cannot be applied.
+
 ## Parameters (filled in the app, printed into the prompt)
 
 - **Reference guides** — name + optional base wiki URL, one or more. Pre-filled from the loaded character's `meta.ruleset` (which accepts either plain strings or `{ name, url }` objects). The prompt instructs the assistant to use **only** these sources. Adding a guide here is the same act as adding it to `meta.ruleset`.
@@ -56,7 +66,7 @@ The shipped prompts follow the app's UI language (English or Italian) — switch
 
 ## The in-app banner
 
-The Prompts page also shows this short disclaimer as a banner above the prompts, independent of which one you copy — same substance as the full disclaimer below, condensed for the UI (`prompts.banner` in `src/i18n/useI18n.ts`):
+The Prompts page also shows this short disclaimer as a banner above the prompts, independent of which one you copy — same substance as the full disclaimer below, condensed for the UI (`prompts.banner` in [`src/i18n/en.ts`](../src/i18n/en.ts) and [`src/i18n/it.ts`](../src/i18n/it.ts)):
 
 ```
 Automated/AI retrieval is allowed only for the SRD version named in Sources (default: SRD 5.1) or sources whose licence and terms explicitly permit it. Do not mix rules editions; owning or subscribing to a source is not enough.
@@ -185,4 +195,4 @@ The full machine-readable JSON Schema (generated from the same Zod source as the
 
 ## Source of truth
 
-The prompt blocks quoted above are copied verbatim from the `DISCLAIMER`, `BASE_CORE`, `DATA_CONTRACT`, `CREATE_TASK`, `LEVEL_UP_TASK`, `VALIDATE_TASK`, and `MIGRATE_TASK` constants in [`src/prompts/prompts.ts`](../src/prompts/prompts.ts) (with `MIGRATE_TASK` used standalone, not composed on the base); the schema changelog it references is `SCHEMA_CHANGELOG` in [`src/schema/changelog.ts`](../src/schema/changelog.ts); the banner quote is from `prompts.banner` in [`src/i18n/useI18n.ts`](../src/i18n/useI18n.ts). Both are what the app's Prompts page actually renders. If you change either in code, update this file in the same change — there's no automated check that they stay in sync. For actual use, copy from the in-app page (it composes the parametric header for you) rather than from here.
+The prompt blocks quoted above are copied verbatim from the `DISCLAIMER`, `BASE_CORE`, `DATA_CONTRACT`, `CREATE_TASK`, `LEVEL_UP_TASK`, `VALIDATE_TASK`, and `MIGRATE_TASK` constants in [`src/prompts/prompts.ts`](../src/prompts/prompts.ts) (with `MIGRATE_TASK` used standalone, not composed on the base); the schema changelog it references is `SCHEMA_CHANGELOG` in [`src/schema/changelog.ts`](../src/schema/changelog.ts); the localized banner quote is `prompts.banner` in [`src/i18n/en.ts`](../src/i18n/en.ts) and [`src/i18n/it.ts`](../src/i18n/it.ts). These are what the app's Prompts page actually renders. If you change them in code, update this file in the same change — there's no automated check that they stay in sync. For actual use, copy from the in-app page (it composes the parametric header for you) rather than from here.

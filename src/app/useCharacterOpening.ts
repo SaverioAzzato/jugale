@@ -76,6 +76,31 @@ export function useCharacterOpening() {
     else fileInputRef.current?.click();
   }, [fileAccessSupported, openFile]);
 
+  /** Pick a JSON as an update payload without binding or modifying the selected file. */
+  const pickJsonCandidate = useCallback(async () => {
+    if (!fileAccessSupported) return null;
+    try {
+      const result = isAndroid()
+        ? await openCharacterFileAndroid()
+        : isTauri()
+          ? await openCharacterFileTauri()
+          : await openCharacterFile();
+      return result ? { raw: result.raw, sourceName: result.ref.name } : null;
+    } catch (error) {
+      reportOpenError(error);
+      return null;
+    }
+  }, [fileAccessSupported, reportOpenError]);
+
+  const parseJsonCandidate = useCallback(async (file: File) => {
+    try {
+      return { raw: await importJsonFile(file), sourceName: file.name };
+    } catch (error) {
+      reportOpenError(error);
+      return null;
+    }
+  }, [reportOpenError]);
+
   const handleOpenFolder = useCallback(() => {
     if (isTauri() || isDirectoryAccessSupported()) void openFolder();
     else folderInputRef.current?.click();
@@ -123,8 +148,11 @@ export function useCharacterOpening() {
   return {
     fileInputRef,
     folderInputRef,
+    fileAccessSupported,
     handleOpenJson,
     handleOpenFolder,
+    pickJsonCandidate,
+    parseJsonCandidate,
     handleImportFile,
     handleImportFolder,
     reportOpenError,

@@ -1,3 +1,8 @@
+export type ToolbarActionId = "dice" | "edit" | "version" | "history" | "import" | "export" | "raw" | "prompts" | "help" | "settings";
+
+/** Highest priority first; reverse this list to get the character-toolbar disappearance order. */
+export const TOOLBAR_PRIORITY: ToolbarActionId[] = ["dice", "edit", "raw", "prompts", "version", "history", "export", "import", "help", "settings"];
+
 /** Number of priority actions that fit beside the toolbar's fixed content. Hidden actions share
  * one overflow button, so that slot is reserved whenever not everything fits. Measurements are
  * physical pixels because CSS root zoom changes the rendered button size. */

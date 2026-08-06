@@ -22,7 +22,7 @@
  */
 import { AndroidFs, AndroidUriPermissionState, type AndroidFsUri } from "tauri-plugin-android-fs-api";
 import { isTauri } from "./tauriProvider";
-import type { StorageProvider, GalleryImage, AndroidRecentRef, LoadedCharacter } from "./provider";
+import type { StorageProvider, GalleryImage, AndroidRecentRef, LoadedCharacter, CharacterImportTarget } from "./provider";
 import type { PersistableCharacterDocument } from "../schema/validate";
 import { normalizeStorageError, storageError } from "./errors";
 import { createVersionStore, type VersionStore } from "./versions";
@@ -203,19 +203,10 @@ export async function openCharacterFolderAndroid(): Promise<{
   };
 }
 
-export type AndroidImportTarget =
-  | ({ kind: "existing" } & NonNullable<Awaited<ReturnType<typeof openCharacterFolderAndroid>>>)
-  | {
-      kind: "empty";
-      sourceName: string;
-      ref: AndroidRecentRef;
-      create: (document: PersistableCharacterDocument) => Promise<LoadedCharacter>;
-    };
-
 /** Pick an import destination without changing it. Existing characters are loaded for preview;
  * a truly empty folder exposes a deferred creator so character.json is written only after the
  * user confirms. A non-empty folder without character.json is rejected. */
-export async function pickCharacterImportTargetAndroid(): Promise<AndroidImportTarget | null> {
+export async function pickCharacterImportTargetAndroid(): Promise<CharacterImportTarget | null> {
   const treeUri = await AndroidFs.showOpenDirPicker();
   if (!treeUri) return null;
   await tryPersist(treeUri);

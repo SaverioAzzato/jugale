@@ -11,6 +11,7 @@ describe("DicePalette", () => {
     useSettings.getState().setUiScale(120);
     render(<DicePalette />);
     const toggle = screen.getByRole("button", { name: "Roll a die" });
+    expect(toggle).toHaveAttribute("title", "Roll a die");
     Object.defineProperty(window, "innerWidth", { configurable: true, value: 412 });
     Object.defineProperty(toggle, "getBoundingClientRect", {
       configurable: true,
