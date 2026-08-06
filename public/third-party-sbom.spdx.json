@@ -3,9 +3,9 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "JUGALE third-party dependency SBOM",
-  "documentNamespace": "https://github.com/SaverioAzzato/jugale/sbom/sha256-faee812b7ad9989415ef15f3d652d53bb418c2bb7a2303d08a9a8578de2697e9",
+  "documentNamespace": "https://github.com/SaverioAzzato/jugale/sbom/sha256-8ba400611fcde80b573635458f0dbb4913be4eee280291e355437f2ab9a1b991",
   "creationInfo": {
-    "created": "2026-08-03T15:39:57Z",
+    "created": "2026-08-06T15:40:34Z",
     "creators": [
       "Tool: JUGALE scripts/generate-legal-artifacts.mjs"
     ]
@@ -14608,5 +14608,5 @@
       "relatedSpdxElement": "SPDXRef-Package-8a5cff91433a3f15141a8987"
     }
   ],
-  "comment": "Generated from package-lock.json and src-tauri/Cargo.lock. Lock fingerprint: sha256:faee812b7ad9989415ef15f3d652d53bb418c2bb7a2303d08a9a8578de2697e9"
+  "comment": "Generated from package-lock.json and src-tauri/Cargo.lock. Lock fingerprint: sha256:8ba400611fcde80b573635458f0dbb4913be4eee280291e355437f2ab9a1b991"
 }
